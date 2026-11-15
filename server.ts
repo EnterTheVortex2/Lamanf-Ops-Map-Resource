@@ -1,0 +1,496 @@
+import "dotenv/config";
+import express from "express";
+import path from "path";
+import { fileURLToPath } from "url";
+import { createServer as createViteServer } from "vite";
+import { GzwDataClient } from "@zoniboy/gzw-data-client";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const PORT = Number(process.env.PORT || 3000);
+
+const API_ROOT = "https://gzw-data.dev/api/v1";
+const DATASET_MATCH_PATTERN =
+  /^(hideout|hideout_modules|gamedata_hideout_rooms|gamedata_hideout_devices|gamedata_hideout_materials|gamedata_hideout_recipes|disassembly_recipes|building_material|workshop_supplies|laboratory_supplies|electronics|crafting_material|disassembly_material|production_material|military_material|tools|keys|keycards|loot_container|loot_containers|regions|tasks)$/i;
+
+const PRIORITY_DATASETS = [
+  "hideout_modules",
+  "gamedata_hideout_rooms",
+  "gamedata_hideout_devices",
+  "gamedata_hideout_materials",
+  "gamedata_hideout_recipes",
+  "disassembly_recipes",
+  "building_material",
+  "workshop_supplies",
+  "laboratory_supplies",
+  "electronics",
+  "tools",
+  "keys",
+  "loot_container",
+  "loot_containers",
+  "regions",
+  "tasks",
+];
+
+const MAX_PAGES_BY_DATASET: Record<string, number> = {
+  tasks: 3,
+  keys: 2,
+  gamedata_hideout_materials: 2,
+};
+
+const gzwClient = new GzwDataClient({
+  baseUrl: API_ROOT,
+  cache: { ttlMs: 10 * 60 * 1000, maxEntries: 300 },
+  retries: 2,
+  timeoutMs: 10000,
+});
+
+interface NormalizedApiRecord {
+  uid: string;
+  id: string;
+  dataset: string;
+  name: string;
+  description: string;
+  category: string;
+  image: string | null;
+  weight?: string;
+  gridSize?: string;
+  sellPrice?: string;
+  manufacturer?: string;
+  room?: string;
+  module?: string;
+  level?: number;
+  requirements?: { name: string; quantity: number }[];
+  benefit?: string;
+  spawnNotes: string[];
+  coords: { x: number; y: number } | null;
+  raw: Record<string, unknown>;
+}
+
+interface BootstrapCachePayload {
+  timestamp: string;
+  discoveredDatasets: string[];
+  totalAvailableDatasets: number;
+  datasets: Record<string, NormalizedApiRecord[]>;
+}
+
+let cachedBootstrap: { data: BootstrapCachePayload; fetchedAtMs: number } | null = null;
+let inflightBootstrap: Promise<BootstrapCachePayload> | null = null;
+const BOOTSTRAP_TTL_MS = 10 * 60 * 1000;
+const FORCE_REFRESH_COOLDOWN_MS = 15 * 1000;
+
+const searchCache = new Map<string, { data: unknown; fetchedAtMs: number }>();
+const SEARCH_TTL_MS = 10 * 60 * 1000;
+
+function extractSpawnNotes(raw: Record<string, unknown>): string[] {
+  const notes: string[] = [];
+  const candidateKeys = [
+    "spawn",
+    "spawns",
+    "spawn_location",
+    "spawn_locations",
+    "location",
+    "locations",
+    "found_in",
+    "region",
+    "regions",
+    "lz_callsign",
+    "locals_type",
+  ];
+  for (const key of candidateKeys) {
+    const val = raw[key];
+    if (!val) continue;
+    if (typeof val === "string" && val.trim()) {
+      notes.push(val.trim());
+    } else if (Array.isArray(val)) {
+      for (const item of val) {
+        if (typeof item === "string" && item.trim()) {
+          notes.push(item.trim());
+        } else if (item && typeof item === "object") {
+          const obj = item as Record<string, unknown>;
+          const label = [obj.source, obj.table].filter(Boolean).join(" · ");
+          if (label) notes.push(label);
+        }
+      }
+    }
+  }
+  return Array.from(new Set(notes));
+}
+
+function extractCoords(raw: Record<string, unknown>): { x: number; y: number } | null {
+  if (typeof raw.x === "number" && typeof raw.y === "number") {
+    return { x: raw.x, y: raw.y };
+  }
+  const coordinates = raw.coordinates as Record<string, unknown> | undefined;
+  if (
+    coordinates &&
+    typeof coordinates.x === "number" &&
+    typeof coordinates.y === "number"
+  ) {
+    return { x: coordinates.x, y: coordinates.y };
+  }
+  if (Array.isArray(raw.coords) && raw.coords.length >= 2) {
+    const x = Number(raw.coords[0]);
+    const y = Number(raw.coords[1]);
+    if (!Number.isNaN(x) && !Number.isNaN(y)) return { x, y };
+  }
+  return null;
+}
+
+function extractRequirements(
+  raw: Record<string, unknown>
+): { name: string; quantity: number }[] | undefined {
+  const list = (raw.requirements || raw.build_materials) as unknown;
+  if (!Array.isArray(list)) return undefined;
+  const parsed: { name: string; quantity: number }[] = [];
+  for (const entry of list) {
+    if (entry && typeof entry === "object") {
+      const obj = entry as Record<string, unknown>;
+      const name = String(obj.name || obj.id || "").trim();
+      const qty = Number(obj.quantity ?? obj.amount ?? 1);
+      if (name) {
+        parsed.push({ name, quantity: Number.isNaN(qty) ? 1 : qty });
+      }
+    }
+  }
+  return parsed.length > 0 ? parsed : undefined;
+}
+
+function normalizeRecord(
+  dataset: string,
+  raw: Record<string, unknown>,
+  index: number
+): NormalizedApiRecord {
+  const id = String(raw.id || `${dataset}_${index}`);
+  const name = String(
+    raw.name ||
+      raw.title ||
+      raw.item_name ||
+      raw.module_name ||
+      raw.id ||
+      `${dataset} #${index + 1}`
+  );
+  const description = String(
+    raw.description || raw.desc || raw.summary || raw.requirements_text || ""
+  );
+  const category = String(raw.type || raw.category || raw.room || raw.slot || dataset);
+  const image =
+    typeof raw.image === "string" && raw.image.trim() ? raw.image.trim() : null;
+
+  let sellPrice: string | undefined;
+  if (typeof raw.sell_price === "string") {
+    sellPrice = raw.sell_price;
+  } else if (Array.isArray(raw.sell_prices) && raw.sell_prices.length > 0) {
+    const first = raw.sell_prices[0] as Record<string, unknown>;
+    if (first && first.price !== undefined) {
+      const vendors = Array.isArray(first.vendors)
+        ? first.vendors.join(", ")
+        : "";
+      sellPrice = `$${first.price}${vendors ? ` (${vendors})` : ""}`;
+    }
+  }
+
+  return {
+    uid: `${dataset}::${id}`,
+    id,
+    dataset,
+    name,
+    description,
+    category,
+    image,
+    weight: typeof raw.weight === "string" ? raw.weight : undefined,
+    gridSize: typeof raw.grid_size === "string" ? raw.grid_size : undefined,
+    sellPrice,
+    manufacturer:
+      typeof raw.manufacturer === "string" ? raw.manufacturer : undefined,
+    room: typeof raw.room === "string" ? raw.room : undefined,
+    module: typeof raw.module === "string" ? raw.module : undefined,
+    level: typeof raw.level === "number" ? raw.level : undefined,
+    requirements: extractRequirements(raw),
+    benefit: typeof raw.function === "string" ? raw.function : undefined,
+    spawnNotes: extractSpawnNotes(raw),
+    coords: extractCoords(raw),
+    raw,
+  };
+}
+
+async function fetchBootstrapFromGzw(force = false): Promise<BootstrapCachePayload> {
+  const now = Date.now();
+  if (cachedBootstrap) {
+    const age = now - cachedBootstrap.fetchedAtMs;
+    if (!force && age < BOOTSTRAP_TTL_MS) {
+      return cachedBootstrap.data;
+    }
+    if (force && age < FORCE_REFRESH_COOLDOWN_MS) {
+      return cachedBootstrap.data;
+    }
+  }
+
+  if (inflightBootstrap) {
+    return inflightBootstrap;
+  }
+
+  inflightBootstrap = (async () => {
+    if (force) {
+      gzwClient.clearCache();
+    }
+
+    const discoveredSet = new Set<string>(PRIORITY_DATASETS);
+    let totalAvailableDatasets = 0;
+
+    try {
+      const meta = await gzwClient.metadata();
+      totalAvailableDatasets = meta.datasetCount || meta.datasets?.length || 0;
+      for (const ds of meta.datasets || []) {
+        if (DATASET_MATCH_PATTERN.test(ds.name)) {
+          discoveredSet.add(ds.name);
+        }
+      }
+    } catch {
+      try {
+        const stats = await gzwClient.stats();
+        const keys = Object.keys(stats || {});
+        totalAvailableDatasets = keys.length;
+        keys.forEach((k) => {
+          if (DATASET_MATCH_PATTERN.test(k)) discoveredSet.add(k);
+        });
+      } catch {
+        // Use PRIORITY_DATASETS
+      }
+    }
+
+    const targetDatasets = Array.from(discoveredSet);
+    const datasets: Record<string, NormalizedApiRecord[]> = {};
+    const activeEndpoints: string[] = [];
+
+    const batchSize = 4;
+    for (let i = 0; i < targetDatasets.length; i += batchSize) {
+      const slice = targetDatasets.slice(i, i + batchSize);
+      const settled = await Promise.allSettled(
+        slice.map(async (dataset) => {
+          const maxPages = MAX_PAGES_BY_DATASET[dataset] ?? 2;
+          const rows: NormalizedApiRecord[] = [];
+          let page = 1;
+
+          while (page <= maxPages) {
+            const resp = await gzwClient
+              .dataset(dataset)
+              .list({ perPage: 100, page });
+            const batch = (resp.data || []) as Record<string, unknown>[];
+            if (batch.length === 0) break;
+
+            rows.push(
+              ...batch.map((item, idx) =>
+                normalizeRecord(dataset, item, (page - 1) * 100 + idx)
+              )
+            );
+
+            if (resp.totalPages && page >= resp.totalPages) break;
+            if (batch.length < 100) break;
+            page += 1;
+          }
+
+          const cleanRows = rows.filter((r) => !r.name.startsWith("<DEV>"));
+          return { dataset, rows: cleanRows };
+        })
+      );
+
+      for (const result of settled) {
+        if (result.status === "fulfilled" && result.value.rows.length > 0) {
+          datasets[result.value.dataset] = result.value.rows;
+          activeEndpoints.push(result.value.dataset);
+        }
+      }
+    }
+
+    if (activeEndpoints.length === 0) {
+      throw new Error("Could not fetch datasets from gzw-data.dev");
+    }
+
+    const payload: BootstrapCachePayload = {
+      timestamp: new Date().toISOString(),
+      discoveredDatasets: activeEndpoints,
+      totalAvailableDatasets: totalAvailableDatasets || activeEndpoints.length,
+      datasets,
+    };
+
+    cachedBootstrap = { data: payload, fetchedAtMs: Date.now() };
+    return payload;
+  })();
+
+  try {
+    return await inflightBootstrap;
+  } finally {
+    inflightBootstrap = null;
+  }
+}
+
+const TILE_CDN_BASE = "https://cdn.gzwtacmap.com/0.5/lamang";
+const TRANSPARENT_TILE_PNG = Buffer.from(
+  "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=",
+  "base64"
+);
+const tileCache = new Map<string, { buf: Buffer; isEmpty: boolean }>();
+const MAX_TILE_CACHE = 800;
+
+async function startServer() {
+  const app = express();
+  app.use(express.json());
+
+  app.get("/api/map/tiles/:z/:x/:y.png", async (req, res) => {
+    const z = Number(req.params.z);
+    const x = Number(req.params.x);
+    const y = Number(req.params.y);
+
+    if (
+      !Number.isInteger(z) ||
+      !Number.isInteger(x) ||
+      !Number.isInteger(y) ||
+      z < 14 ||
+      z > 19
+    ) {
+      res.setHeader("Content-Type", "image/png");
+      res.setHeader("Cache-Control", "public, max-age=86400");
+      res.send(TRANSPARENT_TILE_PNG);
+      return;
+    }
+
+    const key = `${z}/${x}/${y}`;
+    const cached = tileCache.get(key);
+    if (cached) {
+      res.setHeader("Content-Type", "image/png");
+      res.setHeader("Cache-Control", "public, max-age=86400");
+      res.send(cached.buf);
+      return;
+    }
+
+    try {
+      const upstream = await fetch(`${TILE_CDN_BASE}/${z}/${x}/${y}.png`, {
+        signal: AbortSignal.timeout(8000),
+      });
+
+      if (!upstream.ok) {
+        if (tileCache.size >= MAX_TILE_CACHE) {
+          const firstKey = tileCache.keys().next().value;
+          if (firstKey) tileCache.delete(firstKey);
+        }
+        tileCache.set(key, { buf: TRANSPARENT_TILE_PNG, isEmpty: true });
+        res.setHeader("Content-Type", "image/png");
+        res.setHeader("Cache-Control", "public, max-age=86400");
+        res.send(TRANSPARENT_TILE_PNG);
+        return;
+      }
+
+      const buf = Buffer.from(await upstream.arrayBuffer());
+      if (tileCache.size >= MAX_TILE_CACHE) {
+        const firstKey = tileCache.keys().next().value;
+        if (firstKey) tileCache.delete(firstKey);
+      }
+      tileCache.set(key, { buf, isEmpty: false });
+
+      res.setHeader("Content-Type", "image/png");
+      res.setHeader("Cache-Control", "public, max-age=86400");
+      res.send(buf);
+    } catch {
+      res.setHeader("Content-Type", "image/png");
+      res.send(TRANSPARENT_TILE_PNG);
+    }
+  });
+
+  app.get("/api/gzw/health", (_req, res) => {
+    const recordCount = cachedBootstrap
+      ? Object.values(cachedBootstrap.data.datasets).reduce(
+          (acc, list) => acc + list.length,
+          0
+        )
+      : 0;
+    res.json({
+      ok: true,
+      cached: !!cachedBootstrap,
+      cachedAt: cachedBootstrap?.data.timestamp || null,
+      datasetCount: cachedBootstrap?.data.discoveredDatasets.length || 0,
+      recordCount,
+    });
+  });
+
+  app.get("/api/gzw/bootstrap", async (req, res) => {
+    const force = req.query.force === "1" || req.query.force === "true";
+    const wasCached =
+      !!cachedBootstrap &&
+      !force &&
+      Date.now() - cachedBootstrap.fetchedAtMs < BOOTSTRAP_TTL_MS;
+
+    try {
+      const payload = await fetchBootstrapFromGzw(force);
+      res.json({
+        ...payload,
+        proxySource: wasCached ? "server-cache" : "live-upstream",
+      });
+    } catch (err) {
+      if (cachedBootstrap) {
+        res.json({
+          ...cachedBootstrap.data,
+          proxySource: "stale-cache",
+        });
+        return;
+      }
+      res.status(502).json({
+        error: err instanceof Error ? err.message : "Failed to reach gzw-data.dev",
+      });
+    }
+  });
+
+  app.get("/api/gzw/search", async (req, res) => {
+    const q = String(req.query.q || "").trim();
+    if (!q) {
+      res.json({ query: "", results: {} });
+      return;
+    }
+
+    const cacheKey = q.toLowerCase();
+    const cached = searchCache.get(cacheKey);
+    if (cached && Date.now() - cached.fetchedAtMs < SEARCH_TTL_MS) {
+      res.json(cached.data);
+      return;
+    }
+
+    try {
+      const resp = await gzwClient.search(q, { limit: 20 });
+      const data = { query: q, results: resp?.results || {} };
+      searchCache.set(cacheKey, { data, fetchedAtMs: Date.now() });
+      res.json(data);
+    } catch (err) {
+      if (cached) {
+        res.json(cached.data);
+        return;
+      }
+      res.status(502).json({
+        query: q,
+        results: {},
+        error: err instanceof Error ? err.message : "Search failed",
+      });
+    }
+  });
+
+  if (process.env.NODE_ENV !== "production") {
+    const vite = await createViteServer({
+      server: { middlewareMode: true },
+      appType: "spa",
+    });
+    app.use(vite.middlewares);
+  } else {
+    const distDir = path.join(__dirname, "dist");
+    app.use(express.static(distDir));
+    app.get("/{*path}", (_req, res) => {
+      res.sendFile(path.join(distDir, "index.html"));
+    });
+  }
+
+  app.listen(PORT, "0.0.0.0", () => {
+    console.log(`Lamang Operations server listening on http://0.0.0.0:${PORT}`);
+    // Pre-warm cache silently in background
+    fetchBootstrapFromGzw(false).catch(() => {});
+  });
+}
+
+startServer();

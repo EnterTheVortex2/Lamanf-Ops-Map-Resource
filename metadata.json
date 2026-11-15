@@ -1,0 +1,8 @@
+{
+  "name": "Lamang Operations",
+  "description": "Tactical Gray Zone Warfare 0.5 Hideout Upgrade Tracker, Live gzw-data.dev API Explorer, and Interactive Lamang Island Map.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
