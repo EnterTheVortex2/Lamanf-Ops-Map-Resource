@@ -2,7 +2,7 @@ import { GzwDataClient } from "@zoniboy/gzw-data-client";
 
 export const API_ROOT = "https://gzw-data.dev/api/v1";
 
-const CACHE_KEY = "lamang_ops_gzw_api_cache_v5";
+const CACHE_KEY = "lamang_ops_gzw_api_cache_v8";
 const SPAWN_LOOKUP_CACHE_KEY = "lamang_ops_spawn_lookup_v3";
 
 // Direct SDK fallback client (used only if backend /api/gzw/* proxy is unavailable)

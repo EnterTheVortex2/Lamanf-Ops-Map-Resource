@@ -46,6 +46,7 @@ interface HideoutTrackerPanelProps {
   catalog: CatalogMaterial[];
   disassemblyRecipes: DisassemblyRecipeDef[];
   apiCache: ApiCachePayload | null;
+  isExpanded: boolean;
 }
 
 function normMatKey(name: string): string {
@@ -73,6 +74,7 @@ export function HideoutTrackerPanel({
   catalog,
   disassemblyRecipes,
   apiCache,
+  isExpanded,
 }: HideoutTrackerPanelProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [roomFilter, setRoomFilter] = useState<"all" | RoomId>("all");
@@ -231,26 +233,26 @@ export function HideoutTrackerPanel({
   };
 
   return (
-    <aside className="flex flex-col h-full min-h-0 bg-[#0d1117] border-r border-[#212a36]">
-      {/* Planner Top Header & Controls */}
-      <div className="px-5 pt-4 pb-3 border-b border-[#212a36] bg-[#0b0f14] space-y-3">
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <h1 className="font-display text-xl font-bold tracking-tight text-[#eef3f8]">
-              Hideout planner
-            </h1>
-            <p className="text-xs text-[#8b98a9] mt-0.5">
-              Plan upgrades, click any upgrade or material to inspect spawns on Lamang Island.
+    <div className="flex flex-col flex-1 min-h-0">
+      {/* Compact Hideout Sub-Controls */}
+      <div className="px-4 py-3 border-b border-[#212a36] bg-[#0b0f14] space-y-2.5 shrink-0">
+        <div className="flex items-center justify-between gap-2">
+          <div className="min-w-0">
+            <div className="font-mono-tabular text-[10px] uppercase tracking-wider text-[#7f8ea1]">
+              {builtCount} / {allUpgrades.length} upgrades built
+            </div>
+            <p className="text-[11px] text-[#8b98a9] truncate">
+              Click any upgrade or material to inspect spawns.
             </p>
           </div>
 
           <button
             type="button"
             onClick={() => onViewChange("manifest")}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded bg-[#e5a93c] hover:bg-[#f0b94d] text-[#0c0f14] text-xs font-semibold transition-colors whitespace-nowrap shrink-0"
+            className="min-h-[36px] inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded bg-[#e5a93c] hover:bg-[#f0b94d] text-[#0c0f14] text-xs font-semibold transition-colors whitespace-nowrap shrink-0"
           >
             <ClipboardList className="w-3.5 h-3.5" />
-            Field checklist ({supplyManifest.rows.filter((r) => r.toFind > 0).length})
+            Checklist ({supplyManifest.rows.filter((r) => r.toFind > 0).length})
           </button>
         </div>
 
@@ -261,20 +263,20 @@ export function HideoutTrackerPanel({
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search an upgrade or material..."
-            className="w-full bg-[#070a0e] border border-[#222b38] rounded pl-8 pr-3 py-1.5 text-xs text-[#eef3f8] placeholder:text-[#5d6b7c] focus:outline-none focus:border-[#e5a93c]"
+            placeholder="Search upgrade or material..."
+            className="w-full min-h-[36px] bg-[#070a0e] border border-[#222b38] rounded pl-8 pr-3 py-1.5 text-xs text-[#eef3f8] placeholder:text-[#5d6b7c] focus:outline-none focus:border-[#e5a93c]"
           />
         </div>
 
-        {/* View Switcher Tabs */}
-        <div className="flex items-center gap-1.5 flex-wrap">
+        {/* Sub-view Switcher Tabs */}
+        <div className="grid grid-cols-4 gap-1">
           {(
             [
-              { id: "planner", label: `Upgrade planner (${allUpgrades.length})` },
-              { id: "manifest", label: `Supply manifest (${plannedCount} planned)` },
-              { id: "disassembly", label: `Disassembly (${disassemblyRecipes.length})` },
-              { id: "api-search", label: `API search (${allApiRecords.length})` },
-            ] as { id: PlannerViewId; label: string }[]
+              { id: "planner", label: "Upgrades", count: allUpgrades.length },
+              { id: "manifest", label: "Manifest", count: plannedCount },
+              { id: "disassembly", label: "Disasm", count: disassemblyRecipes.length },
+              { id: "api-search", label: "Database", count: allApiRecords.length },
+            ] as { id: PlannerViewId; label: string; count: number }[]
           ).map((tab) => {
             const active = activeView === tab.id;
             return (
@@ -282,13 +284,16 @@ export function HideoutTrackerPanel({
                 key={tab.id}
                 type="button"
                 onClick={() => onViewChange(tab.id)}
-                className={`px-3 py-1.5 rounded text-xs font-medium border transition-colors whitespace-nowrap ${
+                className={`min-h-[34px] px-1.5 py-1 rounded text-[11px] font-medium border transition-colors whitespace-nowrap truncate text-center ${
                   active
                     ? "bg-[#1a222d] border-[#425064] text-[#eef3f8]"
                     : "bg-[#10151c] border-[#1f2834] text-[#8d9bad] hover:text-[#dce4ee] hover:border-[#313e50]"
                 }`}
               >
-                {tab.label}
+                {tab.label}{" "}
+                <span className="font-mono-tabular text-[10px] text-[#7f8ea1]">
+                  ({tab.count})
+                </span>
               </button>
             );
           })}
@@ -296,76 +301,71 @@ export function HideoutTrackerPanel({
 
         {/* Filters for Upgrade Planner */}
         {activeView === "planner" && (
-          <div className="flex items-center justify-between gap-2 pt-0.5 flex-wrap">
-            <div className="flex items-center gap-2 flex-wrap">
-              <select
-                value={roomFilter}
-                onChange={(e) => setRoomFilter(e.target.value as "all" | RoomId)}
-                className="bg-[#11161e] border border-[#253040] rounded px-2.5 py-1 text-xs text-[#dce4ee] focus:outline-none focus:border-[#e5a93c]"
-              >
-                <option value="all">All rooms ({allUpgrades.length})</option>
-                <option value="utility">
-                  Utility Room ({allUpgrades.filter((u) => u.room === "utility").length})
-                </option>
-                <option value="electronics">
-                  Electronics Workshop ({allUpgrades.filter((u) => u.room === "electronics").length})
-                </option>
-                <option value="laboratory">
-                  Laboratory ({allUpgrades.filter((u) => u.room === "laboratory").length})
-                </option>
-              </select>
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <select
+              aria-label="Filter hideout by room"
+              value={roomFilter}
+              onChange={(e) => setRoomFilter(e.target.value as "all" | RoomId)}
+              className="min-h-[32px] bg-[#11161e] border border-[#253040] rounded px-2 py-1 text-xs text-[#dce4ee] focus:outline-none focus:border-[#e5a93c]"
+            >
+              <option value="all">All rooms ({allUpgrades.length})</option>
+              <option value="utility">
+                Utility ({allUpgrades.filter((u) => u.room === "utility").length})
+              </option>
+              <option value="electronics">
+                Electronics ({allUpgrades.filter((u) => u.room === "electronics").length})
+              </option>
+              <option value="laboratory">
+                Laboratory ({allUpgrades.filter((u) => u.room === "laboratory").length})
+              </option>
+            </select>
 
-              <div className="flex items-center rounded bg-[#080b0f] border border-[#222b38] p-0.5">
-                {([0, 1, 2, 3] as const).map((lvl) => (
-                  <button
-                    key={lvl}
-                    type="button"
-                    onClick={() => setTierFilter(lvl)}
-                    className={`px-2 py-0.5 rounded text-[11px] font-medium transition-colors ${
-                      tierFilter === lvl
-                        ? "bg-[#1d2633] text-[#e5a93c]"
-                        : "text-[#808fa2] hover:text-[#dce4ee]"
-                    }`}
-                  >
-                    {lvl === 0 ? "All tiers" : `Lv ${lvl}`}
-                  </button>
-                ))}
-              </div>
-
-              <div className="flex items-center rounded bg-[#080b0f] border border-[#222b38] p-0.5">
-                {(
-                  [
-                    { id: "all", label: "All" },
-                    { id: "planned", label: "Planned" },
-                    { id: "unbuilt", label: "Unbuilt" },
-                    { id: "built", label: "Built" },
-                  ] as const
-                ).map((st) => (
-                  <button
-                    key={st.id}
-                    type="button"
-                    onClick={() => setStatusFilter(st.id)}
-                    className={`px-2 py-0.5 rounded text-[11px] font-medium transition-colors ${
-                      statusFilter === st.id
-                        ? "bg-[#1d2633] text-[#38bdf8]"
-                        : "text-[#808fa2] hover:text-[#dce4ee]"
-                    }`}
-                  >
-                    {st.label}
-                  </button>
-                ))}
-              </div>
+            <div className="flex items-center rounded bg-[#080b0f] border border-[#222b38] p-0.5">
+              {([0, 1, 2, 3] as const).map((lvl) => (
+                <button
+                  key={lvl}
+                  type="button"
+                  onClick={() => setTierFilter(lvl)}
+                  className={`px-2 py-1 rounded text-[11px] font-medium transition-colors ${
+                    tierFilter === lvl
+                      ? "bg-[#1d2633] text-[#e5a93c]"
+                      : "text-[#808fa2] hover:text-[#dce4ee]"
+                  }`}
+                >
+                  {lvl === 0 ? "All" : `Lv${lvl}`}
+                </button>
+              ))}
             </div>
 
-            <span className="font-mono-tabular text-[11px] text-[#7a899b]">
-              {builtCount} built / {allUpgrades.length} total
-            </span>
+            <div className="flex items-center rounded bg-[#080b0f] border border-[#222b38] p-0.5">
+              {(
+                [
+                  { id: "all", label: "All" },
+                  { id: "planned", label: "Plan" },
+                  { id: "unbuilt", label: "Todo" },
+                  { id: "built", label: "Built" },
+                ] as const
+              ).map((st) => (
+                <button
+                  key={st.id}
+                  type="button"
+                  onClick={() => setStatusFilter(st.id)}
+                  className={`px-2 py-1 rounded text-[11px] font-medium transition-colors ${
+                    statusFilter === st.id
+                      ? "bg-[#1d2633] text-[#38bdf8]"
+                      : "text-[#808fa2] hover:text-[#dce4ee]"
+                  }`}
+                >
+                  {st.label}
+                </button>
+              ))}
+            </div>
           </div>
         )}
       </div>
 
       {/* Main Scrollable Content */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+      <div className="flex-1 overflow-y-auto p-3.5 space-y-3">
         {/* ================================================================
             VIEW 1: UPGRADE PLANNER (ALL 36 UPGRADES, TIERS 1-3)
            ================================================================ */}
@@ -472,7 +472,11 @@ export function HideoutTrackerPanel({
             )}
 
             {/* 36 Upgrade Cards Grid */}
-            <div className="grid grid-cols-1 xl:grid-cols-2 gap-3">
+            <div
+              className={`grid gap-2.5 ${
+                isExpanded ? "grid-cols-1 md:grid-cols-2" : "grid-cols-1"
+              }`}
+            >
               {filteredUpgrades.map((upg) => {
                 const isBuilt = !!builtUpgrades[upg.id];
                 const isPlanned = !!plannedUpgrades[upg.id];
@@ -683,8 +687,8 @@ export function HideoutTrackerPanel({
                             : "bg-[#10151c] border-[#212a36] hover:border-[#344254]"
                       }`}
                     >
-                      <div className="flex items-center justify-between gap-3">
-                        <div className="flex items-center gap-3 min-w-0 flex-1">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+                        <div className="flex items-center gap-2.5 min-w-0 flex-1">
                           {row.mat ? (
                             <ItemThumbnail src={row.mat.image} alt={row.name} />
                           ) : (
@@ -707,7 +711,7 @@ export function HideoutTrackerPanel({
 
                         {/* Stash Input + To Find */}
                         <div
-                          className="flex items-center gap-3 shrink-0"
+                          className="flex items-center justify-between sm:justify-end gap-3 shrink-0"
                           onClick={(e) => e.stopPropagation()}
                         >
                           <div className="flex items-center gap-1 bg-[#070a0e] border border-[#232d3b] rounded px-1.5 py-1">
@@ -718,7 +722,7 @@ export function HideoutTrackerPanel({
                                 onClick={() =>
                                   onSetStashCount(row.key, Math.max(0, row.stash - 1))
                                 }
-                                className="w-5 h-5 flex items-center justify-center rounded text-[#8b98a9] hover:text-[#e5a93c]"
+                                className="w-6 h-6 flex items-center justify-center rounded text-[#8b98a9] hover:text-[#e5a93c]"
                               >
                                 <Minus className="w-3 h-3" />
                               </button>
@@ -742,7 +746,7 @@ export function HideoutTrackerPanel({
                               <button
                                 type="button"
                                 onClick={() => onSetStashCount(row.key, row.stash + 1)}
-                                className="w-5 h-5 flex items-center justify-center rounded text-[#8b98a9] hover:text-[#e5a93c]"
+                                className="w-6 h-6 flex items-center justify-center rounded text-[#8b98a9] hover:text-[#e5a93c]"
                               >
                                 <Plus className="w-3 h-3" />
                               </button>
@@ -1019,6 +1023,6 @@ export function HideoutTrackerPanel({
           </div>
         )}
       </div>
-    </aside>
+    </div>
   );
 }

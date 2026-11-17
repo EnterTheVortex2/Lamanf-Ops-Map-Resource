@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Package } from "lucide-react";
 
 interface ItemThumbnailProps {
@@ -13,6 +13,10 @@ export function ItemThumbnail({
   sizeClass = "w-9 h-9",
 }: ItemThumbnailProps) {
   const [failed, setFailed] = useState(false);
+
+  useEffect(() => {
+    setFailed(false);
+  }, [src]);
 
   if (!src || failed) {
     return (

@@ -11,14 +11,10 @@ const PORT = Number(process.env.PORT || 3000);
 
 const API_ROOT = "https://gzw-data.dev/api/v1";
 const DATASET_MATCH_PATTERN =
-  /^(hideout|hideout_modules|gamedata_hideout_rooms|gamedata_hideout_devices|gamedata_hideout_materials|gamedata_hideout_recipes|disassembly_recipes|building_material|workshop_supplies|laboratory_supplies|electronics|crafting_material|disassembly_material|production_material|military_material|tools|keys|keycards|loot_container|loot_containers|regions|tasks)$/i;
+  /^(hideout|hideout_modules|gamedata_hideout_rooms|gamedata_hideout_devices|gamedata_hideout_materials|gamedata_hideout_recipes|disassembly_recipes|building_material|workshop_supplies|laboratory_supplies|electronics|crafting_material|disassembly_material|production_material|military_material|tools|keys|keycards|loot_container|loot_containers|regions|vendors|tasks|main_task|side_task|hidden_task|contract|contracts|squad_strike_missions|squad_strike_missions_item|task_items|task_guides|intels|bosses)$/i;
 
 const PRIORITY_DATASETS = [
   "hideout_modules",
-  "gamedata_hideout_rooms",
-  "gamedata_hideout_devices",
-  "gamedata_hideout_materials",
-  "gamedata_hideout_recipes",
   "disassembly_recipes",
   "building_material",
   "workshop_supplies",
@@ -26,16 +22,35 @@ const PRIORITY_DATASETS = [
   "electronics",
   "tools",
   "keys",
+  "keycards",
   "loot_container",
-  "loot_containers",
   "regions",
+  "vendors",
   "tasks",
+  "main_task",
+  "side_task",
+  "hidden_task",
+  "contract",
+  "contracts",
+  "squad_strike_missions",
+  "squad_strike_missions_item",
+  "task_items",
+  "task_guides",
+  "intels",
+  "bosses",
 ];
 
 const MAX_PAGES_BY_DATASET: Record<string, number> = {
-  tasks: 3,
-  keys: 2,
-  gamedata_hideout_materials: 2,
+  tasks: 7,
+  side_task: 3,
+  keys: 3,
+  task_items: 3,
+  task_guides: 2,
+  intels: 6,
+  squad_strike_missions_item: 2,
+  contract: 2,
+  contracts: 2,
+  loot_container: 2,
 };
 
 const gzwClient = new GzwDataClient({
@@ -156,6 +171,22 @@ function extractRequirements(
   return parsed.length > 0 ? parsed : undefined;
 }
 
+function toProxiedImageUrl(rawUrl: string): string {
+  try {
+    const parsed = new URL(rawUrl);
+    if (
+      parsed.protocol === "https:" &&
+      (parsed.hostname.endsWith(".wikia.nocookie.net") ||
+        parsed.hostname === "static.wikia.nocookie.net")
+    ) {
+      return `/api/gzw/image?url=${encodeURIComponent(rawUrl)}`;
+    }
+  } catch {
+    // keep original
+  }
+  return rawUrl;
+}
+
 function normalizeRecord(
   dataset: string,
   raw: Record<string, unknown>,
@@ -174,8 +205,9 @@ function normalizeRecord(
     raw.description || raw.desc || raw.summary || raw.requirements_text || ""
   );
   const category = String(raw.type || raw.category || raw.room || raw.slot || dataset);
-  const image =
+  const rawImage =
     typeof raw.image === "string" && raw.image.trim() ? raw.image.trim() : null;
+  const image = rawImage ? toProxiedImageUrl(rawImage) : null;
 
   let sellPrice: string | undefined;
   if (typeof raw.sell_price === "string") {
@@ -273,20 +305,27 @@ async function fetchBootstrapFromGzw(force = false): Promise<BootstrapCachePaylo
           let page = 1;
 
           while (page <= maxPages) {
-            const resp = await gzwClient
-              .dataset(dataset)
-              .list({ perPage: 100, page });
-            const batch = (resp.data || []) as Record<string, unknown>[];
+            const upstreamRes = await fetch(
+              `${API_ROOT}/${encodeURIComponent(dataset)}?page=${page}`,
+              { signal: AbortSignal.timeout(10000) }
+            );
+            if (!upstreamRes.ok) break;
+            const resp = (await upstreamRes.json()) as {
+              data?: Record<string, unknown>[];
+              totalPages?: number;
+              perPage?: number;
+            };
+            const batch = Array.isArray(resp.data) ? resp.data : [];
             if (batch.length === 0) break;
 
+            const pageSize = resp.perPage || batch.length || 50;
             rows.push(
               ...batch.map((item, idx) =>
-                normalizeRecord(dataset, item, (page - 1) * 100 + idx)
+                normalizeRecord(dataset, item, (page - 1) * pageSize + idx)
               )
             );
 
             if (resp.totalPages && page >= resp.totalPages) break;
-            if (batch.length < 100) break;
             page += 1;
           }
 
@@ -394,6 +433,74 @@ async function startServer() {
     } catch {
       res.setHeader("Content-Type", "image/png");
       res.send(TRANSPARENT_TILE_PNG);
+    }
+  });
+
+  const imageCache = new Map<string, { buf: Buffer; contentType: string }>();
+  const MAX_IMAGE_CACHE = 400;
+
+  app.get("/api/gzw/image", async (req, res) => {
+    const rawUrl = typeof req.query.url === "string" ? req.query.url.trim() : "";
+    if (!rawUrl) {
+      res.status(400).end();
+      return;
+    }
+
+    let parsed: URL;
+    try {
+      parsed = new URL(rawUrl);
+    } catch {
+      res.status(400).end();
+      return;
+    }
+
+    if (
+      parsed.protocol !== "https:" ||
+      (!parsed.hostname.endsWith(".wikia.nocookie.net") &&
+        parsed.hostname !== "static.wikia.nocookie.net")
+    ) {
+      res.status(403).end();
+      return;
+    }
+
+    const cached = imageCache.get(rawUrl);
+    if (cached) {
+      res.setHeader("Content-Type", cached.contentType);
+      res.setHeader("Cache-Control", "public, max-age=86400");
+      res.send(cached.buf);
+      return;
+    }
+
+    try {
+      const upstream = await fetch(rawUrl, {
+        headers: {
+          "User-Agent":
+            "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36",
+          Referer: "https://gray-zone-warfare.fandom.com/",
+          Accept: "image/avif,image/webp,image/png,image/*,*/*;q=0.8",
+        },
+        signal: AbortSignal.timeout(8000),
+      });
+      if (!upstream.ok) {
+        res.status(upstream.status).end();
+        return;
+      }
+      const contentType = upstream.headers.get("content-type") || "image/png";
+      if (!contentType.startsWith("image/")) {
+        res.status(415).end();
+        return;
+      }
+      const buf = Buffer.from(await upstream.arrayBuffer());
+      if (imageCache.size >= MAX_IMAGE_CACHE) {
+        const firstKey = imageCache.keys().next().value;
+        if (firstKey) imageCache.delete(firstKey);
+      }
+      imageCache.set(rawUrl, { buf, contentType });
+      res.setHeader("Content-Type", contentType);
+      res.setHeader("Cache-Control", "public, max-age=86400");
+      res.send(buf);
+    } catch {
+      res.status(502).end();
     }
   });
 

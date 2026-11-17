@@ -1,6 +1,19 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import L from "leaflet";
-import { ChevronDown, Crosshair, Layers, LocateFixed, MapPin, Navigation, X } from "lucide-react";
+import {
+  AlertTriangle,
+  BookOpen,
+  Check,
+  ChevronDown,
+  Compass,
+  Crosshair,
+  KeyRound,
+  Layers,
+  LocateFixed,
+  MapPin,
+  Navigation,
+  X,
+} from "lucide-react";
 import {
   BLUE_CRATES_05,
   CHEMICAL_AREAS_05,
@@ -17,6 +30,7 @@ import {
   resolveSpawnPointsForMaterial,
   type CatalogMaterial,
 } from "../utils/catalogBuilder";
+import type { GzwTaskDef } from "../utils/taskBuilder";
 import { ItemThumbnail } from "./ItemThumbnail";
 
 interface TacticalMapPanelProps {
@@ -30,11 +44,17 @@ interface TacticalMapPanelProps {
   inspectedLookup: ItemSpawnLookupResult | null;
   isLookupLoading: boolean;
   onCloseInspect: () => void;
+  inspectedTask: GzwTaskDef | null;
+  onCloseInspectTask: () => void;
+  completedTasks?: Record<string, boolean>;
+  onToggleTaskComplete?: (taskId: string) => void;
   apiRecords: NormalizedApiRecord[];
   pinDropMode: boolean;
   onTogglePinDropMode: (force?: boolean) => void;
   preselectedPinMaterialId: string;
   onNotify: (msg: string) => void;
+  layoutTrigger: string;
+  isResizing?: boolean;
 }
 
 const toLatLng = (x: number, y: number): L.LatLng =>
@@ -106,14 +126,21 @@ export function TacticalMapPanel({
   inspectedLookup,
   isLookupLoading,
   onCloseInspect,
+  inspectedTask,
+  onCloseInspectTask,
+  completedTasks = {},
+  onToggleTaskComplete,
   apiRecords,
   pinDropMode,
   onTogglePinDropMode,
   preselectedPinMaterialId,
   onNotify,
+  layoutTrigger,
+  isResizing = false,
 }: TacticalMapPanelProps) {
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<L.Map | null>(null);
+  const taskPinsLayerRef = useRef<L.LayerGroup>(L.layerGroup());
   const layersRef = useRef<Record<MapLayerKey, L.LayerGroup>>({
     blueCrates: L.layerGroup(),
     pcSpawns: L.layerGroup(),
@@ -148,6 +175,7 @@ export function TacticalMapPanel({
   const [pinMaterialId, setPinMaterialId] = useState("");
   const [pinLayer, setPinLayer] = useState<"customPins" | "blueCrates" | "pcSpawns">("customPins");
   const [pinNote, setPinNote] = useState("");
+  const [mapLightbox, setMapLightbox] = useState<{ src: string; title: string } | null>(null);
 
   useEffect(() => {
     if (preselectedPinMaterialId) {
@@ -204,6 +232,7 @@ export function TacticalMapPanel({
     (Object.keys(layersRef.current) as MapLayerKey[]).forEach((key) => {
       layersRef.current[key].addTo(map);
     });
+    taskPinsLayerRef.current.addTo(map);
 
     map.on("mousemove", (e: L.LeafletMouseEvent) => {
       setCursorCoords(fromLatLng(e.latlng));
@@ -234,6 +263,20 @@ export function TacticalMapPanel({
     };
   }, [onNotify]);
 
+  // Keep Leaflet sizing accurate when switching mobile views or dragging split divider
+  useEffect(() => {
+    const raf = requestAnimationFrame(() => {
+      mapRef.current?.invalidateSize({ animate: false });
+    });
+    const t = setTimeout(() => {
+      mapRef.current?.invalidateSize({ animate: false });
+    }, 120);
+    return () => {
+      cancelAnimationFrame(raf);
+      clearTimeout(t);
+    };
+  }, [layoutTrigger]);
+
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
@@ -260,6 +303,58 @@ export function TacticalMapPanel({
       mapRef.current.flyTo(toLatLng(first.x, first.y), 16, { duration: 0.65 });
     }
   }, [inspectedMaterial, inspectedSpawnPoints]);
+
+  // Render & fly to inspected Vendor Task POIs + exact Grid waypoints
+  useEffect(() => {
+    const layer = taskPinsLayerRef.current;
+    layer.clearLayers();
+    if (!inspectedTask) return;
+
+    inspectedTask.matchedPois.forEach((poi) => {
+      const marker = L.marker(toLatLng(poi.x, poi.y), {
+        icon: createTargetPinIcon("#38bdf8", "T", true),
+        zIndexOffset: 800,
+      });
+      marker.bindPopup(`
+        <div style="min-width:210px;">
+          <div style="font-family:monospace;font-size:10px;color:#38bdf8;font-weight:700;">${escapeHtml(inspectedTask.vendor)} · ${escapeHtml(inspectedTask.category)}</div>
+          <div style="font-weight:700;font-size:13px;margin:2px 0;">${escapeHtml(inspectedTask.name)}</div>
+          <div style="font-size:11px;color:#cbd5e1;">AO: ${escapeHtml(poi.name)} (${escapeHtml(poi.tier)})</div>
+          <div style="font-size:11px;color:#94a3b8;margin-top:2px;">Nearest LZ: ${escapeHtml(poi.lz)}</div>
+          <div style="font-family:monospace;font-size:10px;color:#e5a93c;margin-top:4px;">Grid ${formatGridSquare(poi.x, poi.y)}</div>
+        </div>
+      `);
+      marker.addTo(layer);
+    });
+
+    inspectedTask.exactCoords.forEach((coord, idx) => {
+      const marker = L.marker(toLatLng(coord.x, coord.y), {
+        icon: createTargetPinIcon("#e5a93c", `${idx + 1}`, true),
+        zIndexOffset: 900,
+      });
+      marker.bindPopup(`
+        <div style="min-width:210px;">
+          <div style="font-family:monospace;font-size:10px;color:#e5a93c;font-weight:700;">TASK OBJECTIVE WAYPOINT #${idx + 1}</div>
+          <div style="font-weight:700;font-size:13px;margin:2px 0;">${escapeHtml(inspectedTask.name)}</div>
+          <div style="font-size:11px;color:#cbd5e1;">${escapeHtml(coord.label)}</div>
+          <div style="font-family:monospace;font-size:10px;color:#38bdf8;margin-top:4px;">Exact Grid ${escapeHtml(coord.grid)}</div>
+        </div>
+      `);
+      marker.addTo(layer);
+    });
+
+    if (mapRef.current) {
+      if (inspectedTask.exactCoords.length > 0) {
+        const firstCoord = inspectedTask.exactCoords[0];
+        mapRef.current.flyTo(toLatLng(firstCoord.x, firstCoord.y), 16.5, { duration: 0.65 });
+      } else if (inspectedTask.matchedPois.length > 0) {
+        const first = inspectedTask.matchedPois[0];
+        mapRef.current.flyTo(toLatLng(first.x, first.y), 16, { duration: 0.65 });
+      } else {
+        fitIslandView();
+      }
+    }
+  }, [inspectedTask]);
 
   // Render clean, borderless, zoom-gated Update 0.5 markers
   useEffect(() => {
@@ -649,8 +744,8 @@ export function TacticalMapPanel({
   return (
     <section className="relative flex-1 h-full min-h-0 bg-[#06090d] overflow-hidden">
       {/* Compact Floating Map Controls */}
-      <div className="absolute top-3 left-3 right-3 z-[650] flex items-start justify-between gap-2 pointer-events-none">
-        <div className="pointer-events-auto flex items-center gap-2 relative">
+      <div className="absolute top-2.5 left-2.5 right-2.5 z-[650] flex items-start justify-between gap-1.5 pointer-events-none">
+        <div className="pointer-events-auto flex items-center gap-1.5 relative">
           {/* Region Quick-Jump Popover */}
           <div className="relative">
             <button
@@ -659,15 +754,16 @@ export function TacticalMapPanel({
                 setJumpOpen((v) => !v);
                 setLayersOpen(false);
               }}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded bg-[#0c1016]/92 backdrop-blur-md border border-[#242e3c] hover:border-[#3c4b61] text-xs font-medium text-[#dce4ee] shadow-xl transition-colors"
+              className="min-h-[38px] inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded bg-[#0c1016]/92 backdrop-blur-md border border-[#242e3c] hover:border-[#3c4b61] text-xs font-medium text-[#dce4ee] shadow-xl transition-colors"
             >
               <Navigation className="w-3.5 h-3.5 text-[#e5a93c]" />
-              <span>Locate Region</span>
+              <span className="hidden sm:inline">Locate Region</span>
+              <span className="sm:hidden">Regions</span>
               <ChevronDown className="w-3.5 h-3.5 text-[#7f8ea1]" />
             </button>
 
             {jumpOpen && (
-              <div className="absolute top-full left-0 mt-1.5 w-64 max-h-80 overflow-y-auto rounded-md bg-[#0c1016]/96 backdrop-blur-xl border border-[#242e3c] p-1.5 shadow-2xl z-[800]">
+              <div className="absolute top-full left-0 mt-1.5 w-60 max-h-72 overflow-y-auto rounded-md bg-[#0c1016]/96 backdrop-blur-xl border border-[#242e3c] p-1.5 shadow-2xl z-[800]">
                 {quickJumpPois.map((poi) => (
                   <button
                     key={poi.id}
@@ -676,7 +772,7 @@ export function TacticalMapPanel({
                       mapRef.current?.flyTo(toLatLng(poi.x, poi.y), 16, { duration: 0.65 });
                       setJumpOpen(false);
                     }}
-                    className="w-full text-left px-2.5 py-1.5 rounded hover:bg-[#151d28] flex items-center justify-between gap-2 text-xs transition-colors"
+                    className="w-full min-h-[36px] text-left px-2.5 py-1.5 rounded hover:bg-[#151d28] flex items-center justify-between gap-2 text-xs transition-colors"
                   >
                     <span className="text-[#eef3f8] font-medium truncate">{poi.name}</span>
                     <span
@@ -704,7 +800,7 @@ export function TacticalMapPanel({
                 setLayersOpen((v) => !v);
                 setJumpOpen(false);
               }}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded bg-[#0c1016]/92 backdrop-blur-md border border-[#242e3c] hover:border-[#3c4b61] text-xs font-medium text-[#dce4ee] shadow-xl transition-colors"
+              className="min-h-[38px] inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded bg-[#0c1016]/92 backdrop-blur-md border border-[#242e3c] hover:border-[#3c4b61] text-xs font-medium text-[#dce4ee] shadow-xl transition-colors"
             >
               <Layers className="w-3.5 h-3.5 text-[#38bdf8]" />
               <span>Layers</span>
@@ -755,34 +851,292 @@ export function TacticalMapPanel({
         </div>
 
         {/* Top-Right Compact Controls */}
-        <div className="pointer-events-auto flex items-center gap-2">
+        <div className="pointer-events-auto flex items-center gap-1.5">
           <button
             type="button"
             onClick={() => onTogglePinDropMode()}
-            className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded text-xs font-medium backdrop-blur-md shadow-xl transition-colors whitespace-nowrap shrink-0 ${
+            className={`min-h-[38px] inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded text-xs font-medium backdrop-blur-md shadow-xl transition-colors whitespace-nowrap shrink-0 ${
               pinDropMode
                 ? "bg-cyan-500/20 border border-cyan-400 text-cyan-200"
                 : "bg-[#0c1016]/92 border border-[#242e3c] text-[#dce4ee] hover:border-[#3c4b61]"
             }`}
           >
             <Crosshair className="w-3.5 h-3.5" />
-            {pinDropMode ? "Pin Drop: On" : "Pin Drop"}
+            <span className="hidden sm:inline">{pinDropMode ? "Pin Drop: On" : "Pin Drop"}</span>
+            <span className="sm:hidden">{pinDropMode ? "Pin: On" : "Pin"}</span>
           </button>
 
           <button
             type="button"
             onClick={fitIslandView}
-            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded text-xs font-medium bg-[#0c1016]/92 backdrop-blur-md border border-[#242e3c] text-[#dce4ee] hover:border-[#3c4b61] shadow-xl transition-colors whitespace-nowrap shrink-0"
+            title="Reset Island View"
+            className="min-h-[38px] inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded text-xs font-medium bg-[#0c1016]/92 backdrop-blur-md border border-[#242e3c] text-[#dce4ee] hover:border-[#3c4b61] shadow-xl transition-colors whitespace-nowrap shrink-0"
           >
             <LocateFixed className="w-3.5 h-3.5" />
-            Reset View
+            <span className="hidden sm:inline">Reset View</span>
           </button>
         </div>
       </div>
 
+      {/* Task AO & Full Walkthrough Slide-Over Drawer */}
+      {inspectedTask && !inspectedMaterial && (
+        <div className="absolute top-14 left-2.5 z-[710] w-[385px] max-w-[calc(100%-20px)] max-h-[58vh] lg:max-h-[calc(100%-84px)] overflow-y-auto rounded-md bg-[#0c1016]/96 backdrop-blur-xl border border-[#38bdf8]/60 p-3.5 shadow-2xl">
+          <div className="flex items-start justify-between gap-2 pb-2.5 border-b border-[#212a36]">
+            <div className="min-w-0">
+              <div className="font-mono-tabular text-[10px] uppercase tracking-wider text-[#38bdf8]">
+                {inspectedTask.vendor} · {inspectedTask.areas.join(", ")} · {inspectedTask.category}
+              </div>
+              <h3 className="font-display text-sm font-semibold text-[#eef3f8] leading-snug mt-0.5">
+                {inspectedTask.name}
+              </h3>
+            </div>
+            <div className="flex items-center gap-1 shrink-0">
+              {onToggleTaskComplete && (
+                <button
+                  type="button"
+                  onClick={() => onToggleTaskComplete(inspectedTask.id)}
+                  className={`inline-flex items-center gap-1 px-2 py-1 rounded border text-[11px] font-medium transition-colors ${
+                    completedTasks[inspectedTask.id]
+                      ? "bg-[#112720] border-[#2b6b53] text-[#34d399]"
+                      : "bg-[#141a23] border-[#2b3748] text-[#dce4ee] hover:border-[#e5a93c] hover:text-[#e5a93c]"
+                  }`}
+                >
+                  {completedTasks[inspectedTask.id] && (
+                    <Check className="w-3 h-3 stroke-[2.5]" />
+                  )}
+                  <span>
+                    {completedTasks[inspectedTask.id] ? "Done" : "Mark Done"}
+                  </span>
+                </button>
+              )}
+              <button
+                type="button"
+                aria-label="Close task overlay"
+                onClick={onCloseInspectTask}
+                className="p-1.5 rounded text-[#8b98a9] hover:text-white hover:bg-[#1a222d]"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+
+          <div className="mt-3 space-y-3 text-xs">
+            {/* Location / Guide Visual Preview */}
+            {(inspectedTask.guideImage || inspectedTask.image) && (
+              <button
+                type="button"
+                onClick={() =>
+                  setMapLightbox({
+                    src: inspectedTask.guideImage || inspectedTask.image || "",
+                    title: `${inspectedTask.name} — Task Intel`,
+                  })
+                }
+                className="w-full text-left rounded bg-[#080b0f] border border-[#222c3a] hover:border-[#38bdf8] overflow-hidden transition-colors block"
+              >
+                <img
+                  src={inspectedTask.guideImage || inspectedTask.image || ""}
+                  alt={inspectedTask.name}
+                  referrerPolicy="no-referrer"
+                  className={`w-full object-cover ${
+                    inspectedTask.guideImage ? "max-h-40" : "max-h-20 opacity-85"
+                  }`}
+                />
+                <div className="px-2.5 py-1 flex items-center justify-between text-[10px] font-mono-tabular text-[#8b98a9] bg-[#0a0e13]">
+                  <span>
+                    {inspectedTask.guideImage
+                      ? "Location Reference Image"
+                      : `${inspectedTask.vendor} Operation Banner`}
+                  </span>
+                  <span className="text-[#38bdf8]">Enlarge</span>
+                </div>
+              </button>
+            )}
+
+            {/* Objectives Checklist */}
+            {inspectedTask.objectivesText && (
+              <div className="rounded bg-[#080b0f] border border-[#1d2531] px-2.5 py-2">
+                <div className="font-mono-tabular text-[10px] uppercase tracking-wider text-[#e5a93c] mb-1">
+                  Objectives
+                </div>
+                <p className="text-[#e6ecf2] leading-relaxed">
+                  {inspectedTask.objectivesText}
+                </p>
+                {inspectedTask.objectivesList.length > 0 && (
+                  <ul className="mt-1.5 pl-4 space-y-0.5 text-[11px] text-[#9fb0c4] list-disc">
+                    {inspectedTask.objectivesList.map((st, idx) => (
+                      <li key={idx}>{st}</li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            )}
+
+            {/* Step-by-Step Task Walkthrough */}
+            <div>
+              <div className="flex items-center justify-between mb-1.5">
+                <span className="inline-flex items-center gap-1.5 font-mono-tabular text-[10px] uppercase tracking-wider text-[#38bdf8] font-semibold">
+                  <BookOpen className="w-3 h-3" />
+                  Walkthrough Steps
+                </span>
+                <span className="font-mono-tabular text-[9px] uppercase text-[#6f7e91]">
+                  {inspectedTask.walkthroughSource === "api-guide"
+                    ? "API Field Guide"
+                    : inspectedTask.walkthroughSource === "curated"
+                      ? "0.5 Tactical Guide"
+                      : "Mission Intel"}
+                </span>
+              </div>
+              <ol className="space-y-1.5">
+                {inspectedTask.walkthroughSteps.map((step, idx) => (
+                  <li
+                    key={idx}
+                    className="flex items-start gap-2 rounded bg-[#080b0f] border border-[#1a222d] px-2.5 py-2 text-[#dce4ee] leading-relaxed"
+                  >
+                    <span className="font-mono-tabular text-[10px] font-bold text-[#e5a93c] shrink-0 mt-0.5">
+                      {String(idx + 1).padStart(2, "0")}
+                    </span>
+                    <span>{step}</span>
+                  </li>
+                ))}
+              </ol>
+            </div>
+
+            {/* Exact Waypoint Coordinates & Area POIs (Click to Fly) */}
+            {(inspectedTask.exactCoords.length > 0 ||
+              inspectedTask.matchedPois.length > 0) && (
+              <div>
+                <div className="inline-flex items-center gap-1.5 font-mono-tabular text-[10px] uppercase tracking-wider text-[#e5a93c] mb-1.5">
+                  <Compass className="w-3 h-3" />
+                  Target Areas &amp; Grids (Click to Fly)
+                </div>
+                <div className="space-y-1.5">
+                  {inspectedTask.exactCoords.map((coord, idx) => (
+                    <button
+                      key={`coord-${coord.grid}`}
+                      type="button"
+                      onClick={() =>
+                        mapRef.current?.flyTo(toLatLng(coord.x, coord.y), 17, {
+                          duration: 0.55,
+                        })
+                      }
+                      className="w-full text-left px-2.5 py-2 rounded bg-[#14120c] border border-[#e5a93c]/40 hover:border-[#e5a93c] transition-colors flex items-center justify-between gap-2"
+                    >
+                      <div className="min-w-0">
+                        <div className="font-medium text-[#eef3f8] truncate">
+                          Waypoint #{idx + 1}: {coord.label}
+                        </div>
+                        <div className="text-[11px] text-[#cbd5e1] truncate">
+                          Exact task coordinate marker
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1 font-mono-tabular text-[11px] text-[#e5a93c] shrink-0">
+                        <MapPin className="w-3 h-3" />
+                        {coord.grid}
+                      </div>
+                    </button>
+                  ))}
+
+                  {inspectedTask.matchedPois.map((poi) => (
+                    <button
+                      key={poi.id}
+                      type="button"
+                      onClick={() =>
+                        mapRef.current?.flyTo(toLatLng(poi.x, poi.y), 16.5, {
+                          duration: 0.6,
+                        })
+                      }
+                      className="w-full text-left px-2.5 py-2 rounded bg-[#080b0f] border border-[#1f2834] hover:border-[#38bdf8] transition-colors flex items-center justify-between gap-2"
+                    >
+                      <div className="min-w-0">
+                        <div className="font-medium text-[#eef3f8] truncate">
+                          {poi.name}
+                        </div>
+                        <div className="text-[11px] text-[#8b98a9] truncate">
+                          {poi.tier} · LZ {poi.lz}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1 font-mono-tabular text-[11px] text-[#38bdf8] shrink-0">
+                        <MapPin className="w-3 h-3" />
+                        {formatGridSquare(poi.x, poi.y)}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Required Gear, Keys & Task Items */}
+            {inspectedTask.relatedItems.length > 0 && (
+              <div>
+                <div className="inline-flex items-center gap-1.5 font-mono-tabular text-[10px] uppercase tracking-wider text-[#e5a93c] mb-1.5">
+                  <KeyRound className="w-3 h-3" />
+                  Required Gear, Keys &amp; Items
+                </div>
+                <div className="space-y-1.5">
+                  {inspectedTask.relatedItems.map((item, idx) => (
+                    <div
+                      key={`${item.name}-${idx}`}
+                      className="flex items-center gap-2.5 rounded bg-[#080b0f] border border-[#1d2531] px-2.5 py-1.5"
+                    >
+                      <ItemThumbnail
+                        src={item.image}
+                        alt={item.name}
+                        sizeClass="w-7 h-7"
+                      />
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="font-medium text-[#eef3f8] truncate">
+                            {item.name}
+                          </span>
+                          <span className="font-mono-tabular text-[9px] uppercase text-[#38bdf8] shrink-0">
+                            {item.kind}
+                          </span>
+                        </div>
+                        {item.note && (
+                          <div className="text-[11px] text-[#8b98a9] truncate">
+                            {item.note}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Boss Warning & Tactical Tip */}
+            {(inspectedTask.bossWarning || inspectedTask.guideTip) && (
+              <div className="rounded bg-[#18120c] border border-[#e5a93c]/40 px-2.5 py-2 space-y-1 text-[11px] text-[#f3d49b]">
+                {inspectedTask.bossWarning && (
+                  <div className="flex items-start gap-1.5">
+                    <AlertTriangle className="w-3.5 h-3.5 text-[#f59e0b] shrink-0 mt-0.5" />
+                    <span>{inspectedTask.bossWarning}</span>
+                  </div>
+                )}
+                {inspectedTask.guideTip && (
+                  <div className="text-[#cbd5e1]">
+                    Tip: {inspectedTask.guideTip}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Full Vendor Briefing */}
+            {inspectedTask.briefing && (
+              <div className="text-[11px] text-[#9fb0c4] leading-relaxed border-l-2 border-[#2a3646] pl-2.5">
+                <div className="font-mono-tabular text-[9px] uppercase tracking-wider text-[#6f7e91] mb-0.5">
+                  {inspectedTask.vendor} Briefing
+                </div>
+                {inspectedTask.briefing}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Material Spawn & Upgrade Intel Slide-Over Drawer */}
       {inspectedMaterial && (
-        <div className="absolute top-14 left-3 z-[710] w-[345px] max-w-[calc(100%-24px)] max-h-[calc(100%-80px)] overflow-y-auto rounded-md bg-[#0c1016]/95 backdrop-blur-xl border border-[#38bdf8]/50 p-4 shadow-2xl">
+        <div className="absolute top-14 left-2.5 z-[710] w-[335px] max-w-[calc(100%-20px)] max-h-[50vh] lg:max-h-[calc(100%-96px)] overflow-y-auto rounded-md bg-[#0c1016]/95 backdrop-blur-xl border border-[#38bdf8]/50 p-3.5 shadow-2xl">
           <div className="flex items-start justify-between gap-3 pb-3 border-b border-[#212a36]">
             <div className="flex items-center gap-3 min-w-0">
               <ItemThumbnail
@@ -1019,25 +1373,63 @@ export function TacticalMapPanel({
       )}
 
       {/* Leaflet Canvas (keep ref element className static so Leaflet classes are never overwritten by React) */}
-      <div className={`w-full h-full ${pinDropMode ? "pin-drop-active" : ""}`}>
+      <div
+        className={`w-full h-full ${pinDropMode ? "pin-drop-active" : ""} ${
+          isResizing ? "pointer-events-none" : ""
+        }`}
+      >
         <div ref={mapContainerRef} className="w-full h-full" />
       </div>
 
       {/* Minimal Bottom-Right Coordinate Telemetry */}
-      <div className="absolute bottom-3 right-3 z-[650] pointer-events-auto bg-[#0c1016]/88 backdrop-blur-md border border-[#242e3c] rounded px-2.5 py-1 font-mono-tabular text-[11px] text-[#8b98a9] flex items-center gap-2.5 shadow-lg">
+      <div className="absolute bottom-2.5 right-2.5 z-[650] pointer-events-auto bg-[#0c1016]/88 backdrop-blur-md border border-[#242e3c] rounded px-2 py-1 font-mono-tabular text-[11px] text-[#8b98a9] flex items-center gap-2 shadow-lg">
         <span>
           Grid{" "}
           <strong className="text-[#e5a93c]">
             {formatGridSquare(cursorCoords.x, cursorCoords.y)}
           </strong>
         </span>
-        <span className="text-[#3a4657]">·</span>
-        <span>
+        <span className="hidden sm:inline text-[#3a4657]">·</span>
+        <span className="hidden sm:inline">
           {cursorCoords.x}, {cursorCoords.y}
         </span>
         <span className="text-[#3a4657]">·</span>
-        <span>Zoom {zoomLevel.toFixed(1)}</span>
+        <span>Z{zoomLevel.toFixed(1)}</span>
       </div>
+
+      {/* Map Reference Image Lightbox */}
+      {mapLightbox && (
+        <div
+          className="fixed inset-0 z-[2100] bg-black/85 backdrop-blur-sm flex items-center justify-center p-4"
+          onClick={() => setMapLightbox(null)}
+        >
+          <div
+            className="max-w-2xl w-full rounded-md bg-[#0c1016] border border-[#2c3849] overflow-hidden shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="px-4 py-2.5 border-b border-[#212a36] flex items-center justify-between gap-3">
+              <span className="text-xs font-semibold text-[#eef3f8] truncate">
+                {mapLightbox.title}
+              </span>
+              <button
+                type="button"
+                onClick={() => setMapLightbox(null)}
+                className="p-1 rounded text-[#8b98a9] hover:text-white"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <div className="p-3 bg-[#070a0e] flex justify-center">
+              <img
+                src={mapLightbox.src}
+                alt={mapLightbox.title}
+                referrerPolicy="no-referrer"
+                className="max-h-[75vh] w-auto object-contain rounded"
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </section>
   );
 }
