@@ -1,20 +1,31 @@
 import { useMemo, useState } from "react";
 import {
-  AlertTriangle,
   BookOpen,
+  Camera,
   Check,
   ChevronDown,
   ChevronUp,
   Compass,
   Crosshair,
+  ExternalLink,
   GitBranch,
-  Image as ImageIcon,
   KeyRound,
+  Loader2,
   MapPin,
+  RefreshCw,
   Search,
   User,
   X,
 } from "lucide-react";
+import {
+  doesTaskBelongToFaction,
+  FACTIONS,
+  type FactionId,
+} from "../config/mapConfig";
+import {
+  fetchTaskWalkthroughIntel,
+  type TaskWikiIntel,
+} from "../services/gzwApi";
 import type {
   GzwTaskDef,
   TaskCategory,
@@ -25,6 +36,7 @@ import { ItemThumbnail } from "./ItemThumbnail";
 interface TasksTrackerPanelProps {
   vendors: VendorProfile[];
   tasks: GzwTaskDef[];
+  selectedFaction: FactionId;
   completedTasks: Record<string, boolean>;
   onToggleTaskComplete: (taskId: string) => void;
   selectedTaskId: string | null;
@@ -39,12 +51,12 @@ const CATEGORY_OPTIONS: { id: "ALL" | TaskCategory; label: string }[] = [
   { id: "Side Task", label: "Side" },
   { id: "Contract", label: "Contract" },
   { id: "Hidden Task", label: "Hidden" },
-  { id: "Squad Strike", label: "Strike" },
 ];
 
 export function TasksTrackerPanel({
   vendors,
   tasks,
+  selectedFaction,
   completedTasks,
   onToggleTaskComplete,
   selectedTaskId,
@@ -54,6 +66,7 @@ export function TasksTrackerPanel({
 }: TasksTrackerPanelProps) {
   const [selectedVendor, setSelectedVendor] = useState<string>("ALL");
   const [selectedArea, setSelectedArea] = useState<string>("ALL");
+  const [showAllFactionsOverride, setShowAllFactionsOverride] = useState(false);
   const [categoryFilter, setCategoryFilter] = useState<"ALL" | TaskCategory>(
     "ALL"
   );
@@ -64,20 +77,37 @@ export function TasksTrackerPanel({
   const [expandedTaskIds, setExpandedTaskIds] = useState<
     Record<string, boolean>
   >({});
+  const [wikiIntelByTaskId, setWikiIntelByTaskId] = useState<
+    Record<string, TaskWikiIntel>
+  >({});
+  const [loadingWikiIds, setLoadingWikiIds] = useState<Record<string, boolean>>(
+    {}
+  );
   const [lightboxImage, setLightboxImage] = useState<{
     src: string;
     title: string;
+    caption?: string;
   } | null>(null);
   const [failedImgUrls, setFailedImgUrls] = useState<Record<string, boolean>>({});
   const markImgFailed = (url: string) =>
     setFailedImgUrls((prev) => (prev[url] ? prev : { ...prev, [url]: true }));
+
+  const effectiveFaction =
+    showAllFactionsOverride ? "ALL" : selectedFaction;
+
+  const factionTasks = useMemo(() => {
+    if (effectiveFaction === "ALL") return tasks;
+    return tasks.filter((t) =>
+      doesTaskBelongToFaction(t.faction, t.areas, effectiveFaction)
+    );
+  }, [tasks, effectiveFaction]);
 
   const vendorStats = useMemo(() => {
     const map = new Map<string, { total: number; done: number }>();
     for (const v of vendors) {
       map.set(v.name.toLowerCase(), { total: 0, done: 0 });
     }
-    for (const t of tasks) {
+    for (const t of factionTasks) {
       const k = t.vendor.toLowerCase();
       const entry = map.get(k) || { total: 0, done: 0 };
       entry.total += 1;
@@ -85,7 +115,7 @@ export function TasksTrackerPanel({
       map.set(k, entry);
     }
     return map;
-  }, [vendors, tasks, completedTasks]);
+  }, [vendors, factionTasks, completedTasks]);
 
   const activeVendorProfile = useMemo(
     () =>
@@ -98,11 +128,11 @@ export function TasksTrackerPanel({
   );
 
   const vendorScopedTasks = useMemo(() => {
-    if (selectedVendor === "ALL") return tasks;
-    return tasks.filter(
+    if (selectedVendor === "ALL") return factionTasks;
+    return factionTasks.filter(
       (t) => t.vendor.toLowerCase() === selectedVendor.toLowerCase()
     );
-  }, [tasks, selectedVendor]);
+  }, [factionTasks, selectedVendor]);
 
   const areaOptions = useMemo(() => {
     const counts = new Map<string, number>();
@@ -111,15 +141,28 @@ export function TasksTrackerPanel({
         counts.set(area, (counts.get(area) || 0) + 1);
       }
     }
+    const starterTown =
+      selectedFaction !== "ALL" ? FACTIONS[selectedFaction].starterTown : null;
     return Array.from(counts.entries())
       .map(([area, count]) => ({ area, count }))
-      .sort((a, b) => a.area.localeCompare(b.area));
-  }, [vendorScopedTasks]);
+      .sort((a, b) => {
+        if (starterTown) {
+          if (a.area === starterTown && b.area !== starterTown) return -1;
+          if (b.area === starterTown && a.area !== starterTown) return 1;
+        }
+        return a.area.localeCompare(b.area);
+      });
+  }, [vendorScopedTasks, selectedFaction]);
+
+  const effectiveArea =
+    selectedArea === "ALL" || areaOptions.some((o) => o.area === selectedArea)
+      ? selectedArea
+      : "ALL";
 
   const filteredTasks = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
     return vendorScopedTasks.filter((t) => {
-      if (selectedArea !== "ALL" && !t.areas.includes(selectedArea)) {
+      if (effectiveArea !== "ALL" && !t.areas.includes(effectiveArea)) {
         return false;
       }
       if (categoryFilter !== "ALL" && t.category !== categoryFilter) {
@@ -142,7 +185,7 @@ export function TasksTrackerPanel({
     });
   }, [
     vendorScopedTasks,
-    selectedArea,
+    effectiveArea,
     categoryFilter,
     statusFilter,
     completedTasks,
@@ -150,19 +193,34 @@ export function TasksTrackerPanel({
   ]);
 
   const totalDone = useMemo(
-    () => tasks.filter((t) => completedTasks[t.id]).length,
-    [tasks, completedTasks]
+    () => factionTasks.filter((t) => completedTasks[t.id]).length,
+    [factionTasks, completedTasks]
   );
 
-  const toggleTaskExpanded = (taskId: string) => {
-    setExpandedTaskIds((prev) => ({ ...prev, [taskId]: !prev[taskId] }));
+  const loadLiveTaskGuide = async (task: GzwTaskDef, force = false) => {
+    if (!force && wikiIntelByTaskId[task.id]) return;
+    setLoadingWikiIds((prev) => ({ ...prev, [task.id]: true }));
+    try {
+      const intel = await fetchTaskWalkthroughIntel(task.name, force);
+      setWikiIntelByTaskId((prev) => ({ ...prev, [task.id]: intel }));
+    } finally {
+      setLoadingWikiIds((prev) => ({ ...prev, [task.id]: false }));
+    }
+  };
+
+  const toggleTaskExpanded = (task: GzwTaskDef) => {
+    const willOpen = !expandedTaskIds[task.id];
+    setExpandedTaskIds((prev) => ({ ...prev, [task.id]: willOpen }));
+    if (willOpen) {
+      void loadLiveTaskGuide(task);
+    }
   };
 
   return (
-    <div className="flex-1 min-h-0 flex flex-col">
-      {/* Compact In-Game Vendor & Area Filter Controls */}
-      <div className="px-4 py-3 border-b border-[#212a36] bg-[#0b0f14] space-y-2.5 shrink-0">
-        {/* Horizontal scrollable Vendor Roster Strip (In-Game Style) */}
+    <div className="flex-1 min-h-0 flex flex-col bg-[#0b0f16]">
+      {/* Vendor & Region Filter Controls */}
+      <div className="px-4 py-3.5 border-b border-white/[0.08] bg-[#0d121b] space-y-3 shrink-0">
+        {/* Horizontal scrollable Vendor Roster Strip */}
         <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
           <button
             type="button"
@@ -170,21 +228,21 @@ export function TasksTrackerPanel({
               setSelectedVendor("ALL");
               setSelectedArea("ALL");
             }}
-            className={`min-h-[40px] px-2.5 py-1.5 rounded border text-left transition-colors shrink-0 flex items-center gap-2 ${
+            className={`min-h-[44px] px-3 py-1.5 rounded-xl border text-left transition-colors shrink-0 flex items-center gap-2.5 ${
               selectedVendor === "ALL"
-                ? "bg-[#1a222d] border-[#e5a93c] text-[#eef3f8]"
-                : "bg-[#10151c] border-[#1f2834] text-[#8d9bad] hover:text-white hover:border-[#344254]"
+                ? "bg-[#1a2232] border-[#e5a93c]/75 text-[#f8fafc]"
+                : "bg-[#121822] border-white/[0.08] text-[#9fb0c4] hover:text-white hover:border-white/[0.18]"
             }`}
           >
-            <div className="w-6 h-6 rounded bg-[#080b0f] border border-[#253040] flex items-center justify-center text-[10px] font-mono-tabular font-bold text-[#e5a93c]">
-              ALL
+            <div className="w-7 h-7 rounded-lg bg-[#080c12] border border-white/[0.08] flex items-center justify-center text-[11px] font-semibold text-[#e5a93c]">
+              All
             </div>
             <div>
-              <div className="text-[11px] font-semibold leading-tight">
+              <div className="text-xs font-semibold leading-tight">
                 All Vendors
               </div>
-              <div className="font-mono-tabular text-[10px] text-[#7f8ea1]">
-                {totalDone}/{tasks.length}
+              <div className="font-mono-tabular text-[11px] text-[#8899ae]">
+                {totalDone}/{factionTasks.length}
               </div>
             </div>
           </button>
@@ -204,10 +262,10 @@ export function TasksTrackerPanel({
                   setSelectedVendor(vendor.name);
                   setSelectedArea("ALL");
                 }}
-                className={`min-h-[40px] px-2.5 py-1.5 rounded border text-left transition-colors shrink-0 flex items-center gap-2 ${
+                className={`min-h-[44px] px-3 py-1.5 rounded-xl border text-left transition-colors shrink-0 flex items-center gap-2.5 ${
                   active
-                    ? "bg-[#1a222d] border-[#e5a93c] text-[#eef3f8]"
-                    : "bg-[#10151c] border-[#1f2834] text-[#8d9bad] hover:text-white hover:border-[#344254]"
+                    ? "bg-[#1a2232] border-[#e5a93c]/75 text-[#f8fafc]"
+                    : "bg-[#121822] border-white/[0.08] text-[#9fb0c4] hover:text-white hover:border-white/[0.18]"
                 }`}
               >
                 {vendor.image && !failedImgUrls[vendor.image] ? (
@@ -216,19 +274,19 @@ export function TasksTrackerPanel({
                     alt={vendor.name}
                     referrerPolicy="no-referrer"
                     onError={() => markImgFailed(vendor.image!)}
-                    className="w-6 h-6 rounded object-cover border border-[#2a3646] bg-[#080b0f] shrink-0"
+                    className="w-7 h-7 rounded-lg object-cover border border-white/[0.1] bg-[#080c12] shrink-0"
                     loading="lazy"
                   />
                 ) : (
-                  <div className="w-6 h-6 rounded bg-[#080b0f] border border-[#253040] flex items-center justify-center shrink-0">
-                    <User className="w-3.5 h-3.5 text-[#7f8ea1]" />
+                  <div className="w-7 h-7 rounded-lg bg-[#080c12] border border-white/[0.08] flex items-center justify-center shrink-0">
+                    <User className="w-3.5 h-3.5 text-[#8899ae]" />
                   </div>
                 )}
                 <div>
-                  <div className="text-[11px] font-semibold leading-tight whitespace-nowrap">
+                  <div className="text-xs font-semibold leading-tight whitespace-nowrap">
                     {vendor.name}
                   </div>
-                  <div className="font-mono-tabular text-[10px] text-[#7f8ea1]">
+                  <div className="font-mono-tabular text-[11px] text-[#8899ae]">
                     {stats.done}/{stats.total}
                   </div>
                 </div>
@@ -238,9 +296,9 @@ export function TasksTrackerPanel({
         </div>
 
         {/* Direct Vendor & Area Dropdowns */}
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-2 gap-2.5">
           <div>
-            <label className="block font-mono-tabular text-[10px] uppercase tracking-wider text-[#6f7e91] mb-1">
+            <label className="block text-xs font-medium text-[#9fb0c4] mb-1">
               Vendor
             </label>
             <select
@@ -250,9 +308,9 @@ export function TasksTrackerPanel({
                 setSelectedVendor(e.target.value);
                 setSelectedArea("ALL");
               }}
-              className="w-full min-h-[38px] bg-[#11161e] border border-[#253040] rounded px-2.5 py-1.5 text-xs text-[#eef3f8] focus:outline-none focus:border-[#e5a93c]"
+              className="w-full min-h-[38px] bg-[#121822] border border-white/[0.09] rounded-lg px-2.5 py-1.5 text-[13px] text-[#f1f5f9] focus:outline-none focus:border-[#e5a93c]"
             >
-              <option value="ALL">All Vendors ({tasks.length})</option>
+              <option value="ALL">All Vendors ({factionTasks.length})</option>
               {vendors.map((v) => {
                 const st = vendorStats.get(v.name.toLowerCase());
                 return (
@@ -265,23 +323,47 @@ export function TasksTrackerPanel({
           </div>
 
           <div>
-            <label className="block font-mono-tabular text-[10px] uppercase tracking-wider text-[#6f7e91] mb-1">
-              Area / Region
-            </label>
+            <div className="flex items-center justify-between mb-1">
+              <label className="block text-xs font-medium text-[#9fb0c4]">
+                Region
+              </label>
+              {selectedFaction !== "ALL" && (
+                <button
+                  type="button"
+                  onClick={() => setShowAllFactionsOverride((v) => !v)}
+                  className="text-[11px] font-medium text-[#38bdf8] hover:underline"
+                >
+                  {showAllFactionsOverride
+                    ? `Filter: ${selectedFaction}`
+                    : "Show all factions"}
+                </button>
+              )}
+            </div>
             <select
               aria-label="Filter tasks by area"
-              value={selectedArea}
+              value={
+                selectedArea === "ALL" ||
+                areaOptions.some((o) => o.area === selectedArea)
+                  ? selectedArea
+                  : "ALL"
+              }
               onChange={(e) => setSelectedArea(e.target.value)}
-              className="w-full min-h-[38px] bg-[#11161e] border border-[#253040] rounded px-2.5 py-1.5 text-xs text-[#eef3f8] focus:outline-none focus:border-[#e5a93c]"
+              className="w-full min-h-[38px] bg-[#121822] border border-white/[0.09] rounded-lg px-2.5 py-1.5 text-[13px] text-[#f1f5f9] focus:outline-none focus:border-[#e5a93c]"
             >
               <option value="ALL">
-                All Areas ({vendorScopedTasks.length})
+                All Regions ({vendorScopedTasks.length})
               </option>
-              {areaOptions.map((opt) => (
-                <option key={opt.area} value={opt.area}>
-                  {opt.area} ({opt.count})
-                </option>
-              ))}
+              {areaOptions.map((opt) => {
+                const isStarter =
+                  selectedFaction !== "ALL" &&
+                  opt.area === FACTIONS[selectedFaction].starterTown;
+                return (
+                  <option key={opt.area} value={opt.area}>
+                    {opt.area}
+                    {isStarter ? ` (${selectedFaction} Starter)` : ""} ({opt.count})
+                  </option>
+                );
+              })}
             </select>
           </div>
         </div>
@@ -289,7 +371,7 @@ export function TasksTrackerPanel({
         {/* Search + Type + Status Row */}
         <div className="space-y-2">
           <div className="relative">
-            <Search className="w-3.5 h-3.5 text-[#6b7a8d] absolute left-3 top-1/2 -translate-y-1/2" />
+            <Search className="w-4 h-4 text-[#7b8ca1] absolute left-3 top-1/2 -translate-y-1/2" />
             <input
               type="text"
               value={searchQuery}
@@ -297,23 +379,23 @@ export function TasksTrackerPanel({
               placeholder={
                 activeVendorProfile
                   ? `Search ${activeVendorProfile.name} tasks, walkthroughs, or keys...`
-                  : "Search task, area, walkthrough, or required key..."
+                  : "Search task, region, walkthrough, or required key..."
               }
-              className="w-full min-h-[36px] bg-[#070a0e] border border-[#222b38] rounded pl-8 pr-3 py-1.5 text-xs text-[#eef3f8] placeholder:text-[#5d6b7c] focus:outline-none focus:border-[#e5a93c]"
+              className="w-full min-h-[38px] bg-[#070a0f] border border-white/[0.09] rounded-lg pl-9 pr-3 py-1.5 text-[13px] text-[#f1f5f9] placeholder:text-[#66778b] focus:outline-none focus:border-[#e5a93c] transition-colors"
             />
           </div>
 
           <div className="flex items-center justify-between gap-2 flex-wrap">
-            <div className="flex items-center rounded bg-[#080b0f] border border-[#222b38] p-0.5 overflow-x-auto max-w-full">
+            <div className="flex items-center rounded-lg bg-[#070a0f] border border-white/[0.07] p-0.5 overflow-x-auto max-w-full">
               {CATEGORY_OPTIONS.map((opt) => (
                 <button
                   key={opt.id}
                   type="button"
                   onClick={() => setCategoryFilter(opt.id)}
-                  className={`px-2 py-1 rounded text-[11px] font-medium transition-colors whitespace-nowrap ${
+                  className={`px-2.5 py-1 rounded-md text-xs font-medium transition-colors whitespace-nowrap ${
                     categoryFilter === opt.id
-                      ? "bg-[#1d2633] text-[#e5a93c]"
-                      : "text-[#808fa2] hover:text-[#dce4ee]"
+                      ? "bg-[#1c2433] text-[#e5a93c]"
+                      : "text-[#94a3b8] hover:text-[#f1f5f9]"
                   }`}
                 >
                   {opt.label}
@@ -321,7 +403,7 @@ export function TasksTrackerPanel({
               ))}
             </div>
 
-            <div className="flex items-center rounded bg-[#080b0f] border border-[#222b38] p-0.5 shrink-0">
+            <div className="flex items-center rounded-lg bg-[#070a0f] border border-white/[0.07] p-0.5 shrink-0">
               {(
                 [
                   { id: "all", label: "All" },
@@ -333,10 +415,10 @@ export function TasksTrackerPanel({
                   key={st.id}
                   type="button"
                   onClick={() => setStatusFilter(st.id)}
-                  className={`px-2 py-1 rounded text-[11px] font-medium transition-colors ${
+                  className={`px-2.5 py-1 rounded-md text-xs font-medium transition-colors ${
                     statusFilter === st.id
-                      ? "bg-[#1d2633] text-[#38bdf8]"
-                      : "text-[#808fa2] hover:text-[#dce4ee]"
+                      ? "bg-[#1c2433] text-[#38bdf8]"
+                      : "text-[#94a3b8] hover:text-[#f1f5f9]"
                   }`}
                 >
                   {st.label}
@@ -347,10 +429,10 @@ export function TasksTrackerPanel({
         </div>
       </div>
 
-      {/* Scrollable In-Game Tasks Feed */}
-      <div className="flex-1 overflow-y-auto p-3.5 space-y-2.5">
+      {/* Scrollable Tasks Feed */}
+      <div className="flex-1 overflow-y-auto p-4 space-y-3.5">
         {activeVendorProfile && (
-          <div className="rounded-md bg-[#10161e] border border-[#232d3b] p-3 flex items-center justify-between gap-3">
+          <div className="rounded-xl bg-[#121822] border border-white/[0.08] p-3.5 flex items-center justify-between gap-3">
             <div className="flex items-center gap-3 min-w-0">
               {activeVendorProfile.image &&
               !failedImgUrls[activeVendorProfile.image] ? (
@@ -359,46 +441,43 @@ export function TasksTrackerPanel({
                   alt={activeVendorProfile.name}
                   referrerPolicy="no-referrer"
                   onError={() => markImgFailed(activeVendorProfile.image!)}
-                  className="w-10 h-10 rounded object-cover border border-[#324054] shrink-0"
+                  className="w-10 h-10 rounded-lg object-cover border border-white/[0.12] shrink-0"
                 />
               ) : (
-                <div className="w-10 h-10 rounded bg-[#080b0f] border border-[#253040] flex items-center justify-center shrink-0">
+                <div className="w-10 h-10 rounded-lg bg-[#080c12] border border-white/[0.08] flex items-center justify-center shrink-0">
                   <User className="w-5 h-5 text-[#e5a93c]" />
                 </div>
               )}
               <div className="min-w-0">
-                <div className="text-xs font-semibold text-[#eef3f8] truncate">
+                <div className="font-display text-sm font-semibold text-[#f8fafc] truncate">
                   {activeVendorProfile.name}{" "}
                   {activeVendorProfile.fullName !== "Unknown" && (
-                    <span className="text-[#8b98a9] font-normal">
+                    <span className="text-[#9fb0c4] font-normal text-xs">
                       · {activeVendorProfile.fullName}
                     </span>
                   )}
                 </div>
-                <div className="text-[11px] text-[#7f8ea1] truncate">
+                <div className="text-xs text-[#9fb0c4] truncate mt-0.5">
                   {activeVendorProfile.specialty}
                 </div>
               </div>
             </div>
             <div className="text-right shrink-0">
-              <div className="font-mono-tabular text-xs font-bold text-[#e5a93c]">
+              <div className="font-mono-tabular text-sm font-semibold text-[#e5a93c]">
                 {vendorStats.get(activeVendorProfile.name.toLowerCase())?.done ??
                   0}{" "}
                 /{" "}
                 {vendorStats.get(activeVendorProfile.name.toLowerCase())
                   ?.total ?? 0}
               </div>
-              <div className="font-mono-tabular text-[9px] uppercase text-[#7f8ea1]">
-                COMPLETED
-              </div>
+              <div className="text-xs text-[#8899ae]">Completed</div>
             </div>
           </div>
         )}
 
-        <div className="flex items-center justify-between text-[11px] font-mono-tabular text-[#7f8ea1] px-0.5">
+        <div className="flex items-center justify-between text-xs text-[#9fb0c4] px-0.5">
           <span>
-            Showing {filteredTasks.length} of {vendorScopedTasks.length} tasks ·
-            Click any task for walkthrough
+            Showing {filteredTasks.length} of {vendorScopedTasks.length} tasks · Click a card for building photos &amp; guide
           </span>
           {selectedArea !== "ALL" && (
             <button
@@ -406,26 +485,26 @@ export function TasksTrackerPanel({
               onClick={() => setSelectedArea("ALL")}
               className="text-[#38bdf8] hover:underline shrink-0"
             >
-              Clear area
+              Show all regions
             </button>
           )}
         </div>
 
         {tasks.length === 0 ? (
-          <div className="rounded-md border border-[#212a36] bg-[#10151c] p-6 text-center text-xs text-[#8b98a9]">
+          <div className="rounded-xl border border-white/[0.08] bg-[#121822] p-8 text-center text-sm text-[#9fb0c4]">
             {isLoadingApi
-              ? "Syncing live vendor tasks & walkthroughs from gzw-data.dev..."
-              : "No vendor tasks cached yet. Click Refresh API to sync."}
+              ? "Loading vendor tasks & walkthroughs..."
+              : "No vendor tasks cached yet. Click Sync Data in the top bar."}
           </div>
         ) : filteredTasks.length === 0 ? (
-          <div className="rounded-md border border-[#212a36] bg-[#10151c] p-6 text-center text-xs text-[#8b98a9]">
+          <div className="rounded-xl border border-white/[0.08] bg-[#121822] p-8 text-center text-sm text-[#9fb0c4]">
             No tasks match{" "}
             {selectedVendor !== "ALL" ? selectedVendor : "your filters"}
             {selectedArea !== "ALL" ? ` in ${selectedArea}` : ""}.
           </div>
         ) : (
           <div
-            className={`grid gap-2.5 ${
+            className={`grid gap-3.5 ${
               isExpanded ? "grid-cols-1 md:grid-cols-2" : "grid-cols-1"
             }`}
           >
@@ -435,89 +514,113 @@ export function TasksTrackerPanel({
               const isOpen = !!expandedTaskIds[task.id];
               const hasMapCoords =
                 task.exactCoords.length > 0 || task.matchedPois.length > 0;
-              const previewImg = task.guideImage || task.image;
+              const wikiIntel = wikiIntelByTaskId[task.id];
+              const isLoadingGuide = !!loadingWikiIds[task.id];
+
+              // Combine live Wiki building/room screenshots + any API field guide screenshot (never vendor banners)
+              const locationPhotos = [
+                ...(wikiIntel?.images || []),
+                ...(task.guideImage &&
+                !(wikiIntel?.images || []).some((im) =>
+                  im.url.includes(task.guideImage!.split("/")[6] || "__none__")
+                )
+                  ? [
+                      {
+                        url: task.guideImage,
+                        fullUrl: task.guideImage,
+                        caption: `${task.name} objective reference`,
+                      },
+                    ]
+                  : []),
+              ].filter((im) => !failedImgUrls[im.url]);
+
+              // Prefer richer live Wiki steps when available, else curated/API steps
+              const displaySteps =
+                wikiIntel && wikiIntel.walkthroughSteps.length > 0
+                  ? wikiIntel.walkthroughSteps
+                  : task.walkthroughSteps;
+              const stepSourceLabel =
+                wikiIntel && wikiIntel.walkthroughSteps.length > 0
+                  ? "Live Wiki Guide"
+                  : task.walkthroughSource === "api-guide"
+                    ? "Field Guide"
+                    : task.walkthroughSource === "curated"
+                      ? "0.5 Tactical Guide"
+                      : "Mission Intel";
 
               return (
                 <article
                   key={task.id}
-                  onClick={() => toggleTaskExpanded(task.id)}
-                  className={`rounded-md border p-3 transition-colors flex flex-col justify-between cursor-pointer ${
+                  onClick={() => toggleTaskExpanded(task)}
+                  className={`rounded-xl border p-4.5 transition-colors flex flex-col justify-between cursor-pointer ${
                     isSelected
-                      ? "bg-[#121923] border-[#38bdf8]"
+                      ? "bg-[#141d2b] border-[#38bdf8]/75 shadow-lg"
                       : isOpen
-                        ? "bg-[#111720] border-[#3b4a5e]"
+                        ? "bg-[#141b27] border-white/[0.2]"
                         : isDone
-                          ? "bg-[#0d1413] border-[#1f3b32]"
-                          : "bg-[#10151c] border-[#212a36] hover:border-[#344254]"
+                          ? "bg-[#0e1716] border-[#214237]"
+                          : "bg-[#121822] border-white/[0.08] hover:border-white/[0.18]"
                   }`}
                 >
                   <div>
-                    {/* Zero-pill typographic metadata line */}
-                    <div className="flex items-center justify-between gap-2 font-mono-tabular text-[10px] uppercase tracking-wider text-[#8b98a9]">
+                    {/* Clean Metadata Header */}
+                    <div className="flex items-center justify-between gap-2 text-xs text-[#9fb0c4]">
                       <span className="truncate">
                         <span className="text-[#e5a93c] font-semibold">
                           {task.vendor}
                         </span>
-                        <span className="mx-1.5 text-[#3a4657]">·</span>
-                        <span className="text-[#cbd5e1]">
+                        <span className="mx-1.5 text-white/[0.22]">·</span>
+                        <span className="text-[#dce5f0]">
                           {task.areas.join(", ")}
                         </span>
                       </span>
-                      <span className="inline-flex items-center gap-1.5 shrink-0">
-                        {task.guideImage && (
-                          <ImageIcon
-                            className="w-3 h-3 text-[#38bdf8]"
-                            aria-label="Includes location image"
-                          />
-                        )}
-                        <span
-                          className={
-                            task.category === "Main Task"
-                              ? "text-[#38bdf8]"
-                              : task.category === "Hidden Task"
-                                ? "text-purple-400"
-                                : task.category === "Contract"
-                                  ? "text-[#e5a93c]"
-                                  : "text-[#7f8ea1]"
-                          }
-                        >
-                          {task.category}
-                        </span>
+                      <span
+                        className={`text-xs font-medium shrink-0 ${
+                          task.category === "Main Task"
+                            ? "text-[#38bdf8]"
+                            : task.category === "Hidden Task"
+                              ? "text-purple-400"
+                              : task.category === "Contract"
+                                ? "text-[#e5a93c]"
+                                : "text-[#9fb0c4]"
+                        }`}
+                      >
+                        {task.category}
                       </span>
                     </div>
 
-                    {/* Task Title + Expand Chevron */}
-                    <div className="mt-1 flex items-start justify-between gap-2">
+                    {/* Task Title */}
+                    <div className="mt-1.5 flex items-start justify-between gap-2">
                       <h3
-                        className={`font-display text-sm font-semibold leading-snug ${
-                          isDone ? "text-[#94a3b8] line-through" : "text-[#eef3f8]"
+                        className={`font-display text-[15.5px] font-semibold leading-snug ${
+                          isDone ? "text-[#94a3b8] line-through" : "text-[#f8fafc]"
                         }`}
                       >
                         {task.name}
                       </h3>
-                      <div className="flex items-center gap-1.5 shrink-0">
+                      <div className="flex items-center gap-1.5 shrink-0 mt-0.5">
                         {task.vendorRankRequired && (
-                          <span className="font-mono-tabular text-[10px] text-[#e5a93c]">
-                            Rk {task.vendorRankRequired}
+                          <span className="font-mono-tabular text-xs text-[#e5a93c]">
+                            Rank {task.vendorRankRequired}
                           </span>
                         )}
                         {isOpen ? (
                           <ChevronUp className="w-4 h-4 text-[#38bdf8]" />
                         ) : (
-                          <ChevronDown className="w-4 h-4 text-[#7f8ea1]" />
+                          <ChevronDown className="w-4 h-4 text-[#8899ae]" />
                         )}
                       </div>
                     </div>
 
-                    {/* Concise Objectives Summary */}
+                    {/* Clean Objectives Summary */}
                     {task.objectivesText && (
-                      <div className="mt-2 rounded bg-[#0a0e13] border border-[#1d2531] px-2.5 py-2 text-xs text-[#dce4ee] leading-relaxed">
-                        <div className="flex items-start gap-1.5">
-                          <Crosshair className="w-3.5 h-3.5 text-[#e5a93c] shrink-0 mt-0.5" />
+                      <div className="mt-2.5 text-[13px] text-[#cbd5e1] leading-relaxed">
+                        <div className="flex items-start gap-2">
+                          <Crosshair className="w-4 h-4 text-[#e5a93c] shrink-0 mt-0.5" />
                           <span>{task.objectivesText}</span>
                         </div>
                         {task.objectivesList.length > 0 && (
-                          <ul className="mt-1.5 pl-5 space-y-0.5 text-[11px] text-[#9fb0c4] list-disc">
+                          <ul className="mt-1.5 pl-6 space-y-1 text-[12.5px] text-[#a9b8ca] list-disc">
                             {task.objectivesList.map((step, idx) => (
                               <li key={idx}>{step}</li>
                             ))}
@@ -526,14 +629,14 @@ export function TasksTrackerPanel({
                       </div>
                     )}
 
-                    {/* Quick Collapsed Hints: Coords / LZs / Gear */}
+                    {/* Collapsed Hints */}
                     {!isOpen &&
                       (task.exactCoords.length > 0 ||
                         task.relatedItems.length > 0 ||
                         task.nearestLzs.length > 0) && (
-                        <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 font-mono-tabular text-[10px] text-[#8b98a9]">
+                        <div className="mt-2.5 flex flex-wrap items-center gap-x-3.5 gap-y-1 text-xs text-[#8899ae]">
                           {task.exactCoords.length > 0 && (
-                            <span className="text-[#38bdf8]">
+                            <span className="font-mono-tabular text-[#38bdf8]">
                               Grid{" "}
                               {task.exactCoords.map((c) => c.grid).join(" / ")}
                             </span>
@@ -550,10 +653,9 @@ export function TasksTrackerPanel({
                         </div>
                       )}
 
-                    {/* Alternate / Hidden notes */}
                     {task.alternate && (
-                      <div className="mt-1.5 flex items-center gap-1.5 text-[11px] text-[#f59e0b]">
-                        <GitBranch className="w-3 h-3 shrink-0" />
+                      <div className="mt-2 flex items-center gap-1.5 text-xs text-[#f59e0b]">
+                        <GitBranch className="w-3.5 h-3.5 shrink-0" />
                         <span className="truncate">
                           Alternate choice: {task.alternate}
                         </span>
@@ -561,82 +663,145 @@ export function TasksTrackerPanel({
                     )}
 
                     {task.hiddenNote && (
-                      <div className="mt-1 text-[11px] text-purple-300">
+                      <div className="mt-1.5 text-xs text-purple-300">
                         Unlock: {task.hiddenNote}
                       </div>
                     )}
 
                     {/* ======================================================
-                        EXPANDED TASK WALKTHROUGH, IMAGES, ITEMS & INTEL
+                        EXPANDED WALKTHROUGH: BUILDING & OBJECTIVE PHOTOS + GUIDE
                        ====================================================== */}
                     {isOpen && (
                       <div
-                        className="mt-3 pt-3 border-t border-[#1e2734] space-y-3"
+                        className="mt-4 pt-4 border-t border-white/[0.08] space-y-4"
                         onClick={(e) => e.stopPropagation()}
                       >
-                        {/* Guide / Location Image */}
-                        {previewImg && !failedImgUrls[previewImg] && (
-                          <div className="rounded bg-[#080b0f] border border-[#222c3a] overflow-hidden">
-                            <button
-                              type="button"
-                              onClick={() =>
-                                setLightboxImage({
-                                  src: previewImg,
-                                  title: `${task.name} — ${
-                                    task.guideImage
-                                      ? "Location Guide"
-                                      : `${task.vendor} Task Intel`
-                                  }`,
-                                })
-                              }
-                              className="w-full text-left group relative block"
-                            >
-                              <img
-                                src={previewImg}
-                                alt={`${task.name} visual reference`}
-                                referrerPolicy="no-referrer"
-                                onError={() => markImgFailed(previewImg)}
-                                className={`w-full object-cover ${
-                                  task.guideImage ? "max-h-44" : "max-h-24 opacity-85"
-                                } group-hover:opacity-100 transition-opacity`}
-                              />
-                              <div className="px-2.5 py-1.5 flex items-center justify-between text-[10px] font-mono-tabular text-[#8b98a9] bg-[#0a0e13]/90 border-t border-[#1c2430]">
-                                <span>
-                                  {task.guideImage
-                                    ? "API Location Screenshot"
-                                    : `${task.vendor} Mission Banner`}
+                        {/* Live Community Location & Building Photos */}
+                        <div className="space-y-2.5">
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#38bdf8]">
+                              <Camera className="w-3.5 h-3.5" />
+                              Building &amp; Objective Photos
+                              {locationPhotos.length > 0 && (
+                                <span className="text-[#9fb0c4] font-normal">
+                                  ({locationPhotos.length})
                                 </span>
-                                <span className="text-[#38bdf8]">
-                                  Click to enlarge
-                                </span>
-                              </div>
-                            </button>
+                              )}
+                            </span>
+
+                            <div className="flex items-center gap-2.5">
+                              <button
+                                type="button"
+                                onClick={() => void loadLiveTaskGuide(task, true)}
+                                disabled={isLoadingGuide}
+                                title="Pull latest community updates from GZW Wiki"
+                                className="inline-flex items-center gap-1 text-xs text-[#9fb0c4] hover:text-white disabled:opacity-50"
+                              >
+                                <RefreshCw
+                                  className={`w-3 h-3 ${
+                                    isLoadingGuide ? "animate-spin" : ""
+                                  }`}
+                                />
+                                <span>Refresh</span>
+                              </button>
+                              <a
+                                href={
+                                  wikiIntel?.wikiUrl ||
+                                  `https://gray-zone-warfare.fandom.com/wiki/${encodeURIComponent(
+                                    task.name.replace(/\s+/g, "_")
+                                  )}`
+                                }
+                                target="_blank"
+                                rel="noreferrer"
+                                className="inline-flex items-center gap-1 text-xs text-[#e5a93c] hover:underline"
+                              >
+                                <span>Wiki</span>
+                                <ExternalLink className="w-3 h-3" />
+                              </a>
+                            </div>
                           </div>
-                        )}
+
+                          {isLoadingGuide && locationPhotos.length === 0 ? (
+                            <div className="rounded-xl bg-[#090d14] border border-white/[0.07] p-4 flex items-center gap-2.5 text-xs text-[#9fb0c4]">
+                              <Loader2 className="w-4 h-4 animate-spin text-[#38bdf8]" />
+                              <span>
+                                Fetching building &amp; interior location screenshots...
+                              </span>
+                            </div>
+                          ) : locationPhotos.length > 0 ? (
+                            <div
+                              className={`grid gap-2.5 ${
+                                isExpanded
+                                  ? "grid-cols-2 sm:grid-cols-3"
+                                  : "grid-cols-1 sm:grid-cols-2"
+                              }`}
+                            >
+                              {locationPhotos.map((photo, idx) => (
+                                <button
+                                  key={`${photo.url}-${idx}`}
+                                  type="button"
+                                  onClick={() =>
+                                    setLightboxImage({
+                                      src: photo.fullUrl || photo.url,
+                                      title: task.name,
+                                      caption: photo.caption,
+                                    })
+                                  }
+                                  className="group rounded-xl bg-[#080c12] border border-white/[0.09] hover:border-[#38bdf8]/70 overflow-hidden text-left transition-colors flex flex-col"
+                                >
+                                  <div className="relative w-full h-36 bg-[#05080c] overflow-hidden">
+                                    <img
+                                      src={photo.url}
+                                      alt={photo.caption}
+                                      referrerPolicy="no-referrer"
+                                      onError={() => markImgFailed(photo.url)}
+                                      loading="lazy"
+                                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
+                                    />
+                                  </div>
+                                  <div className="px-2.5 py-2 text-xs text-[#cbd5e1] leading-snug line-clamp-2">
+                                    {photo.caption}
+                                  </div>
+                                </button>
+                              ))}
+                            </div>
+                          ) : (
+                            <div className="rounded-xl bg-[#090d14] border border-white/[0.07] px-3.5 py-2.5 flex items-center justify-between gap-2 text-xs text-[#9fb0c4]">
+                              <span>
+                                No screenshots hosted on this wiki page yet. Check GZW Tac Map for visual markers.
+                              </span>
+                              <a
+                                href={`https://gzwtacmap.com/`}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="inline-flex items-center gap-1 text-[#38bdf8] hover:underline shrink-0"
+                              >
+                                <span>GZW Tac Map</span>
+                                <ExternalLink className="w-3 h-3" />
+                              </a>
+                            </div>
+                          )}
+                        </div>
 
                         {/* Step-by-Step Walkthrough */}
-                        <div>
-                          <div className="flex items-center justify-between mb-1.5">
-                            <span className="inline-flex items-center gap-1.5 font-mono-tabular text-[10px] uppercase tracking-wider text-[#38bdf8] font-semibold">
-                              <BookOpen className="w-3 h-3" />
-                              Task Walkthrough
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#38bdf8]">
+                              <BookOpen className="w-3.5 h-3.5" />
+                              Walkthrough Steps
                             </span>
-                            <span className="font-mono-tabular text-[9px] uppercase text-[#6f7e91]">
-                              {task.walkthroughSource === "api-guide"
-                                ? "API Field Guide"
-                                : task.walkthroughSource === "curated"
-                                  ? "0.5 Tactical Guide"
-                                  : "Mission Intel"}
+                            <span className="text-xs text-[#8899ae]">
+                              {stepSourceLabel}
                             </span>
                           </div>
-                          <ol className="space-y-1.5">
-                            {task.walkthroughSteps.map((step, i) => (
+                          <ol className="space-y-2">
+                            {displaySteps.map((step, i) => (
                               <li
                                 key={i}
-                                className="flex items-start gap-2 text-xs text-[#dce4ee] leading-relaxed bg-[#0a0e13] border border-[#1a222d] rounded px-2.5 py-2"
+                                className="flex items-start gap-2.5 text-[13px] text-[#dce5f0] leading-relaxed bg-[#0a0e15] border border-white/[0.06] rounded-xl px-3.5 py-2.5"
                               >
-                                <span className="font-mono-tabular text-[10px] font-bold text-[#e5a93c] shrink-0 mt-0.5">
-                                  {String(i + 1).padStart(2, "0")}
+                                <span className="font-mono-tabular text-xs font-bold text-[#e5a93c] shrink-0 mt-0.5">
+                                  {i + 1}.
                                 </span>
                                 <span>{step}</span>
                               </li>
@@ -647,26 +812,26 @@ export function TasksTrackerPanel({
                         {/* Exact Coords & Nearest LZs */}
                         {(task.exactCoords.length > 0 ||
                           task.nearestLzs.length > 0) && (
-                          <div className="rounded bg-[#0a0e13] border border-[#1d2531] px-2.5 py-2 space-y-1.5 text-xs">
-                            <div className="flex items-center gap-1.5 font-mono-tabular text-[10px] uppercase tracking-wider text-[#e5a93c]">
-                              <Compass className="w-3 h-3" />
+                          <div className="rounded-xl bg-[#0a0e15] border border-white/[0.07] px-3.5 py-3 space-y-2 text-[13px]">
+                            <div className="flex items-center gap-1.5 text-xs font-semibold text-[#e5a93c]">
+                              <Compass className="w-3.5 h-3.5" />
                               Infil &amp; Target Grids
                             </div>
                             {task.exactCoords.map((coord) => (
                               <div
                                 key={coord.grid}
-                                className="flex items-center justify-between gap-2 text-[11px]"
+                                className="flex items-center justify-between gap-2 text-xs"
                               >
-                                <span className="text-[#cbd5e1] truncate">
+                                <span className="text-[#dce5f0] truncate">
                                   {coord.label}
                                 </span>
-                                <span className="font-mono-tabular text-[#38bdf8] shrink-0">
+                                <span className="font-mono-tabular text-[#38bdf8] shrink-0 font-medium">
                                   Grid {coord.grid}
                                 </span>
                               </div>
                             ))}
                             {task.nearestLzs.length > 0 && (
-                              <div className="text-[11px] text-[#9fb0c4]">
+                              <div className="text-xs text-[#a9b8ca]">
                                 Nearest LZs:{" "}
                                 <span className="text-[#fde047] font-mono-tabular">
                                   {task.nearestLzs.join(" · ")}
@@ -678,33 +843,33 @@ export function TasksTrackerPanel({
 
                         {/* Required Gear, Keys & Task Items */}
                         {task.relatedItems.length > 0 && (
-                          <div>
-                            <div className="inline-flex items-center gap-1.5 font-mono-tabular text-[10px] uppercase tracking-wider text-[#e5a93c] mb-1.5">
-                              <KeyRound className="w-3 h-3" />
+                          <div className="space-y-2">
+                            <div className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#e5a93c]">
+                              <KeyRound className="w-3.5 h-3.5" />
                               Required Gear, Keys &amp; Items
                             </div>
-                            <div className="space-y-1.5">
+                            <div className="space-y-2">
                               {task.relatedItems.map((item, idx) => (
                                 <div
                                   key={`${item.name}-${idx}`}
-                                  className="flex items-center gap-2.5 rounded bg-[#0a0e13] border border-[#1d2531] px-2.5 py-1.5"
+                                  className="flex items-center gap-3 rounded-xl bg-[#0a0e15] border border-white/[0.07] px-3 py-2"
                                 >
                                   <ItemThumbnail
                                     src={item.image}
                                     alt={item.name}
-                                    sizeClass="w-7 h-7"
+                                    sizeClass="w-8 h-8"
                                   />
                                   <div className="min-w-0 flex-1">
                                     <div className="flex items-center justify-between gap-2">
-                                      <span className="text-xs font-medium text-[#eef3f8] truncate">
+                                      <span className="text-[13px] font-medium text-[#f1f5f9] truncate">
                                         {item.name}
                                       </span>
-                                      <span className="font-mono-tabular text-[9px] uppercase text-[#38bdf8] shrink-0">
+                                      <span className="text-xs text-[#38bdf8] shrink-0">
                                         {item.kind}
                                       </span>
                                     </div>
                                     {item.note && (
-                                      <div className="text-[11px] text-[#8b98a9] truncate">
+                                      <div className="text-xs text-[#9fb0c4] truncate mt-0.5">
                                         {item.note}
                                       </div>
                                     )}
@@ -715,27 +880,20 @@ export function TasksTrackerPanel({
                           </div>
                         )}
 
-                        {/* Boss / Tactical Tip */}
-                        {(task.bossWarning || task.guideTip) && (
-                          <div className="rounded bg-[#18120c] border border-[#e5a93c]/40 px-2.5 py-2 space-y-1 text-[11px] text-[#f3d49b]">
-                            {task.bossWarning && (
-                              <div className="flex items-start gap-1.5">
-                                <AlertTriangle className="w-3.5 h-3.5 text-[#f59e0b] shrink-0 mt-0.5" />
-                                <span>{task.bossWarning}</span>
-                              </div>
-                            )}
-                            {task.guideTip && (
-                              <div className="text-[#cbd5e1]">
-                                Tip: {task.guideTip}
-                              </div>
-                            )}
+                        {/* Tactical Tip */}
+                        {(wikiIntel?.tips?.[0] || task.guideTip) && (
+                          <div className="rounded-xl bg-[#18130c] border border-[#e5a93c]/35 px-3.5 py-2.5 text-[13px] text-[#e2e8f0] leading-relaxed">
+                            <span className="font-semibold text-[#e5a93c]">
+                              Tip:{" "}
+                            </span>
+                            {wikiIntel?.tips?.[0] || task.guideTip}
                           </div>
                         )}
 
                         {/* Full Vendor Briefing */}
                         {task.briefing && (
-                          <div className="text-xs text-[#9fb0c4] leading-relaxed border-l-2 border-[#2a3646] pl-2.5">
-                            <div className="font-mono-tabular text-[9px] uppercase tracking-wider text-[#6f7e91] mb-0.5">
+                          <div className="rounded-xl bg-white/[0.025] border border-white/[0.07] px-3.5 py-3 text-[13px] text-[#b4c2d4] leading-relaxed">
+                            <div className="text-xs font-medium text-[#8899ae] mb-1">
                               {task.vendor} Briefing
                             </div>
                             {task.briefing}
@@ -745,37 +903,37 @@ export function TasksTrackerPanel({
                     )}
                   </div>
 
-                  {/* Card Footer: Locate on Map (always opens Map + Walkthrough!) + Complete Toggle */}
+                  {/* Card Footer */}
                   <div
-                    className="mt-3 pt-2 border-t border-[#1c2430] flex items-center justify-between gap-2"
+                    className="mt-4 pt-3 border-t border-white/[0.06] flex items-center justify-between gap-2"
                     onClick={(e) => e.stopPropagation()}
                   >
                     <button
                       type="button"
                       onClick={() => onLocateTaskOnMap(task)}
-                      className={`min-h-[36px] inline-flex items-center gap-1.5 px-2.5 py-1 rounded border text-xs font-medium transition-colors ${
+                      className={`min-h-[38px] inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg border text-xs font-medium transition-colors ${
                         isSelected
-                          ? "bg-[#142536] border-[#38bdf8] text-[#7dd3fc]"
-                          : "bg-[#0c1118] border-[#253040] text-[#38bdf8] hover:border-[#38bdf8]"
+                          ? "bg-[#16283b] border-[#38bdf8] text-[#7dd3fc]"
+                          : "bg-white/[0.04] border-white/[0.1] text-[#38bdf8] hover:border-[#38bdf8]"
                       }`}
                     >
                       <MapPin className="w-3.5 h-3.5" />
                       <span>
-                        {hasMapCoords ? "Locate on Map" : "Map Walkthrough"}
+                        {hasMapCoords ? "Locate on Map" : "View Walkthrough"}
                       </span>
                     </button>
 
                     <button
                       type="button"
                       onClick={() => onToggleTaskComplete(task.id)}
-                      className={`min-h-[36px] inline-flex items-center gap-1 px-2.5 py-1 rounded border text-xs font-medium transition-colors whitespace-nowrap ${
+                      className={`min-h-[38px] inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg border text-xs font-medium transition-colors whitespace-nowrap ${
                         isDone
                           ? "bg-[#112720] border-[#2b6b53] text-[#34d399] hover:border-[#34d399]"
-                          : "bg-[#141a23] border-[#2b3748] text-[#dce4ee] hover:border-[#e5a93c] hover:text-[#e5a93c]"
+                          : "bg-white/[0.04] border-white/[0.1] text-[#e2e8f0] hover:border-[#e5a93c] hover:text-[#e5a93c]"
                       }`}
                     >
-                      {isDone && <Check className="w-3 h-3 stroke-[2.5]" />}
-                      {isDone ? "Completed" : "Mark Done"}
+                      {isDone && <Check className="w-3.5 h-3.5 stroke-[2.5]" />}
+                      {isDone ? "Completed" : "Mark Complete"}
                     </button>
                   </div>
                 </article>
@@ -785,34 +943,42 @@ export function TasksTrackerPanel({
         )}
       </div>
 
-      {/* Image Preview Lightbox */}
+      {/* Full-Resolution Building & Objective Photo Lightbox */}
       {lightboxImage && (
         <div
           className="fixed inset-0 z-[2100] bg-black/85 backdrop-blur-sm flex items-center justify-center p-4"
           onClick={() => setLightboxImage(null)}
         >
           <div
-            className="max-w-2xl w-full rounded-md bg-[#0c1016] border border-[#2c3849] overflow-hidden shadow-2xl"
+            className="max-w-4xl w-full rounded-2xl bg-[#0e131c] border border-white/[0.14] overflow-hidden shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="px-4 py-2.5 border-b border-[#212a36] flex items-center justify-between gap-3">
-              <span className="text-xs font-semibold text-[#eef3f8] truncate">
-                {lightboxImage.title}
-              </span>
+            <div className="px-5 py-3 border-b border-white/[0.08] flex items-center justify-between gap-3">
+              <div className="min-w-0">
+                <div className="text-sm font-semibold text-[#f8fafc] truncate">
+                  {lightboxImage.title}
+                </div>
+                {lightboxImage.caption && (
+                  <div className="text-xs text-[#a9b8ca] truncate">
+                    {lightboxImage.caption}
+                  </div>
+                )}
+              </div>
               <button
                 type="button"
                 onClick={() => setLightboxImage(null)}
-                className="p-1 rounded text-[#8b98a9] hover:text-white"
+                aria-label="Close photo preview"
+                className="p-1.5 rounded-lg text-[#94a3b8] hover:text-white hover:bg-white/[0.06]"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
-            <div className="p-3 bg-[#070a0e] flex justify-center">
+            <div className="p-3 bg-[#070a0f] flex justify-center">
               <img
                 src={lightboxImage.src}
-                alt={lightboxImage.title}
+                alt={lightboxImage.caption || lightboxImage.title}
                 referrerPolicy="no-referrer"
-                className="max-h-[75vh] w-auto object-contain rounded"
+                className="max-h-[78vh] w-auto object-contain rounded-lg"
               />
             </div>
           </div>

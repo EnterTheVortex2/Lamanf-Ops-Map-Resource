@@ -34,6 +34,23 @@ export function formatGridSquare(x: number, y: number): string {
   return `${gx} ${gy}`;
 }
 
+export function parseGridInputToMeters(
+  raw: string
+): { grid: string; x: number; y: number } | null {
+  const m = raw
+    .trim()
+    .match(/^(1[0-9]{2}|2[0-3][0-9])\s*[,\s/]+\s*(1[0-7][0-9])$/);
+  if (!m) return null;
+  const gx = Number(m[1]);
+  const gy = Number(m[2]);
+  if (gx < 100 || gx > 240 || gy < 100 || gy > 180) return null;
+  return {
+    grid: `${gx} ${gy}`,
+    x: (gx - 100) * 100 + 50,
+    y: (gy - 100) * 100 + 50,
+  };
+}
+
 export type PoiKind = RawPoi05["kind"];
 
 export interface LamangPoi extends RawPoi05 {
@@ -45,6 +62,7 @@ export type MapLayerKey =
   | "pcSpawns"
   | "chemicalAreas"
   | "disassemblySpawns"
+  | "lockedDoors"
   | "tickedSpawns"
   | "apiLoot"
   | "customPins"
@@ -59,6 +77,94 @@ export interface CustomMapPin {
   layer: "blueCrates" | "pcSpawns" | "customPins";
   label: string;
   materialId: string;
+  createdAt?: number;
+}
+
+export type FactionId = "ALL" | "LRI" | "MSS" | "CSI";
+
+export interface FactionInfo {
+  id: Exclude<FactionId, "ALL">;
+  short: "LRI" | "MSS" | "CSI";
+  name: string;
+  baseId: string;
+  baseName: string;
+  starterTown: "Pha Lang" | "Nam Thaven" | "Kiu Vongsa";
+  color: string;
+  x: number;
+  y: number;
+}
+
+export const FACTIONS: Record<Exclude<FactionId, "ALL">, FactionInfo> = {
+  LRI: {
+    id: "LRI",
+    short: "LRI",
+    name: "Lamang Recovery Initiative",
+    baseId: "base-lri",
+    baseName: "LRI Main Base",
+    starterTown: "Pha Lang",
+    color: "#38bdf8",
+    x: 10772,
+    y: 7162,
+  },
+  MSS: {
+    id: "MSS",
+    short: "MSS",
+    name: "Mithras Security Systems",
+    baseId: "base-mss",
+    baseName: "MSS Main Base",
+    starterTown: "Nam Thaven",
+    color: "#e5a93c",
+    x: 7268,
+    y: 813,
+  },
+  CSI: {
+    id: "CSI",
+    short: "CSI",
+    name: "Crimson Shield International",
+    baseId: "base-csi",
+    baseName: "CSI Main Base",
+    starterTown: "Kiu Vongsa",
+    color: "#f87171",
+    x: 3393,
+    y: 7006,
+  },
+};
+
+export const STARTER_TOWNS = ["Pha Lang", "Nam Thaven", "Kiu Vongsa"] as const;
+
+export function doesTaskBelongToFaction(
+  taskFaction: string | undefined,
+  taskAreas: string[],
+  selectedFaction: FactionId
+): boolean {
+  if (selectedFaction === "ALL") return true;
+  const active = FACTIONS[selectedFaction];
+
+  if (taskFaction && taskFaction.trim()) {
+    const fLower = taskFaction.toLowerCase();
+    const mentionsLri = /\blri\b|lamang\s*recovery/i.test(fLower);
+    const mentionsMss = /\bmss\b|mithras/i.test(fLower);
+    const mentionsCsi = /\bcsi\b|crimson\s*shield/i.test(fLower);
+    if (mentionsLri || mentionsMss || mentionsCsi) {
+      if (selectedFaction === "LRI" && !mentionsLri) return false;
+      if (selectedFaction === "MSS" && !mentionsMss) return false;
+      if (selectedFaction === "CSI" && !mentionsCsi) return false;
+    }
+  }
+
+  // If task areas exclusively point to rival starter town(s) (excluding Pha Lang Airfield), hide from active faction list
+  const starterMatches = taskAreas.filter((a) =>
+    (STARTER_TOWNS as readonly string[]).includes(a)
+  );
+  if (
+    starterMatches.length > 0 &&
+    !starterMatches.includes(active.starterTown) &&
+    starterMatches.length === taskAreas.length
+  ) {
+    return false;
+  }
+
+  return true;
 }
 
 const REGION_LOOT_TAGS: Record<string, string[]> = {

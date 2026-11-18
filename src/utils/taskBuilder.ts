@@ -6,14 +6,15 @@ export type TaskCategory =
   | "Main Task"
   | "Side Task"
   | "Contract"
-  | "Hidden Task"
-  | "Squad Strike";
+  | "Hidden Task";
 
 export interface VendorProfile {
   id: string;
   name: string;
   fullName: string;
   specialty: string;
+  sells?: string;
+  buys?: string;
   image: string | null;
 }
 
@@ -49,7 +50,6 @@ export interface GzwTaskDef {
   exactCoords: TaskCoordTarget[];
   relatedItems: TaskRelatedItem[];
   nearestLzs: string[];
-  bossWarning?: string;
   alternate?: string;
   hiddenNote?: string;
   vendorRankRequired?: string;
@@ -184,6 +184,14 @@ export function buildVendorProfiles(
       name,
       fullName,
       specialty: existing?.specialty || "Lamang Contractor",
+      sells:
+        typeof raw.sells === "string" && raw.sells.trim()
+          ? raw.sells.trim()
+          : undefined,
+      buys:
+        typeof raw.buys === "string" && raw.buys.trim()
+          ? raw.buys.trim()
+          : undefined,
       image: rec.image || existing?.image || null,
     });
   }
@@ -489,11 +497,9 @@ function mapCategory(
     side: Set<string>;
     hidden: Set<string>;
     contract: Set<string>;
-    strike: Set<string>;
   },
   isHiddenFlag: boolean
 ): TaskCategory {
-  if (categorySets.strike.has(id)) return "Squad Strike";
   if (categorySets.hidden.has(id) || isHiddenFlag) return "Hidden Task";
   if (categorySets.contract.has(id)) return "Contract";
   if (categorySets.main.has(id)) return "Main Task";
@@ -502,7 +508,6 @@ function mapCategory(
   const s = String(rawType || "").toLowerCase();
   if (s.includes("main")) return "Main Task";
   if (s.includes("contract")) return "Contract";
-  if (s.includes("strike")) return "Squad Strike";
   if (s.includes("hidden")) return "Hidden Task";
   return "Side Task";
 }
@@ -519,7 +524,6 @@ export function buildAllTasks(apiCache: ApiCachePayload | null): GzwTaskDef[] {
       ...(ds.contract || []).map((r) => r.id),
       ...(ds.contracts || []).map((r) => r.id),
     ]),
-    strike: new Set((ds.squad_strike_missions || []).map((r) => r.id)),
   };
 
   // Index live API task_guides by lowercase id & name
@@ -529,7 +533,7 @@ export function buildAllTasks(apiCache: ApiCachePayload | null): GzwTaskDef[] {
     if (g.name) guideByKey.set(g.name.toLowerCase(), g);
   }
 
-  // Index keys, keycards, task_items, intels, bosses for cross-referencing
+  // Index keys, keycards, task_items, intels for cross-referencing
   const keyRecords = [...(ds.keys || []), ...(ds.keycards || [])].map((rec) => ({
     rec,
     isKeycard: rec.dataset === "keycards",
@@ -540,7 +544,6 @@ export function buildAllTasks(apiCache: ApiCachePayload | null): GzwTaskDef[] {
 
   const itemRecords = [
     ...(ds.task_items || []),
-    ...(ds.squad_strike_missions_item || []),
     ...(ds.intels || []),
   ].map((rec) => ({
     rec,
@@ -548,13 +551,6 @@ export function buildAllTasks(apiCache: ApiCachePayload | null): GzwTaskDef[] {
       | "Intel"
       | "Task Item",
     nameLower: rec.name.toLowerCase(),
-  }));
-
-  const bosses = (ds.bosses || []).map((b) => ({
-    name: b.name,
-    locationLower: String(
-      b.raw?.location || b.spawnNotes.join(" ") || ""
-    ).toLowerCase(),
   }));
 
   const mergedById = new Map<string, NormalizedApiRecord>();
@@ -565,11 +561,17 @@ export function buildAllTasks(apiCache: ApiCachePayload | null): GzwTaskDef[] {
     ds.contract || [],
     ds.contracts || [],
     ds.hidden_task || [],
-    ds.squad_strike_missions || [],
   ];
 
   for (const list of sources) {
     for (const rec of list) {
+      if (
+        String(rec.raw?.task_type || "")
+          .toLowerCase()
+          .includes("strike")
+      ) {
+        continue;
+      }
       if (!mergedById.has(rec.id)) {
         mergedById.set(rec.id, rec);
       }
@@ -705,21 +707,7 @@ export function buildAllTasks(apiCache: ApiCachePayload | null): GzwTaskDef[] {
       }
     }
 
-    // 4. Boss proximity warning in task area
-    let bossWarning: string | undefined;
-    for (const b of bosses) {
-      if (
-        areas.some(
-          (a) =>
-            a !== "Lamang Island" && b.locationLower.includes(a.toLowerCase())
-        )
-      ) {
-        bossWarning = `${b.name} patrols ${areas[0]} — watch for armored bodyguards.`;
-        break;
-      }
-    }
-
-    // 5. Assemble numbered Walkthrough Steps for every task
+    // 4. Assemble numbered Walkthrough Steps for every task
     let walkthroughSteps: string[] = [];
     let walkthroughSource: GzwTaskDef["walkthroughSource"] = "tactical-intel";
 
@@ -793,7 +781,6 @@ export function buildAllTasks(apiCache: ApiCachePayload | null): GzwTaskDef[] {
       exactCoords,
       relatedItems: Array.from(relatedMap.values()),
       nearestLzs,
-      bossWarning,
       alternate:
         typeof raw.alternate === "string" && raw.alternate.trim()
           ? raw.alternate.trim()

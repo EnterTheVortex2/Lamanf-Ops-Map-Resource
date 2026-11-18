@@ -11,7 +11,7 @@ const PORT = Number(process.env.PORT || 3000);
 
 const API_ROOT = "https://gzw-data.dev/api/v1";
 const DATASET_MATCH_PATTERN =
-  /^(hideout|hideout_modules|gamedata_hideout_rooms|gamedata_hideout_devices|gamedata_hideout_materials|gamedata_hideout_recipes|disassembly_recipes|building_material|workshop_supplies|laboratory_supplies|electronics|crafting_material|disassembly_material|production_material|military_material|tools|keys|keycards|loot_container|loot_containers|regions|vendors|tasks|main_task|side_task|hidden_task|contract|contracts|squad_strike_missions|squad_strike_missions_item|task_items|task_guides|intels|bosses)$/i;
+  /^(hideout|hideout_modules|gamedata_hideout_rooms|gamedata_hideout_devices|gamedata_hideout_materials|gamedata_hideout_recipes|disassembly_recipes|building_material|workshop_supplies|laboratory_supplies|electronics|crafting_material|disassembly_material|production_material|military_material|tools|keys|keycards|loot_container|loot_containers|regions|vendors|vendor_stock|tasks|main_task|side_task|hidden_task|contract|contracts|task_items|task_guides|intels)$/i;
 
 const PRIORITY_DATASETS = [
   "hideout_modules",
@@ -26,28 +26,26 @@ const PRIORITY_DATASETS = [
   "loot_container",
   "regions",
   "vendors",
+  "vendor_stock",
   "tasks",
   "main_task",
   "side_task",
   "hidden_task",
   "contract",
   "contracts",
-  "squad_strike_missions",
-  "squad_strike_missions_item",
   "task_items",
   "task_guides",
   "intels",
-  "bosses",
 ];
 
 const MAX_PAGES_BY_DATASET: Record<string, number> = {
+  vendor_stock: 13,
   tasks: 7,
   side_task: 3,
   keys: 3,
   task_items: 3,
   task_guides: 2,
   intels: 6,
-  squad_strike_missions_item: 2,
   contract: 2,
   contracts: 2,
   loot_container: 2,
@@ -95,6 +93,10 @@ const BOOTSTRAP_TTL_MS = 10 * 60 * 1000;
 const FORCE_REFRESH_COOLDOWN_MS = 15 * 1000;
 
 const searchCache = new Map<string, { data: unknown; fetchedAtMs: number }>();
+const datasetCache = new Map<
+  string,
+  { records: NormalizedApiRecord[]; fetchedAtMs: number }
+>();
 const SEARCH_TTL_MS = 10 * 60 * 1000;
 
 function extractSpawnNotes(raw: Record<string, unknown>): string[] {
@@ -577,6 +579,337 @@ async function startServer() {
         error: err instanceof Error ? err.message : "Search failed",
       });
     }
+  });
+
+  app.get("/api/gzw/dataset/:name", async (req, res) => {
+    const dataset = String(req.params.name || "").trim();
+    if (!/^[a-z0-9_]+$/i.test(dataset)) {
+      res.status(400).json({ error: "Invalid dataset name" });
+      return;
+    }
+
+    const cached = datasetCache.get(dataset);
+    if (cached && Date.now() - cached.fetchedAtMs < SEARCH_TTL_MS) {
+      res.json({ dataset, records: cached.records });
+      return;
+    }
+
+    try {
+      const records: NormalizedApiRecord[] = [];
+      let page = 1;
+      const maxPages = 5;
+      while (page <= maxPages) {
+        const upstreamRes = await fetch(
+          `${API_ROOT}/${encodeURIComponent(dataset)}?page=${page}`,
+          { signal: AbortSignal.timeout(10000) }
+        );
+        if (!upstreamRes.ok) break;
+        const resp = (await upstreamRes.json()) as {
+          data?: Record<string, unknown>[];
+          totalPages?: number;
+          perPage?: number;
+        };
+        const batch = Array.isArray(resp.data) ? resp.data : [];
+        if (batch.length === 0) break;
+
+        const pageSize = resp.perPage || batch.length || 50;
+        records.push(
+          ...batch.map((item, idx) =>
+            normalizeRecord(dataset, item, (page - 1) * pageSize + idx)
+          )
+        );
+        if (resp.totalPages && page >= resp.totalPages) break;
+        page += 1;
+      }
+
+      const clean = records.filter((r) => !r.name.startsWith("<DEV>"));
+      datasetCache.set(dataset, { records: clean, fetchedAtMs: Date.now() });
+      res.json({ dataset, records: clean });
+    } catch (err) {
+      if (cached) {
+        res.json({ dataset, records: cached.records });
+        return;
+      }
+      res.status(502).json({
+        dataset,
+        records: [],
+        error: err instanceof Error ? err.message : "Failed to load dataset",
+      });
+    }
+  });
+
+  const taskWikiCache = new Map<
+    string,
+    {
+      data: {
+        title: string;
+        wikiUrl: string;
+        walkthroughSteps: string[];
+        tips: string[];
+        images: { url: string; fullUrl: string; caption: string }[];
+        fetchedAt: string;
+      };
+      fetchedAtMs: number;
+    }
+  >();
+  const TASK_WIKI_TTL_MS = 30 * 60 * 1000;
+
+  function decodeHtmlEntities(str: string): string {
+    return str
+      .replace(/&#(\d+);/g, (_m, dec) => String.fromCharCode(Number(dec)))
+      .replace(/&#x([0-9a-f]+);/gi, (_m, hex) =>
+        String.fromCharCode(parseInt(hex, 16))
+      )
+      .replace(/&quot;/g, '"')
+      .replace(/&#039;|&apos;/g, "'")
+      .replace(/&amp;/g, "&")
+      .replace(/&lt;/g, "<")
+      .replace(/&gt;/g, ">")
+      .replace(/&nbsp;/g, " ");
+  }
+
+  function stripHtml(html: string): string {
+    return decodeHtmlEntities(
+      html
+        .replace(/<style[\s\S]*?<\/style>/gi, " ")
+        .replace(/<script[\s\S]*?<\/script>/gi, " ")
+        .replace(/<[^>]+>/g, " ")
+    )
+      .replace(/\[edit\]/gi, "")
+      .replace(/\s+/g, " ")
+      .trim();
+  }
+
+  function parseWikiTaskHtml(taskName: string, pageTitle: string, html: string) {
+    const images: { url: string; fullUrl: string; caption: string }[] = [];
+    const seenUrls = new Set<string>();
+
+    const cleanImageUrl = (rawUrl: string): string => {
+      // Strip scale-to-width-down/NNN so we get full crisp resolution
+      return rawUrl
+        .replace(/\/revision\/latest\/scale-to-width-down\/\d+/i, "/revision/latest")
+        .replace(/\/revision\/latest\/window-crop\/[^?]+/i, "/revision/latest");
+    };
+
+    const isUsefulLocationImage = (url: string, imgName: string): boolean => {
+      const lower = `${url} ${imgName}`.toLowerCase();
+      if (!url.startsWith("https://static.wikia.nocookie.net/")) return false;
+      if (
+        lower.includes("_banner") ||
+        lower.includes("red_cross") ||
+        lower.includes("missing_icon") ||
+        lower.includes("check_mark") ||
+        lower.includes("_icon.") ||
+        lower.includes("site-logo")
+      ) {
+        return false;
+      }
+      if (/scale-to-width-down\/(?:1[0-9]|[1-5][0-9])\b/.test(url)) return false;
+      return true;
+    };
+
+    // 1. Parse .wikia-gallery-item blocks (primary container for building + interior photos)
+    const galleryChunks = html.split('<div class="wikia-gallery-item"').slice(1);
+    for (const chunk of galleryChunks) {
+      const block = chunk.slice(0, 2600);
+      const srcMatch =
+        block.match(/(?:data-src|src)="(https:\/\/static\.wikia\.nocookie\.net\/[^"]+)"/i);
+      if (!srcMatch) continue;
+      const rawThumbUrl = srcMatch[1];
+      const nameMatch = block.match(/data-image-name="([^"]+)"/i);
+      const imgName = nameMatch ? decodeHtmlEntities(nameMatch[1]) : "";
+      if (!isUsefulLocationImage(rawThumbUrl, imgName)) continue;
+
+      const fullRawUrl = cleanImageUrl(rawThumbUrl);
+      const dedupKey = fullRawUrl.split("?")[0];
+      if (seenUrls.has(dedupKey)) continue;
+      seenUrls.add(dedupKey);
+
+      const capMatch = block.match(/class="lightbox-caption"[^>]*>([\s\S]*?)<\/div>/i);
+      const dataCapMatch = block.match(/data-caption="([^"]+)"/i);
+      const altMatch = block.match(/alt="([^"]+)"/i);
+      let caption = stripHtml(
+        capMatch?.[1] || dataCapMatch?.[1] || altMatch?.[1] || ""
+      );
+      if (!caption && imgName) {
+        caption = imgName
+          .replace(/\.(png|jpg|jpeg|webp)$/i, "")
+          .replace(/[_-]+/g, " ")
+          .trim();
+      }
+
+      images.push({
+        url: toProxiedImageUrl(rawThumbUrl),
+        fullUrl: toProxiedImageUrl(fullRawUrl),
+        caption: caption || `${taskName} location reference`,
+      });
+    }
+
+    // 2. Also parse <figure> blocks outside galleries
+    const figMatches = html.matchAll(/<figure\b[\s\S]*?<\/figure>/gi);
+    for (const fm of figMatches) {
+      const block = fm[0];
+      const srcMatch =
+        block.match(/(?:data-src|src)="(https:\/\/static\.wikia\.nocookie\.net\/[^"]+)"/i);
+      if (!srcMatch) continue;
+      const rawThumbUrl = srcMatch[1];
+      const nameMatch = block.match(/data-image-name="([^"]+)"/i);
+      const imgName = nameMatch ? decodeHtmlEntities(nameMatch[1]) : "";
+      if (!isUsefulLocationImage(rawThumbUrl, imgName)) continue;
+
+      const fullRawUrl = cleanImageUrl(rawThumbUrl);
+      const dedupKey = fullRawUrl.split("?")[0];
+      if (seenUrls.has(dedupKey)) continue;
+      seenUrls.add(dedupKey);
+
+      const figCapMatch = block.match(/<figcaption[^>]*>([\s\S]*?)<\/figcaption>/i);
+      const altMatch = block.match(/alt="([^"]+)"/i);
+      let caption = stripHtml(figCapMatch?.[1] || altMatch?.[1] || "");
+      if (!caption && imgName) {
+        caption = imgName
+          .replace(/\.(png|jpg|jpeg|webp)$/i, "")
+          .replace(/[_-]+/g, " ")
+          .trim();
+      }
+
+      images.push({
+        url: toProxiedImageUrl(rawThumbUrl),
+        fullUrl: toProxiedImageUrl(fullRawUrl),
+        caption: caption || `${taskName} location reference`,
+      });
+    }
+
+    // 3. Parse Walkthrough / Guide / Tips paragraphs and list items
+    const walkthroughSteps: string[] = [];
+    const tips: string[] = [];
+
+    const extractSectionHtml = (sectionNames: string[]): string => {
+      for (const sName of sectionNames) {
+        const re = new RegExp(
+          `<h[23][^>]*>[\\s\\S]*?${sName}[\\s\\S]*?<\\/h[23]>([\\s\\S]*?)(?=<h[23]\\b|$)`,
+          "i"
+        );
+        const m = html.match(re);
+        if (m && m[1]) return m[1];
+      }
+      return "";
+    };
+
+    const walkthroughHtml = extractSectionHtml([
+      "Walkthrough",
+      "Guide",
+      "Strategy",
+      "Mission Guide",
+    ]);
+    if (walkthroughHtml) {
+      const noGalleries = walkthroughHtml
+        .replace(/<div class="wikia-gallery[\s\S]*?<\/div>\s*<\/div>/gi, " ")
+        .replace(/<figure[\s\S]*?<\/figure>/gi, " ");
+      const blocks = noGalleries.matchAll(/<(?:li|p)[^>]*>([\s\S]*?)<\/(?:li|p)>/gi);
+      for (const b of blocks) {
+        const txt = stripHtml(b[1]);
+        if (
+          txt.length >= 16 &&
+          !/^(?:see also|notes?|gallery|video|rewards?)$/i.test(txt) &&
+          !walkthroughSteps.some((s) => s.toLowerCase() === txt.toLowerCase())
+        ) {
+          walkthroughSteps.push(txt);
+        }
+      }
+    }
+
+    const tipsHtml = extractSectionHtml(["Tips", "Notes", "Trivia"]);
+    if (tipsHtml) {
+      const blocks = tipsHtml.matchAll(/<(?:li|p)[^>]*>([\s\S]*?)<\/(?:li|p)>/gi);
+      for (const b of blocks) {
+        const txt = stripHtml(b[1]);
+        if (txt.length >= 16 && tips.length < 4) {
+          tips.push(txt);
+        }
+      }
+    }
+
+    const wikiSlug = encodeURIComponent(pageTitle.replace(/\s+/g, "_"));
+    return {
+      title: pageTitle || taskName,
+      wikiUrl: `https://gray-zone-warfare.fandom.com/wiki/${wikiSlug}`,
+      walkthroughSteps: walkthroughSteps.slice(0, 14),
+      tips,
+      images: images.slice(0, 14),
+      fetchedAt: new Date().toISOString(),
+    };
+  }
+
+  app.get("/api/gzw/task-wiki", async (req, res) => {
+    const rawName = String(req.query.name || "").trim();
+    const force = req.query.force === "1" || req.query.force === "true";
+    if (!rawName) {
+      res.status(400).json({ error: "Missing task name" });
+      return;
+    }
+
+    const cacheKey = rawName.toLowerCase();
+    const cached = taskWikiCache.get(cacheKey);
+    if (
+      cached &&
+      !force &&
+      Date.now() - cached.fetchedAtMs < TASK_WIKI_TTL_MS
+    ) {
+      res.json(cached.data);
+      return;
+    }
+
+    const pageCandidates = [
+      rawName.replace(/\s+/g, "_"),
+      rawName.replace(/['’]/g, "'").replace(/\s+/g, "_"),
+    ];
+
+    for (const candidate of pageCandidates) {
+      try {
+        const wikiApiUrl = `https://gray-zone-warfare.fandom.com/api.php?action=parse&page=${encodeURIComponent(
+          candidate
+        )}&prop=text|displaytitle&redirects=1&format=json`;
+        const upstream = await fetch(wikiApiUrl, {
+          headers: {
+            "User-Agent":
+              "LamangOperations/1.0 (+https://gray-zone-warfare.fandom.com/)",
+            Accept: "application/json",
+          },
+          signal: AbortSignal.timeout(9000),
+        });
+        if (!upstream.ok) continue;
+        const json = (await upstream.json()) as {
+          parse?: { title?: string; text?: { "*"?: string } };
+        };
+        const html = json.parse?.text?.["*"];
+        if (!html) continue;
+
+        const parsed = parseWikiTaskHtml(
+          rawName,
+          json.parse?.title || rawName,
+          html
+        );
+        taskWikiCache.set(cacheKey, {
+          data: parsed,
+          fetchedAtMs: Date.now(),
+        });
+        res.json(parsed);
+        return;
+      } catch {
+        // try next candidate
+      }
+    }
+
+    res.json({
+      title: rawName,
+      wikiUrl: `https://gray-zone-warfare.fandom.com/wiki/${encodeURIComponent(
+        rawName.replace(/\s+/g, "_")
+      )}`,
+      walkthroughSteps: [],
+      tips: [],
+      images: [],
+      fetchedAt: new Date().toISOString(),
+    });
   });
 
   if (process.env.NODE_ENV !== "production") {

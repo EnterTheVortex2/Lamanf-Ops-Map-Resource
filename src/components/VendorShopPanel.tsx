@@ -1,0 +1,695 @@
+import { useEffect, useMemo, useState } from "react";
+import {
+  ArrowUpDown,
+  Loader2,
+  Package,
+  Search,
+  ShoppingBag,
+  Sparkles,
+  User,
+  X,
+} from "lucide-react";
+import { fetchCategoryDataset } from "../services/gzwApi";
+import type { VendorProfile } from "../utils/taskBuilder";
+import {
+  extractEnrichmentFromRecords,
+  parseUsdPrice,
+  VENDOR_SHOP_GROUPS,
+  type VendorItemEnrichment,
+  type VendorShopGroup,
+  type VendorShopItem,
+} from "../utils/vendorBuilder";
+
+interface VendorShopPanelProps {
+  vendors: VendorProfile[];
+  shopItems: VendorShopItem[];
+  isExpanded: boolean;
+  isLoadingApi: boolean;
+}
+
+type RankFilter = "ALL" | 1 | 2 | 3 | 4;
+type SortMode = "default" | "price-asc" | "price-desc" | "name-asc";
+
+export function VendorShopPanel({
+  vendors,
+  shopItems,
+  isLoadingApi,
+}: VendorShopPanelProps) {
+  const [selectedVendor, setSelectedVendor] = useState<string>("Gunny");
+  const [selectedRank, setSelectedRank] = useState<RankFilter>("ALL");
+  const [selectedGroup, setSelectedGroup] = useState<VendorShopGroup>("ALL");
+  const [sortMode, setSortMode] = useState<SortMode>("default");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [inspectedItem, setInspectedItem] = useState<VendorShopItem | null>(null);
+  const [failedImgUrls, setFailedImgUrls] = useState<Record<string, boolean>>({});
+  const [enrichmentByCategory, setEnrichmentByCategory] = useState<
+    Record<string, Map<string, VendorItemEnrichment>>
+  >({});
+  const [loadingCount, setLoadingCount] = useState(0);
+
+  const markImgFailed = (url: string) =>
+    setFailedImgUrls((prev) => (prev[url] ? prev : { ...prev, [url]: true }));
+
+  const activeVendorProfile = useMemo(
+    () =>
+      vendors.find(
+        (v) => v.name.toLowerCase() === selectedVendor.toLowerCase()
+      ) ||
+      vendors[0] ||
+      null,
+    [vendors, selectedVendor]
+  );
+
+  const vendorCounts = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const item of shopItems) {
+      const k = item.vendor.toLowerCase();
+      map.set(k, (map.get(k) || 0) + 1);
+    }
+    return map;
+  }, [shopItems]);
+
+  const vendorItems = useMemo(
+    () =>
+      shopItems.filter(
+        (item) => item.vendor.toLowerCase() === selectedVendor.toLowerCase()
+      ),
+    [shopItems, selectedVendor]
+  );
+
+  const rankCounts = useMemo(() => {
+    const counts: Record<1 | 2 | 3 | 4, number> = { 1: 0, 2: 0, 3: 0, 4: 0 };
+    for (const item of vendorItems) {
+      if (item.rank && item.rank >= 1 && item.rank <= 4) {
+        counts[item.rank] += 1;
+      }
+    }
+    return counts;
+  }, [vendorItems]);
+
+  const availableGroups = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const item of vendorItems) {
+      if (selectedRank === "ALL" || item.rank === selectedRank) {
+        counts.set(item.shopGroup, (counts.get(item.shopGroup) || 0) + 1);
+      }
+    }
+    return VENDOR_SHOP_GROUPS.filter(
+      (g) => g.id === "ALL" || (counts.get(g.id) || 0) > 0
+    ).map((g) => ({
+      ...g,
+      count:
+        g.id === "ALL"
+          ? vendorItems.filter(
+              (i) => selectedRank === "ALL" || i.rank === selectedRank
+            ).length
+          : counts.get(g.id) || 0,
+    }));
+  }, [vendorItems, selectedRank]);
+
+  useEffect(() => {
+    if (
+      selectedGroup !== "ALL" &&
+      !availableGroups.some((g) => g.id === selectedGroup)
+    ) {
+      setSelectedGroup("ALL");
+    }
+  }, [availableGroups, selectedGroup]);
+
+  // Hydrate ALL distinct datasets stocked by the currently selected vendor in clean batches
+  useEffect(() => {
+    let cancelled = false;
+    const distinctCats = Array.from(
+      new Set(vendorItems.map((i) => i.rawCategory).filter(Boolean))
+    );
+    const missing = distinctCats.filter((cat) => !enrichmentByCategory[cat]);
+    if (missing.length === 0) return;
+
+    const loadAllVendorCats = async () => {
+      setLoadingCount((c) => c + 1);
+      try {
+        const batchSize = 4;
+        for (let i = 0; i < missing.length; i += batchSize) {
+          if (cancelled) return;
+          const slice = missing.slice(i, i + batchSize);
+          const settled = await Promise.allSettled(
+            slice.map(async (cat) => {
+              const records = await fetchCategoryDataset(cat);
+              return { cat, parsed: extractEnrichmentFromRecords(records) };
+            })
+          );
+          if (cancelled) return;
+          setEnrichmentByCategory((prev) => {
+            const next = { ...prev };
+            for (const res of settled) {
+              if (res.status === "fulfilled") {
+                next[res.value.cat] = res.value.parsed;
+              }
+            }
+            return next;
+          });
+        }
+      } finally {
+        if (!cancelled) {
+          setLoadingCount((c) => Math.max(0, c - 1));
+        }
+      }
+    };
+
+    void loadAllVendorCats();
+    return () => {
+      cancelled = true;
+    };
+  }, [vendorItems]);
+
+  const getEnrichment = (item: VendorShopItem): VendorItemEnrichment | null => {
+    const map = enrichmentByCategory[item.rawCategory];
+    if (!map) return null;
+    return map.get(item.itemName.toLowerCase()) || null;
+  };
+
+  const filteredItems = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    const list = vendorItems.filter((item) => {
+      if (selectedRank !== "ALL" && item.rank !== selectedRank) return false;
+      if (selectedGroup !== "ALL" && item.shopGroup !== selectedGroup) {
+        return false;
+      }
+      if (!q) return true;
+      const enriched = getEnrichment(item);
+      return (
+        item.itemName.toLowerCase().includes(q) ||
+        item.type.toLowerCase().includes(q) ||
+        item.shopGroup.toLowerCase().includes(q) ||
+        (enriched?.manufacturer || "").toLowerCase().includes(q) ||
+        (enriched?.description || "").toLowerCase().includes(q)
+      );
+    });
+
+    if (sortMode === "default") return list;
+    return [...list].sort((a, b) => {
+      if (sortMode === "name-asc") {
+        return a.itemName.localeCompare(b.itemName);
+      }
+      const priceA =
+        parseUsdPrice(a.buyPrice || getEnrichment(a)?.buyPrice) ??
+        (sortMode === "price-asc" ? Number.MAX_SAFE_INTEGER : -1);
+      const priceB =
+        parseUsdPrice(b.buyPrice || getEnrichment(b)?.buyPrice) ??
+        (sortMode === "price-asc" ? Number.MAX_SAFE_INTEGER : -1);
+      return sortMode === "price-asc"
+        ? priceA - priceB || a.itemName.localeCompare(b.itemName)
+        : priceB - priceA || a.itemName.localeCompare(b.itemName);
+    });
+  }, [
+    vendorItems,
+    selectedRank,
+    selectedGroup,
+    searchQuery,
+    sortMode,
+    enrichmentByCategory,
+  ]);
+
+  const rankSections = useMemo(() => {
+    if (sortMode !== "default") {
+      return [
+        {
+          rank: selectedRank === "ALL" ? 0 : selectedRank,
+          title:
+            selectedRank === "ALL"
+              ? "All Ranks (Sorted)"
+              : `Rank ${selectedRank}`,
+          items: filteredItems,
+        },
+      ];
+    }
+    if (selectedRank !== "ALL") {
+      return [
+        {
+          rank: selectedRank,
+          title: `Loyalty Rank ${selectedRank}`,
+          items: filteredItems,
+        },
+      ];
+    }
+    const groups: { rank: number; title: string; items: VendorShopItem[] }[] =
+      [];
+    ([1, 2, 3, 4] as const).forEach((rk) => {
+      const list = filteredItems.filter((i) => i.rank === rk);
+      if (list.length > 0) {
+        groups.push({
+          rank: rk,
+          title: `Loyalty Rank ${rk}`,
+          items: list,
+        });
+      }
+    });
+    const unlisted = filteredItems.filter((i) => i.rank === null);
+    if (unlisted.length > 0) {
+      groups.push({ rank: 9, title: "Special Stock", items: unlisted });
+    }
+    return groups;
+  }, [filteredItems, selectedRank, sortMode]);
+
+  const inspectedEnrichment = inspectedItem ? getEnrichment(inspectedItem) : null;
+  const inspectedBuyPrice = inspectedItem
+    ? inspectedItem.buyPrice || inspectedEnrichment?.buyPrice || null
+    : null;
+
+  return (
+    <div className="flex-1 min-h-0 flex flex-col bg-[#0b0f16]">
+      {/* Storefront Header & Controls */}
+      <div className="border-b border-white/[0.08] bg-[#0d121b] shrink-0">
+        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 py-4 space-y-3.5">
+          {/* Vendor Selector Roster */}
+          <div className="flex items-center gap-2 overflow-x-auto pb-1">
+            {vendors.map((vendor) => {
+              const active =
+                selectedVendor.toLowerCase() === vendor.name.toLowerCase();
+              const count = vendorCounts.get(vendor.name.toLowerCase()) || 0;
+              return (
+                <button
+                  key={vendor.id}
+                  type="button"
+                  onClick={() => {
+                    setSelectedVendor(vendor.name);
+                    setSearchQuery("");
+                    setInspectedItem(null);
+                  }}
+                  className={`min-h-[52px] px-3.5 py-2 rounded-xl border text-left transition-all shrink-0 flex items-center gap-3 ${
+                    active
+                      ? "bg-[#1a2232] border-[#e5a93c]/75 text-[#f8fafc] shadow-[0_6px_20px_rgba(0,0,0,0.45)]"
+                      : "bg-[#121822] border-white/[0.08] text-[#9fb0c4] hover:text-white hover:border-white/[0.2]"
+                  }`}
+                >
+                  {vendor.image && !failedImgUrls[vendor.image] ? (
+                    <img
+                      src={vendor.image}
+                      alt={vendor.name}
+                      referrerPolicy="no-referrer"
+                      onError={() => markImgFailed(vendor.image!)}
+                      className="w-9 h-9 rounded-lg object-cover border border-white/[0.12] bg-[#080c12] shrink-0"
+                      loading="lazy"
+                    />
+                  ) : (
+                    <div className="w-9 h-9 rounded-lg bg-[#080c12] border border-white/[0.08] flex items-center justify-center shrink-0">
+                      <User className="w-4 h-4 text-[#8899ae]" />
+                    </div>
+                  )}
+                  <div>
+                    <div className="font-display text-[13.5px] font-semibold leading-tight whitespace-nowrap">
+                      {vendor.name}
+                    </div>
+                    <div className="font-mono-tabular text-[11px] text-[#8899ae] mt-0.5">
+                      {count} items
+                    </div>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Active Vendor Banner + Search / Sort / Rank Controls */}
+          <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-3">
+            {activeVendorProfile && (
+              <div className="flex items-center gap-3.5 min-w-0">
+                {activeVendorProfile.image &&
+                !failedImgUrls[activeVendorProfile.image] ? (
+                  <img
+                    src={activeVendorProfile.image}
+                    alt={activeVendorProfile.name}
+                    referrerPolicy="no-referrer"
+                    onError={() => markImgFailed(activeVendorProfile.image!)}
+                    className="w-11 h-11 rounded-xl object-cover border border-white/[0.14] shrink-0 hidden sm:block"
+                  />
+                ) : (
+                  <div className="w-11 h-11 rounded-xl bg-[#121822] border border-white/[0.08] hidden sm:flex items-center justify-center shrink-0">
+                    <ShoppingBag className="w-5 h-5 text-[#e5a93c]" />
+                  </div>
+                )}
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h2 className="font-display text-lg font-semibold text-[#f8fafc] leading-tight">
+                      {activeVendorProfile.name} Armory &amp; Supply
+                    </h2>
+                    {activeVendorProfile.fullName !== "Unknown" && (
+                      <span className="text-xs text-[#8899ae]">
+                        · {activeVendorProfile.fullName}
+                      </span>
+                    )}
+                    {loadingCount > 0 && (
+                      <span className="inline-flex items-center gap-1.5 text-xs text-[#38bdf8]">
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        Loading prices &amp; specs...
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-[13px] text-[#a9b8ca] mt-0.5 line-clamp-1">
+                    {activeVendorProfile.sells || activeVendorProfile.specialty}
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* Rank Filter + Search + Sort */}
+            <div className="flex flex-wrap items-center gap-2.5">
+              <div className="flex items-center rounded-xl bg-[#070a0f] border border-white/[0.08] p-1 overflow-x-auto max-w-full">
+                {(
+                  [
+                    { id: "ALL" as const, label: `All (${vendorItems.length})` },
+                    { id: 1 as const, label: `Rank 1 (${rankCounts[1]})` },
+                    { id: 2 as const, label: `Rank 2 (${rankCounts[2]})` },
+                    { id: 3 as const, label: `Rank 3 (${rankCounts[3]})` },
+                    { id: 4 as const, label: `Rank 4 (${rankCounts[4]})` },
+                  ]
+                ).map((rk) => (
+                  <button
+                    key={String(rk.id)}
+                    type="button"
+                    onClick={() => setSelectedRank(rk.id)}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors whitespace-nowrap shrink-0 ${
+                      selectedRank === rk.id
+                        ? "bg-[#1c2433] text-[#e5a93c] shadow-sm"
+                        : "text-[#94a3b8] hover:text-white"
+                    }`}
+                  >
+                    {rk.label}
+                  </button>
+                ))}
+              </div>
+
+              <div className="relative min-w-[210px] flex-1 sm:flex-none sm:w-64">
+                <Search className="w-4 h-4 text-[#7b8ca1] absolute left-3 top-1/2 -translate-y-1/2" />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder={`Search ${selectedVendor} stock...`}
+                  className="w-full min-h-[38px] bg-[#070a0f] border border-white/[0.09] rounded-xl pl-9 pr-3 py-1.5 text-[13px] text-[#f1f5f9] placeholder:text-[#66778b] focus:outline-none focus:border-[#e5a93c] transition-colors"
+                />
+              </div>
+
+              <div className="relative flex items-center">
+                <ArrowUpDown className="w-3.5 h-3.5 text-[#8899ae] absolute left-3 pointer-events-none" />
+                <select
+                  aria-label="Sort vendor inventory"
+                  value={sortMode}
+                  onChange={(e) => setSortMode(e.target.value as SortMode)}
+                  className="min-h-[38px] bg-[#121822] border border-white/[0.09] rounded-xl pl-8 pr-3 py-1.5 text-xs text-[#f1f5f9] focus:outline-none focus:border-[#e5a93c]"
+                >
+                  <option value="default">Sort: Loyalty Rank</option>
+                  <option value="price-asc">Price: Low to High</option>
+                  <option value="price-desc">Price: High to Low</option>
+                  <option value="name-asc">Name: A to Z</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          {/* Category Filter Tabs */}
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5">
+            {availableGroups.map((grp) => {
+              const active = selectedGroup === grp.id;
+              return (
+                <button
+                  key={grp.id}
+                  type="button"
+                  onClick={() => setSelectedGroup(grp.id)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors whitespace-nowrap shrink-0 ${
+                    active
+                      ? "bg-[#1a2232] border-[#38bdf8]/70 text-[#7dd3fc]"
+                      : "bg-[#121822] border-white/[0.07] text-[#9fb0c4] hover:text-white hover:border-white/[0.16]"
+                  }`}
+                >
+                  {grp.label}{" "}
+                  <span className="font-mono-tabular text-[11px] opacity-75 ml-0.5">
+                    {grp.count}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
+      {/* Full-Screen Scrollable Product Catalog Grid */}
+      <div className="flex-1 overflow-y-auto">
+        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 py-5 space-y-6">
+          {shopItems.length === 0 ? (
+            <div className="rounded-xl border border-white/[0.08] bg-[#121822] p-10 text-center text-sm text-[#a9b8ca]">
+              {isLoadingApi
+                ? "Loading vendor catalog..."
+                : "Vendor inventory is not loaded yet. Click Sync Data in the top bar."}
+            </div>
+          ) : filteredItems.length === 0 ? (
+            <div className="rounded-xl border border-white/[0.08] bg-[#121822] p-10 text-center text-sm text-[#a9b8ca]">
+              No {selectedVendor} items match the selected rank, category, or search term.
+            </div>
+          ) : (
+            rankSections.map((section) => (
+              <section key={section.rank} className="space-y-3.5">
+                <div className="flex items-center justify-between border-b border-white/[0.07] pb-2.5">
+                  <h3 className="font-display text-base font-semibold text-[#e5a93c]">
+                    {activeVendorProfile?.name} · {section.title}
+                  </h3>
+                  <span className="font-mono-tabular text-xs text-[#8899ae]">
+                    {section.items.length} products
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3.5">
+                  {section.items.map((item) => {
+                    const enriched = getEnrichment(item);
+                    const buyPrice = item.buyPrice || enriched?.buyPrice || null;
+                    const imgSrc = enriched?.image || null;
+                    const imgBroken = !imgSrc || !!failedImgUrls[imgSrc];
+                    const highlightSpec = enriched?.specs[0] || null;
+
+                    return (
+                      <article
+                        key={item.id}
+                        onClick={() => setInspectedItem(item)}
+                        className="group rounded-xl border border-white/[0.08] bg-[#121822] hover:border-[#e5a93c]/55 hover:bg-[#151c28] transition-all overflow-hidden flex flex-col cursor-pointer shadow-sm hover:shadow-[0_12px_28px_rgba(0,0,0,0.45)]"
+                      >
+                        {/* Product Showcase Image Stage */}
+                        <div className="relative h-36 bg-gradient-to-b from-[#0b1017] to-[#080b11] border-b border-white/[0.06] flex items-center justify-center p-4 overflow-hidden">
+                          <span className="absolute top-2.5 left-2.5 text-[11px] font-medium px-2 py-0.5 rounded-md bg-black/55 border border-white/[0.08] text-[#cbd5e1]">
+                            {item.rank ? `Rank ${item.rank}` : "Special"}
+                          </span>
+
+                          {enriched?.gridSize && (
+                            <span className="absolute top-2.5 right-2.5 font-mono-tabular text-[11px] px-2 py-0.5 rounded-md bg-black/55 border border-white/[0.08] text-[#94a3b8]">
+                              {enriched.gridSize}
+                            </span>
+                          )}
+
+                          {!imgBroken ? (
+                            <img
+                              src={imgSrc}
+                              alt={item.itemName}
+                              referrerPolicy="no-referrer"
+                              onError={() => markImgFailed(imgSrc)}
+                              loading="lazy"
+                              className="max-h-24 w-auto object-contain group-hover:scale-105 transition-transform duration-200 drop-shadow-[0_8px_18px_rgba(0,0,0,0.75)]"
+                            />
+                          ) : (
+                            <div className="flex flex-col items-center gap-1.5 text-[#526277]">
+                              <Package className="w-8 h-8" />
+                              <span className="text-[11px]">{item.type}</span>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Product Info & Pricing */}
+                        <div className="p-3.5 flex-1 flex flex-col justify-between gap-2.5">
+                          <div>
+                            <h4 className="font-display text-[14.5px] font-semibold text-[#f8fafc] leading-snug line-clamp-2 group-hover:text-[#e5a93c] transition-colors">
+                              {item.itemName}
+                            </h4>
+                            <div className="text-xs text-[#9fb0c4] mt-1 truncate">
+                              <span>{item.type}</span>
+                              {enriched?.manufacturer && (
+                                <>
+                                  <span className="mx-1.5 text-white/[0.2]">·</span>
+                                  <span>{enriched.manufacturer}</span>
+                                </>
+                              )}
+                            </div>
+                            {highlightSpec && (
+                              <div className="text-xs text-[#7dd3fc] mt-1.5 truncate">
+                                {highlightSpec.label}: {highlightSpec.value}
+                              </div>
+                            )}
+                          </div>
+
+                          <div className="pt-2.5 border-t border-white/[0.06] flex items-center justify-between gap-2">
+                            {buyPrice ? (
+                              <div>
+                                <div className="text-[11px] text-[#8899ae]">
+                                  Buy Price
+                                </div>
+                                <div className="font-mono-tabular text-[15px] font-bold text-[#34d399]">
+                                  {buyPrice}
+                                </div>
+                              </div>
+                            ) : enriched?.sellPrice ? (
+                              <div>
+                                <div className="text-[11px] text-[#8899ae]">
+                                  Sell Value
+                                </div>
+                                <div className="font-mono-tabular text-[13.5px] font-semibold text-[#e5a93c]">
+                                  {enriched.sellPrice}
+                                </div>
+                              </div>
+                            ) : (
+                              <div>
+                                <div className="text-[11px] text-[#8899ae]">
+                                  Availability
+                                </div>
+                                <div className="text-xs font-medium text-[#cbd5e1]">
+                                  {item.rank ? `Rank ${item.rank} Stock` : "Vendor Stock"}
+                                </div>
+                              </div>
+                            )}
+
+                            <span className="text-xs font-medium text-[#38bdf8] group-hover:translate-x-0.5 transition-transform">
+                              Inspect
+                            </span>
+                          </div>
+                        </div>
+                      </article>
+                    );
+                  })}
+                </div>
+              </section>
+            ))
+          )}
+        </div>
+      </div>
+
+      {/* Product Detail Inspection Modal */}
+      {inspectedItem && (
+        <div
+          className="fixed inset-0 z-[2100] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4"
+          onClick={() => setInspectedItem(null)}
+        >
+          <div
+            className="max-w-xl w-full rounded-2xl bg-[#111722] border border-white/[0.14] shadow-2xl overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="px-5 py-4 border-b border-white/[0.08] flex items-start justify-between gap-3">
+              <div>
+                <div className="text-xs font-medium text-[#e5a93c]">
+                  {inspectedItem.vendor} ·{" "}
+                  {inspectedItem.rank
+                    ? `Loyalty Rank ${inspectedItem.rank}`
+                    : "Special Stock"}{" "}
+                  · {inspectedItem.type}
+                </div>
+                <h3 className="font-display text-lg font-semibold text-[#f8fafc] mt-0.5">
+                  {inspectedItem.itemName}
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setInspectedItem(null)}
+                aria-label="Close item details"
+                className="p-1.5 rounded-lg text-[#94a3b8] hover:text-white hover:bg-white/[0.06]"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="p-5 space-y-4 max-h-[80vh] overflow-y-auto">
+              {/* Studio Product Showcase */}
+              <div className="h-48 rounded-xl bg-[#080c12] border border-white/[0.08] flex items-center justify-center p-4">
+                {inspectedEnrichment?.image &&
+                !failedImgUrls[inspectedEnrichment.image] ? (
+                  <img
+                    src={inspectedEnrichment.image}
+                    alt={inspectedItem.itemName}
+                    referrerPolicy="no-referrer"
+                    onError={() => markImgFailed(inspectedEnrichment.image!)}
+                    className="max-h-40 w-auto object-contain drop-shadow-[0_10px_24px_rgba(0,0,0,0.85)]"
+                  />
+                ) : (
+                  <div className="flex flex-col items-center gap-2 text-[#526277]">
+                    <Package className="w-10 h-10" />
+                    <span className="text-xs">{inspectedItem.type}</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Price & Core Metadata Bar */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                <div className="rounded-xl bg-[#0b1017] border border-white/[0.07] p-3">
+                  <div className="text-[11px] text-[#8899ae]">Buy Price</div>
+                  <div className="font-mono-tabular text-base font-bold text-[#34d399] mt-0.5">
+                    {inspectedBuyPrice || "Unlisted"}
+                  </div>
+                </div>
+                <div className="rounded-xl bg-[#0b1017] border border-white/[0.07] p-3">
+                  <div className="text-[11px] text-[#8899ae]">Sell Value</div>
+                  <div className="font-mono-tabular text-sm font-semibold text-[#e5a93c] mt-0.5">
+                    {inspectedEnrichment?.sellPrice || "—"}
+                  </div>
+                </div>
+                <div className="rounded-xl bg-[#0b1017] border border-white/[0.07] p-3">
+                  <div className="text-[11px] text-[#8899ae]">Grid Size</div>
+                  <div className="font-mono-tabular text-sm font-semibold text-[#f1f5f9] mt-0.5">
+                    {inspectedEnrichment?.gridSize || "—"}
+                  </div>
+                </div>
+                <div className="rounded-xl bg-[#0b1017] border border-white/[0.07] p-3">
+                  <div className="text-[11px] text-[#8899ae]">Weight</div>
+                  <div className="font-mono-tabular text-sm font-semibold text-[#f1f5f9] mt-0.5">
+                    {inspectedEnrichment?.weight || "—"}
+                  </div>
+                </div>
+              </div>
+
+              {/* Technical Specifications */}
+              {inspectedEnrichment &&
+                (inspectedEnrichment.specs.length > 0 ||
+                  inspectedEnrichment.manufacturer) && (
+                  <div className="rounded-xl bg-[#0b1017] border border-white/[0.07] p-4 space-y-2.5">
+                    <div className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#38bdf8]">
+                      <Sparkles className="w-3.5 h-3.5" />
+                      Specifications
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2 text-[13px]">
+                      {inspectedEnrichment.manufacturer && (
+                        <div className="flex justify-between gap-2">
+                          <span className="text-[#8899ae]">Manufacturer</span>
+                          <span className="text-[#f1f5f9] font-medium text-right">
+                            {inspectedEnrichment.manufacturer}
+                          </span>
+                        </div>
+                      )}
+                      {inspectedEnrichment.specs.map((sp) => (
+                        <div
+                          key={sp.label}
+                          className="flex justify-between gap-2"
+                        >
+                          <span className="text-[#8899ae]">{sp.label}</span>
+                          <span className="font-mono-tabular text-[#f1f5f9] font-medium text-right">
+                            {sp.value}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+              {inspectedEnrichment?.description && (
+                <p className="text-[13px] text-[#c4d0df] leading-relaxed rounded-xl bg-white/[0.025] border border-white/[0.06] p-3.5">
+                  {inspectedEnrichment.description}
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

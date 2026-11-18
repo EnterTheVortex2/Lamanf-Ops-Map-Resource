@@ -5,8 +5,8 @@
 
 @layer base {
   :root {
-    --font-display: 'Plus Jakarta Sans', system-ui, sans-serif;
-    --font-sans: 'Public Sans', system-ui, sans-serif;
+    --font-display: 'Outfit', system-ui, sans-serif;
+    --font-sans: 'Manrope', system-ui, sans-serif;
     --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
   }
 
@@ -17,15 +17,17 @@
     width: 100%;
     margin: 0;
     padding: 0;
-    background-color: #0b0e12;
-    color: #e6ecf2;
+    background-color: #090c11;
+    color: #e8eef5;
     font-family: var(--font-sans);
-    letter-spacing: 0.01em;
+    letter-spacing: 0.005em;
+    -webkit-font-smoothing: antialiased;
   }
 }
 
 .font-display {
   font-family: var(--font-display);
+  letter-spacing: -0.01em;
 }
 
 .font-mono-tabular {
@@ -39,7 +41,7 @@
   height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #0b0e12;
+  background: transparent;
 }
 ::-webkit-scrollbar-thumb {
   background: rgba(148, 163, 184, 0.22);
@@ -66,11 +68,12 @@
 
 .leaflet-popup-content-wrapper,
 .leaflet-popup-tip {
-  background: rgba(14, 19, 26, 0.97) !important;
-  color: #e6ecf2 !important;
-  border: 1px solid rgba(148, 163, 184, 0.26) !important;
-  border-radius: 6px !important;
-  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.78) !important;
+  background: rgba(13, 18, 26, 0.96) !important;
+  backdrop-filter: blur(10px) !important;
+  color: #e8eef5 !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  border-radius: 10px !important;
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.8) !important;
 }
 
 .leaflet-popup-close-button {
@@ -81,12 +84,13 @@
 }
 
 .leaflet-control-zoom a {
-  background-color: rgba(12, 16, 22, 0.92) !important;
-  color: #cbd5e1 !important;
-  border-color: rgba(148, 163, 184, 0.2) !important;
+  background-color: rgba(13, 18, 25, 0.9) !important;
+  backdrop-filter: blur(8px) !important;
+  color: #d4deea !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
 }
 .leaflet-control-zoom a:hover {
-  background-color: rgba(24, 31, 41, 0.98) !important;
+  background-color: rgba(25, 33, 45, 0.98) !important;
   color: #e5a93c !important;
 }
 
@@ -96,12 +100,29 @@
   pointer-events: auto !important;
 }
 .gzw-map-label:hover {
-  z-index: 900 !important;
+  z-index: 950 !important;
 }
 .gzw-text-shadow {
   text-shadow:
     0 1px 2px rgba(0, 0, 0, 0.98),
-    0 0 6px rgba(0, 0, 0, 0.92),
-    0 0 14px rgba(0, 0, 0, 0.8);
+    0 0 8px rgba(0, 0, 0, 0.95);
 }
+
+.gzw-poi-plaque {
+  transition: scale 0.16s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.16s ease, box-shadow 0.16s ease;
+}
+.gzw-poi-plaque:hover {
+  scale: 1.04;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.88), 0 0 0 1px rgba(255, 255, 255, 0.22) !important;
+}
+
+.gzw-subpoi-chip {
+  transition: scale 0.15s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.15s ease, background-color 0.15s ease;
+}
+.gzw-subpoi-chip:hover {
+  scale: 1.04;
+  background-color: rgba(15, 21, 30, 0.96) !important;
+  border-color: rgba(229, 169, 60, 0.7) !important;
+}
+
 

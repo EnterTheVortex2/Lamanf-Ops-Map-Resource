@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import L from "leaflet";
 import {
-  AlertTriangle,
   BookOpen,
+  Bookmark,
   Check,
   ChevronDown,
   Compass,
@@ -12,18 +12,26 @@ import {
   LocateFixed,
   MapPin,
   Navigation,
+  Pencil,
+  Ruler,
+  Search,
+  Trash2,
   X,
 } from "lucide-react";
 import {
   BLUE_CRATES_05,
   CHEMICAL_AREAS_05,
   DISASSEMBLY_SPAWNS_05,
+  FACTIONS,
   formatGridSquare,
   LAMANG_DIRECT_TILE_URL,
   LAMANG_POIS,
   LAMANG_TILE_URL,
   MAP_EXTENT,
+  parseGridInputToMeters,
   type CustomMapPin,
+  type FactionId,
+  type LamangPoi,
   type MapLayerKey,
 } from "../config/mapConfig";
 import {
@@ -35,6 +43,7 @@ import {
   resolveSpawnPointsForMaterial,
   type CatalogMaterial,
 } from "../utils/catalogBuilder";
+import type { GzwKeyDoorDef } from "../utils/keyBuilder";
 import type { GzwTaskDef } from "../utils/taskBuilder";
 import { ItemThumbnail } from "./ItemThumbnail";
 
@@ -42,6 +51,7 @@ interface TacticalMapPanelProps {
   catalog: CatalogMaterial[];
   customPins: CustomMapPin[];
   onAddPin: (pin: CustomMapPin) => void;
+  onUpdatePin: (pin: CustomMapPin) => void;
   onRemovePin: (pinId: string) => void;
   tickedMapMaterials: Record<string, boolean>;
   onToggleMapMaterial: (matKey: string, visible: boolean) => void;
@@ -51,6 +61,16 @@ interface TacticalMapPanelProps {
   onCloseInspect: () => void;
   inspectedTask: GzwTaskDef | null;
   onCloseInspectTask: () => void;
+  onSelectTask?: (task: GzwTaskDef) => void;
+  allTasks?: GzwTaskDef[];
+  selectedFaction: FactionId;
+  keysList?: GzwKeyDoorDef[];
+  ownedKeys?: Record<string, boolean>;
+  onToggleOwnedKey?: (keyId: string) => void;
+  inspectedKey?: GzwKeyDoorDef | null;
+  onSelectKey?: (keyDef: GzwKeyDoorDef) => void;
+  onCloseInspectKey?: () => void;
+  onSelectMaterial?: (mat: CatalogMaterial) => void;
   completedTasks?: Record<string, boolean>;
   onToggleTaskComplete?: (taskId: string) => void;
   apiRecords: NormalizedApiRecord[];
@@ -120,10 +140,20 @@ function createDotIcon(color: string, size = 8): L.DivIcon {
   });
 }
 
+function formatBearing(dx: number, dy: number): string {
+  // Note: y increases northwards in EPSG:3857
+  const rad = Math.atan2(dx, dy);
+  const deg = ((rad * 180) / Math.PI + 360) % 360;
+  const dirs = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"];
+  const card = dirs[Math.round(deg / 45) % 8];
+  return `${Math.round(deg).toString().padStart(3, "0")}° ${card}`;
+}
+
 export function TacticalMapPanel({
   catalog,
   customPins,
   onAddPin,
+  onUpdatePin,
   onRemovePin,
   tickedMapMaterials,
   onToggleMapMaterial,
@@ -133,6 +163,16 @@ export function TacticalMapPanel({
   onCloseInspect,
   inspectedTask,
   onCloseInspectTask,
+  onSelectTask,
+  allTasks = [],
+  selectedFaction,
+  keysList = [],
+  ownedKeys = {},
+  onToggleOwnedKey,
+  inspectedKey = null,
+  onSelectKey,
+  onCloseInspectKey,
+  onSelectMaterial,
   completedTasks = {},
   onToggleTaskComplete,
   apiRecords,
@@ -146,11 +186,14 @@ export function TacticalMapPanel({
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<L.Map | null>(null);
   const taskPinsLayerRef = useRef<L.LayerGroup>(L.layerGroup());
+  const keyFocusLayerRef = useRef<L.LayerGroup>(L.layerGroup());
+  const measureLayerRef = useRef<L.LayerGroup>(L.layerGroup());
   const layersRef = useRef<Record<MapLayerKey, L.LayerGroup>>({
     blueCrates: L.layerGroup(),
     pcSpawns: L.layerGroup(),
     chemicalAreas: L.layerGroup(),
     disassemblySpawns: L.layerGroup(),
+    lockedDoors: L.layerGroup(),
     tickedSpawns: L.layerGroup(),
     apiLoot: L.layerGroup(),
     customPins: L.layerGroup(),
@@ -164,6 +207,7 @@ export function TacticalMapPanel({
     pcSpawns: true,
     chemicalAreas: false,
     disassemblySpawns: false,
+    lockedDoors: true,
     tickedSpawns: true,
     apiLoot: false,
     customPins: true,
@@ -174,22 +218,65 @@ export function TacticalMapPanel({
 
   const [layersOpen, setLayersOpen] = useState(false);
   const [jumpOpen, setJumpOpen] = useState(false);
+  const [pinsDrawerOpen, setPinsDrawerOpen] = useState(false);
+  const [pinsFilterTab, setPinsFilterTab] = useState<"user" | "all">("user");
+  const [mapSearchQuery, setMapSearchQuery] = useState("");
+  const [mapSearchOpen, setMapSearchOpen] = useState(false);
+  const [inspectedPoi, setInspectedPoi] = useState<LamangPoi | null>(null);
+  const [measureMode, setMeasureMode] = useState(false);
+  const [measurePoints, setMeasurePoints] = useState<
+    { x: number; y: number; grid: string }[]
+  >([]);
   const [cursorCoords, setCursorCoords] = useState({ x: 7000, y: 4200 });
   const [zoomLevel, setZoomLevel] = useState(14);
   const [capturedCoords, setCapturedCoords] = useState<{ x: number; y: number } | null>(null);
+  const [editingPin, setEditingPin] = useState<CustomMapPin | null>(null);
+  const [repositioningPin, setRepositioningPin] = useState(false);
   const [pinMaterialId, setPinMaterialId] = useState("");
   const [pinLayer, setPinLayer] = useState<"customPins" | "blueCrates" | "pcSpawns">("customPins");
   const [pinNote, setPinNote] = useState("");
   const [mapLightbox, setMapLightbox] = useState<{ src: string; title: string } | null>(null);
+  const markerByPinIdRef = useRef<Map<string, L.Marker>>(new Map());
+  const pendingFocusPinRef = useRef<{ id: string; moved: boolean } | null>(null);
+  const zoomLevelRef = useRef(zoomLevel);
+  zoomLevelRef.current = zoomLevel;
 
   useEffect(() => {
-    if (preselectedPinMaterialId) {
+    if (preselectedPinMaterialId && !editingPin) {
       setPinMaterialId(preselectedPinMaterialId);
     }
-  }, [preselectedPinMaterialId]);
+  }, [preselectedPinMaterialId, editingPin]);
 
   const pinDropModeRef = useRef(pinDropMode);
   pinDropModeRef.current = pinDropMode;
+  const measureModeRef = useRef(measureMode);
+  measureModeRef.current = measureMode;
+  const repositioningPinRef = useRef(repositioningPin);
+  repositioningPinRef.current = repositioningPin;
+
+  const startEditingPin = (pin: CustomMapPin) => {
+    setEditingPin(pin);
+    setCapturedCoords({ x: pin.x, y: pin.y });
+    setPinMaterialId(pin.materialId || "");
+    setPinLayer(pin.layer);
+    setPinNote(pin.label);
+    setRepositioningPin(false);
+    setLayersOpen(false);
+    setJumpOpen(false);
+    setMapSearchOpen(false);
+  };
+  const startEditingPinRef = useRef(startEditingPin);
+  startEditingPinRef.current = startEditingPin;
+
+  const openZoneBriefing = (poi: LamangPoi) => {
+    onCloseInspect();
+    onCloseInspectTask();
+    onCloseInspectKey?.();
+    setInspectedPoi(poi);
+    setMapSearchOpen(false);
+    setJumpOpen(false);
+    setLayersOpen(false);
+  };
 
   const fitIslandView = () => {
     mapRef.current?.fitBounds(
@@ -259,6 +346,8 @@ export function TacticalMapPanel({
       layersRef.current[key].addTo(map);
     });
     taskPinsLayerRef.current.addTo(map);
+    keyFocusLayerRef.current.addTo(map);
+    measureLayerRef.current.addTo(map);
 
     map.on("mousemove", (e: L.LeafletMouseEvent) => {
       setCursorCoords(fromLatLng(e.latlng));
@@ -271,9 +360,29 @@ export function TacticalMapPanel({
     map.on("click", (e: L.LeafletMouseEvent) => {
       setLayersOpen(false);
       setJumpOpen(false);
-      if (!pinDropModeRef.current) return;
+      setMapSearchOpen(false);
+
       const { x, y } = fromLatLng(e.latlng);
       const grid = formatGridSquare(x, y);
+
+      if (measureModeRef.current) {
+        setMeasurePoints((prev) =>
+          prev.length >= 2 ? [{ x, y, grid }] : [...prev, { x, y, grid }]
+        );
+        return;
+      }
+
+      if (repositioningPinRef.current) {
+        setCapturedCoords({ x, y });
+        setRepositioningPin(false);
+        onNotify(`Moved pin position to Grid ${grid} (${x}, ${y})`);
+        return;
+      }
+
+      if (!pinDropModeRef.current) return;
+      setEditingPin(null);
+      setPinNote("");
+      setPinLayer("customPins");
       setCapturedCoords({ x, y });
       if (navigator.clipboard?.writeText) {
         navigator.clipboard.writeText(`${x}, ${y}`).catch(() => {});
@@ -375,13 +484,109 @@ export function TacticalMapPanel({
         const firstCoord = inspectedTask.exactCoords[0];
         mapRef.current.flyTo(toLatLng(firstCoord.x, firstCoord.y), 16.5, { duration: 0.65 });
       } else if (inspectedTask.matchedPois.length > 0) {
-        const first = inspectedTask.matchedPois[0];
-        mapRef.current.flyTo(toLatLng(first.x, first.y), 16, { duration: 0.65 });
+        const starterTown =
+          selectedFaction !== "ALL"
+            ? FACTIONS[selectedFaction].starterTown
+            : null;
+        const preferred =
+          (starterTown &&
+            inspectedTask.matchedPois.find(
+              (p) =>
+                p.name === starterTown || p.parentRegion === starterTown
+            )) ||
+          inspectedTask.matchedPois[0];
+        mapRef.current.flyTo(toLatLng(preferred.x, preferred.y), 16, { duration: 0.65 });
       } else {
         fitIslandView();
       }
     }
-  }, [inspectedTask]);
+  }, [inspectedTask, selectedFaction]);
+
+  // Render & fly to inspected Key / Locked Door
+  useEffect(() => {
+    const layer = keyFocusLayerRef.current;
+    layer.clearLayers();
+    if (!inspectedKey) return;
+
+    const marker = L.marker(toLatLng(inspectedKey.x, inspectedKey.y), {
+      icon: createTargetPinIcon(
+        inspectedKey.kind === "Keycard" ? "#38bdf8" : "#e5a93c",
+        "K",
+        true
+      ),
+      zIndexOffset: 920,
+    });
+    marker.bindPopup(`
+      <div style="min-width:205px;">
+        <div style="font-family:monospace;font-size:10px;color:#e5a93c;font-weight:700;">${escapeHtml(inspectedKey.kind.toUpperCase())} · LOCKED DOOR</div>
+        <div style="font-weight:700;font-size:13px;margin:2px 0;">${escapeHtml(inspectedKey.name)}</div>
+        <div style="font-size:11px;color:#cbd5e1;">${escapeHtml(inspectedKey.usage)}</div>
+        <div style="font-family:monospace;font-size:10px;color:#38bdf8;margin-top:4px;">Grid ${escapeHtml(inspectedKey.grid)} · ${escapeHtml(inspectedKey.sublocation || inspectedKey.region)}</div>
+      </div>
+    `);
+    marker.addTo(layer);
+
+    if (mapRef.current) {
+      mapRef.current.flyTo(toLatLng(inspectedKey.x, inspectedKey.y), 17, {
+        duration: 0.65,
+      });
+    }
+  }, [inspectedKey]);
+
+  // Render Distance & Bearing Measure Line
+  useEffect(() => {
+    const layer = measureLayerRef.current;
+    layer.clearLayers();
+    if (measurePoints.length === 0) return;
+
+    measurePoints.forEach((pt, idx) => {
+      L.marker(toLatLng(pt.x, pt.y), {
+        icon: createTargetPinIcon("#38bdf8", idx === 0 ? "A" : "B", false),
+        zIndexOffset: 950,
+      }).addTo(layer);
+    });
+
+    if (measurePoints.length === 2) {
+      const [a, b] = measurePoints;
+      const dist = Math.round(Math.hypot(b.x - a.x, b.y - a.y));
+      const bearing = formatBearing(b.x - a.x, b.y - a.y);
+      const sprintSec = Math.round(dist / 6.2);
+      const sprintLabel =
+        sprintSec >= 60
+          ? `~${Math.floor(sprintSec / 60)}m ${sprintSec % 60}s`
+          : `~${sprintSec}s`;
+
+      L.polyline([toLatLng(a.x, a.y), toLatLng(b.x, b.y)], {
+        color: "#38bdf8",
+        weight: 2.5,
+        dashArray: "6 6",
+        opacity: 0.9,
+      }).addTo(layer);
+
+      const midX = (a.x + b.x) / 2;
+      const midY = (a.y + b.y) / 2;
+      L.marker(toLatLng(midX, midY), {
+        icon: L.divIcon({
+          className: "gzw-map-label",
+          html: `<div style="
+            transform:translate(-50%,-50%);
+            white-space:nowrap;
+            background:rgba(10,14,20,0.94);
+            border:1px solid #38bdf8;
+            color:#eef3f8;
+            padding:3px 8px;
+            border-radius:4px;
+            font-family:'JetBrains Mono',monospace;
+            font-size:10px;
+            font-weight:700;
+            box-shadow:0 4px 12px rgba(0,0,0,0.75);
+          ">${dist} m · ${bearing} · ${sprintLabel}</div>`,
+          iconSize: [0, 0],
+        }),
+        zIndexOffset: 960,
+      }).addTo(layer);
+    }
+  }, [measurePoints]);
 
   // Render clean, borderless, zoom-gated Update 0.5 markers
   useEffect(() => {
@@ -398,128 +603,230 @@ export function TacticalMapPanel({
       const grid = formatGridSquare(poi.x, poi.y);
 
       if (poi.kind === "base" || poi.kind === "tier4" || poi.kind === "major") {
-        // Softly fade major region headers when deeply zoomed into building-level detail
-        const fadeAtCloseZoom = zoomLevel >= 17.5 ? 0.45 : 1;
+        // Softly fade major region plaques when deeply zoomed into building-level detail
+        const fadeAtCloseZoom = zoomLevel >= 17.5 ? 0.38 : 1;
         const isTier4 = poi.kind === "tier4";
         const isBase = poi.kind === "base";
+        const isTier3 = poi.tier === "Tier 3";
         const isExclusionCenter = poi.id === "poi-ground-zero";
-        const mainColor = isTier4 ? "#fca5a5" : isBase ? "#93c5fd" : "#f1f5f9";
-        const subColor = isTier4 ? "#ef4444" : isBase ? "#60a5fa" : "#e5a93c";
+        const activeFactionInfo =
+          selectedFaction !== "ALL" ? FACTIONS[selectedFaction] : null;
+        const isOwnFob = Boolean(
+          isBase && activeFactionInfo && poi.id === activeFactionInfo.baseId
+        );
+        const isRivalFob = Boolean(
+          isBase && activeFactionInfo && poi.id !== activeFactionInfo.baseId
+        );
+
+        const borderColor = isExclusionCenter
+          ? "rgba(239, 68, 68, 0.35)"
+          : isOwnFob && activeFactionInfo
+            ? activeFactionInfo.color
+            : isTier4
+              ? "rgba(248, 113, 113, 0.55)"
+              : isBase
+                ? "rgba(96, 165, 250, 0.45)"
+                : isTier3
+                  ? "rgba(229, 169, 60, 0.52)"
+                  : "rgba(203, 213, 225, 0.28)";
+
+        const dotColor = isOwnFob && activeFactionInfo
+          ? activeFactionInfo.color
+          : isTier4
+            ? "#ef4444"
+            : isBase
+              ? "#60a5fa"
+              : isTier3
+                ? "#e5a93c"
+                : "#94a3b8";
+
+        const titleColor = isExclusionCenter
+          ? "#fca5a5"
+          : isOwnFob
+            ? "#ffffff"
+            : isTier4
+              ? "#fee2e2"
+              : isBase
+                ? "#dbeafe"
+                : "#f8fafc";
+
+        const tierColor = isOwnFob && activeFactionInfo
+          ? activeFactionInfo.color
+          : isTier4
+            ? "#fca5a5"
+            : isBase
+              ? "#93c5fd"
+              : isTier3
+                ? "#fbbf24"
+                : "#cbd5e1";
+
+        const tierText = isOwnFob ? "YOUR FOB" : poi.tier;
+        const plaqueOpacity = isRivalFob
+          ? Math.min(fadeAtCloseZoom, 0.48)
+          : fadeAtCloseZoom;
+
+        const overviewOffsetTransform =
+          zoomLevel < 14.5
+            ? poi.name === "Hunter's Paradise"
+              ? "translate(-100%, -92%)"
+              : poi.name === "Midnight Sapphire"
+                ? "translate(-10%, -18%)"
+                : poi.name === "Sawmill"
+                  ? "translate(-100%, -95%)"
+                  : poi.name === "RLSL-1 Radio Observatory"
+                    ? "translate(-26%, 16%)"
+                    : "translate(-50%, -50%)"
+            : "translate(-50%, -50%)";
 
         const marker = L.marker(ll, {
+          zIndexOffset: isOwnFob ? 360 : isTier4 ? 320 : isBase ? 260 : 280,
           icon: L.divIcon({
             className: "gzw-map-label",
-            html: `<div class="gzw-text-shadow" style="
-              transform: translate(-50%, -50%);
-              text-align: center;
-              white-space: nowrap;
-              opacity: ${fadeAtCloseZoom};
-              pointer-events: auto;
-              cursor: pointer;
-            ">
-              <div style="
-                font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
-                font-size: ${
-                  isExclusionCenter
-                    ? "10px"
-                    : zoomLevel < 14.5
-                      ? isTier4
-                        ? "10.5px"
-                        : "9.5px"
-                      : isTier4
-                        ? "11.5px"
-                        : isBase
-                          ? "10px"
-                          : "10.5px"
-                };
-                font-weight: 700;
-                letter-spacing: ${zoomLevel < 14.5 ? "0.06em" : "0.09em"};
-                text-transform: uppercase;
-                color: ${mainColor};
-                line-height: 1.15;
-              ">${escapeHtml(poi.name)}</div>
-              <div style="
-                font-family: 'JetBrains Mono', monospace;
-                font-size: 9px;
-                font-weight: 600;
-                letter-spacing: 0.08em;
-                text-transform: uppercase;
-                color: ${subColor};
-                margin-top: 1px;
-              ">${escapeHtml(poi.tier)}</div>
-            </div>`,
+            html: isExclusionCenter
+              ? `<div class="gzw-text-shadow" style="
+                  transform: translate(-50%, -50%);
+                  text-align: center;
+                  white-space: nowrap;
+                  opacity: ${zoomLevel >= 16 ? 0.5 : 0.85};
+                  cursor: pointer;
+                ">
+                  <div style="
+                    font-family: 'Outfit', system-ui, sans-serif;
+                    font-size: 11px;
+                    font-weight: 600;
+                    letter-spacing: 0.06em;
+                    color: ${titleColor};
+                  ">${escapeHtml(poi.name)}</div>
+                  <div style="
+                    font-family: 'Manrope', system-ui, sans-serif;
+                    font-size: 9.5px;
+                    font-weight: 600;
+                    color: #f87171;
+                  ">Exclusion Zone</div>
+                </div>`
+              : `<div class="gzw-poi-plaque" style="
+                  display: inline-flex;
+                  align-items: center;
+                  gap: 6px;
+                  transform: ${overviewOffsetTransform};
+                  white-space: nowrap;
+                  opacity: ${plaqueOpacity};
+                  padding: ${zoomLevel < 14.5 ? "2.5px 7.5px" : "4px 10px"};
+                  border-radius: 8px;
+                  background: rgba(9, 13, 20, 0.88);
+                  backdrop-filter: blur(6px);
+                  border: 1px solid ${borderColor};
+                  box-shadow: ${isOwnFob ? `0 0 18px ${dotColor}55, 0 4px 16px rgba(0,0,0,0.85)` : "0 4px 16px rgba(0, 0, 0, 0.82)"};
+                  cursor: pointer;
+                ">
+                  <span style="
+                    width: 6px;
+                    height: 6px;
+                    border-radius: 9999px;
+                    background: ${dotColor};
+                    box-shadow: 0 0 8px ${dotColor};
+                    flex-shrink: 0;
+                  "></span>
+                  <span style="
+                    font-family: 'Outfit', system-ui, sans-serif;
+                    font-size: ${zoomLevel < 14.5 ? (isTier4 ? "11.5px" : "11px") : isTier4 ? "13px" : "12.5px"};
+                    font-weight: 600;
+                    letter-spacing: 0.01em;
+                    color: ${titleColor};
+                    line-height: 1.15;
+                  ">${escapeHtml(poi.name)}</span>
+                  <span style="
+                    font-family: 'Manrope', system-ui, sans-serif;
+                    font-size: 10px;
+                    font-weight: 600;
+                    color: ${tierColor};
+                    padding-left: 5px;
+                    border-left: 1px solid rgba(255, 255, 255, 0.14);
+                    line-height: 1.1;
+                  ">${escapeHtml(tierText)}</span>
+                </div>`,
             iconSize: [0, 0],
           }),
         });
 
-        marker.bindPopup(
-          `<div style="min-width:210px;">
-            <div style="font-size:10px;font-family:monospace;color:${subColor};font-weight:700;text-transform:uppercase;">${escapeHtml(poi.tier)} · ${escapeHtml(poi.faction)}</div>
-            <div style="font-size:14px;font-weight:700;margin-top:2px;color:#f8fafc;">${escapeHtml(poi.name)}</div>
-            <div style="font-size:11px;color:#cbd5e1;margin-top:4px;">Nearest LZs: ${escapeHtml(poi.lz)}</div>
-            <div style="font-family:monospace;font-size:10px;color:#38bdf8;margin-top:4px;">Grid ${grid} · ${poi.x}, ${poi.y}</div>
-          </div>`
-        );
+        marker.on("click", () => openZoneBriefing(poi));
         marker.addTo(groups.poiLabels);
       } else if (poi.kind === "sublocation") {
-        // Dim compounds when user is inspecting a specific material so spawn pins stand out
-        const opacity = hasFocusedMaterial && zoomLevel < 17 ? 0.55 : 0.92;
+        // High-legibility micro-plaques when zoomed in so compounds never merge into terrain
+        const opacity = hasFocusedMaterial && zoomLevel < 17 ? 0.65 : 0.96;
         const isT4Sub = poi.tier === "Tier 4";
-        const dotColor = isT4Sub ? "#f87171" : "#94a3b8";
-        const textColor = isT4Sub ? "#fee2e2" : "#e2e8f0";
+        const dotColor = isT4Sub ? "#f87171" : "#38bdf8";
+        const borderColor = isT4Sub
+          ? "rgba(248, 113, 113, 0.42)"
+          : "rgba(148, 163, 184, 0.34)";
+        const textColor = isT4Sub ? "#fee2e2" : "#f1f5f9";
 
         const marker = L.marker(ll, {
+          zIndexOffset: 240,
           icon: L.divIcon({
             className: "gzw-map-label",
-            html: `<div class="gzw-text-shadow" style="
+            html: `<div class="gzw-subpoi-chip" style="
               display: inline-flex;
               align-items: center;
-              gap: 4px;
-              transform: translate(-4px, -50%);
+              gap: 6px;
+              transform: translate(-8px, -50%);
               white-space: nowrap;
               opacity: ${opacity};
+              padding: 3px 8px;
+              border-radius: 7px;
+              background: rgba(9, 13, 20, 0.88);
+              backdrop-filter: blur(5px);
+              border: 1px solid ${borderColor};
+              box-shadow: 0 3px 12px rgba(0, 0, 0, 0.8);
               cursor: pointer;
             ">
-              <span style="width:4px;height:4px;border-radius:9999px;background:${dotColor};flex-shrink:0;"></span>
               <span style="
-                font-family: 'Public Sans', system-ui, sans-serif;
-                font-size: 10px;
+                width: 6px;
+                height: 6px;
+                border-radius: 9999px;
+                background: ${dotColor};
+                box-shadow: 0 0 6px ${dotColor};
+                flex-shrink: 0;
+              "></span>
+              <span style="
+                font-family: 'Manrope', system-ui, sans-serif;
+                font-size: 11px;
                 font-weight: 600;
-                letter-spacing: 0.02em;
+                letter-spacing: 0.01em;
                 color: ${textColor};
               ">${escapeHtml(poi.name)}</span>
             </div>`,
             iconSize: [0, 0],
           }),
         });
-        marker.bindPopup(
-          `<div style="min-width:190px;">
-            <div style="font-size:10px;font-family:monospace;color:#38bdf8;font-weight:700;">${escapeHtml(poi.parentRegion || poi.tier)}</div>
-            <div style="font-size:13px;font-weight:700;margin-top:2px;">${escapeHtml(poi.name)}</div>
-            <div style="font-size:11px;color:#cbd5e1;margin-top:3px;">Nearest LZ: ${escapeHtml(poi.lz)}</div>
-            <div style="font-family:monospace;font-size:10px;color:#94a3b8;margin-top:3px;">Grid ${grid} · ${poi.x}, ${poi.y}</div>
-          </div>`
-        );
+        marker.on("click", () => openZoneBriefing(poi));
         marker.addTo(groups.subLocations);
       } else if (poi.kind === "cop") {
         const shortName = poi.name.replace(/^Outpost\s+/i, "");
         const marker = L.marker(ll, {
+          zIndexOffset: 210,
           icon: L.divIcon({
             className: "gzw-map-label",
-            html: `<div class="gzw-text-shadow" style="
+            html: `<div style="
               display: inline-flex;
               align-items: center;
-              gap: 4px;
-              transform: translate(-6px, -50%);
+              gap: 5px;
+              transform: translate(-7px, -50%);
               white-space: nowrap;
+              padding: 2px 7px;
+              border-radius: 6px;
+              background: rgba(9, 14, 22, 0.84);
+              backdrop-filter: blur(4px);
+              border: 1px solid rgba(56, 189, 248, 0.34);
+              box-shadow: 0 2px 8px rgba(0, 0, 0, 0.72);
               cursor: pointer;
             ">
               <svg width="10" height="10" viewBox="0 0 12 12" fill="none">
                 <path d="M6 1.5L11 10.5H1L6 1.5Z" fill="#0f172a" stroke="#38bdf8" stroke-width="1.5"/>
               </svg>
               <span style="
-                font-family: 'JetBrains Mono', monospace;
-                font-size: 9.5px;
+                font-family: 'Manrope', system-ui, sans-serif;
+                font-size: 10px;
                 font-weight: 600;
                 color: #bae6fd;
               ">${escapeHtml(shortName)}</span>
@@ -527,38 +834,38 @@ export function TacticalMapPanel({
             iconSize: [0, 0],
           }),
         });
-        marker.bindPopup(
-          `<div style="min-width:170px;">
-            <div style="font-size:10px;font-family:monospace;color:#38bdf8;font-weight:700;">COMBAT OUTPOST</div>
-            <div style="font-size:13px;font-weight:700;margin-top:2px;">${escapeHtml(poi.name)}</div>
-            <div style="font-size:11px;color:#cbd5e1;margin-top:2px;">Region: ${escapeHtml(poi.parentRegion || "Lamang")}</div>
-            <div style="font-family:monospace;font-size:10px;color:#94a3b8;margin-top:3px;">Grid ${grid}</div>
-          </div>`
-        );
+        marker.on("click", () => openZoneBriefing(poi));
         marker.addTo(groups.copsAndLzs);
       } else if (poi.kind === "lz") {
         const marker = L.marker(ll, {
+          zIndexOffset: 200,
           icon: L.divIcon({
             className: "gzw-map-label",
-            html: `<div class="gzw-text-shadow" style="
+            html: `<div style="
               display: inline-flex;
               align-items: center;
-              gap: 4px;
-              transform: translate(-5px, -50%);
+              gap: 5px;
+              transform: translate(-6px, -50%);
               white-space: nowrap;
+              padding: 2px 7px;
+              border-radius: 6px;
+              background: rgba(10, 14, 20, 0.82);
+              backdrop-filter: blur(4px);
+              border: 1px solid rgba(234, 179, 8, 0.36);
+              box-shadow: 0 2px 8px rgba(0, 0, 0, 0.72);
               cursor: pointer;
             ">
               <span style="
-                width: 8px;
-                height: 8px;
+                width: 7px;
+                height: 7px;
                 transform: rotate(45deg);
                 background: #eab308;
                 border: 1px solid #090d12;
                 flex-shrink: 0;
               "></span>
               <span style="
-                font-family: 'JetBrains Mono', monospace;
-                font-size: 9.5px;
+                font-family: 'Manrope', system-ui, sans-serif;
+                font-size: 10px;
                 font-weight: 700;
                 color: #fde047;
               ">${escapeHtml(poi.lz)}</span>
@@ -566,14 +873,7 @@ export function TacticalMapPanel({
             iconSize: [0, 0],
           }),
         });
-        marker.bindPopup(
-          `<div style="min-width:165px;">
-            <div style="font-size:10px;font-family:monospace;color:#eab308;font-weight:700;">LANDING ZONE</div>
-            <div style="font-size:13px;font-weight:700;margin-top:2px;">${escapeHtml(poi.name)}</div>
-            <div style="font-size:11px;color:#cbd5e1;margin-top:2px;">Region: ${escapeHtml(poi.faction)}</div>
-            <div style="font-family:monospace;font-size:10px;color:#94a3b8;margin-top:3px;">Grid ${grid}</div>
-          </div>`
-        );
+        marker.on("click", () => openZoneBriefing(poi));
         marker.addTo(groups.copsAndLzs);
       }
     });
@@ -628,6 +928,7 @@ export function TacticalMapPanel({
     });
 
     // 5. PC Part Spawns & Custom Pins
+    markerByPinIdRef.current.clear();
     customPins.forEach((pin) => {
       if (pin.layer === "pcSpawns" && zoomLevel < 14.5 && !hasFocusedMaterial) {
         return;
@@ -644,7 +945,7 @@ export function TacticalMapPanel({
       );
 
       const popupEl = document.createElement("div");
-      popupEl.style.minWidth = "190px";
+      popupEl.style.minWidth = "205px";
       popupEl.innerHTML = `
         <div style="font-size:10px;font-family:monospace;color:${style.color};font-weight:700;">${style.title}</div>
         <div style="font-weight:600;font-size:13px;margin:3px 0;">${escapeHtml(pin.label)}</div>
@@ -652,18 +953,49 @@ export function TacticalMapPanel({
         <div style="font-family:monospace;font-size:10px;color:#94a3b8;margin-top:4px;">Grid ${formatGridSquare(pin.x, pin.y)} · ${pin.x}, ${pin.y}</div>
       `;
 
+      const actionsEl = document.createElement("div");
+      actionsEl.style.cssText =
+        "display:flex;align-items:center;gap:6px;margin-top:9px;";
+
+      const editBtn = document.createElement("button");
+      editBtn.textContent = "Edit Pin";
+      editBtn.style.cssText =
+        "flex:1;background:#111d2e;border:1px solid #38bdf8;color:#7dd3fc;padding:4px 8px;border-radius:5px;font-size:11px;font-weight:600;cursor:pointer;";
+      editBtn.onclick = (ev) => {
+        ev.stopPropagation();
+        mapRef.current?.closePopup();
+        startEditingPinRef.current(pin);
+      };
+
       const removeBtn = document.createElement("button");
-      removeBtn.textContent = "Remove Pin";
+      removeBtn.textContent = "Delete";
       removeBtn.style.cssText =
-        "margin-top:8px;background:#261215;border:1px solid #ef4444;color:#fca5a5;padding:3px 8px;border-radius:4px;font-size:11px;cursor:pointer;";
-      removeBtn.onclick = () => onRemovePin(pin.id);
-      popupEl.appendChild(removeBtn);
+        "background:#261215;border:1px solid #ef4444;color:#fca5a5;padding:4px 8px;border-radius:5px;font-size:11px;font-weight:600;cursor:pointer;";
+      removeBtn.onclick = (ev) => {
+        ev.stopPropagation();
+        mapRef.current?.closePopup();
+        onRemovePin(pin.id);
+      };
+
+      actionsEl.appendChild(editBtn);
+      actionsEl.appendChild(removeBtn);
+      popupEl.appendChild(actionsEl);
 
       const marker = L.marker(toLatLng(pin.x, pin.y), {
         icon: createTargetPinIcon(style.color, style.glyph),
       }).bindPopup(popupEl);
 
+      markerByPinIdRef.current.set(pin.id, marker);
       marker.addTo(groups[pin.layer] || groups.customPins);
+      if (
+        pendingFocusPinRef.current?.id === pin.id &&
+        pendingFocusPinRef.current.moved
+      ) {
+        pendingFocusPinRef.current = null;
+        setTimeout(() => {
+          marker.openPopup();
+        }, 30);
+      }
     });
 
     // 6. Ticked / Inspected Hideout Material Spawns (Bright pulsing amber focus)
@@ -719,7 +1051,58 @@ export function TacticalMapPanel({
       marker.addTo(groups.tickedSpawns);
     });
 
-    // 7. API records with coordinates
+    // 7. Locked Door / Key Compound Clusters (zoom >= 15)
+    if (zoomLevel >= 15 && keysList.length > 0) {
+      const groupedKeys = new Map<
+        string,
+        { x: number; y: number; place: string; keys: GzwKeyDoorDef[] }
+      >();
+      keysList.forEach((kd) => {
+        const coordKey = `${kd.x},${kd.y}`;
+        if (!groupedKeys.has(coordKey)) {
+          groupedKeys.set(coordKey, {
+            x: kd.x,
+            y: kd.y,
+            place: kd.sublocation || kd.region,
+            keys: [],
+          });
+        }
+        groupedKeys.get(coordKey)!.keys.push(kd);
+      });
+
+      groupedKeys.forEach((cluster) => {
+        const hasKeycard = cluster.keys.some((k) => k.kind === "Keycard");
+        const countLabel =
+          cluster.keys.length > 1 ? `K${cluster.keys.length}` : "K";
+        const marker = L.marker(toLatLng(cluster.x, cluster.y), {
+          icon: createTargetPinIcon(
+            hasKeycard ? "#38bdf8" : "#f59e0b",
+            countLabel,
+            false
+          ),
+          zIndexOffset: 550,
+        });
+        marker.on("click", () => {
+          if (cluster.keys.length === 1 && onSelectKey) {
+            setInspectedPoi(null);
+            onSelectKey(cluster.keys[0]);
+          } else {
+            const matchedPoi = LAMANG_POIS.find(
+              (p) => p.x === cluster.x && p.y === cluster.y
+            );
+            if (matchedPoi) {
+              openZoneBriefing(matchedPoi);
+            } else if (onSelectKey) {
+              setInspectedPoi(null);
+              onSelectKey(cluster.keys[0]);
+            }
+          }
+        });
+        marker.addTo(groups.lockedDoors);
+      });
+    }
+
+    // 8. API records with coordinates
     apiRecords.forEach((rec) => {
       if (!rec.coords) return;
       const marker = L.marker(toLatLng(rec.coords.x, rec.coords.y), {
@@ -734,45 +1117,411 @@ export function TacticalMapPanel({
       `);
       marker.addTo(groups.apiLoot);
     });
-  }, [catalog, customPins, tickedMapMaterials, inspectedMaterial, apiRecords, onRemovePin, zoomLevel]);
+  }, [catalog, customPins, tickedMapMaterials, inspectedMaterial, apiRecords, keysList, onRemovePin, zoomLevel, selectedFaction]);
+
+  const activeFactionInfo =
+    selectedFaction !== "ALL" ? FACTIONS[selectedFaction] : null;
 
   const quickJumpPois = useMemo(() => {
     const list = LAMANG_POIS.filter(
-      (p) => (p.kind === "tier4" || p.kind === "major") && p.id !== "poi-ground-zero"
+      (p) =>
+        ((p.kind === "tier4" || p.kind === "major") &&
+          p.id !== "poi-ground-zero") ||
+        (activeFactionInfo && p.id === activeFactionInfo.baseId)
     );
-    const tierOrder = (t: string) =>
-      t === "Tier 4" ? 0 : t === "Tier 3" ? 1 : t === "Tier 2" ? 2 : 3;
-    return list.sort((a, b) => tierOrder(a.tier) - tierOrder(b.tier) || a.name.localeCompare(b.name));
-  }, []);
+    const tierOrder = (p: LamangPoi) => {
+      if (activeFactionInfo && p.id === activeFactionInfo.baseId) return -2;
+      if (activeFactionInfo && p.name === activeFactionInfo.starterTown) return -1;
+      if (p.tier === "Tier 4") return 0;
+      if (p.tier === "Tier 3") return 1;
+      if (p.tier === "Tier 2") return 2;
+      return 3;
+    };
+    return list.sort((a, b) => tierOrder(a) - tierOrder(b) || a.name.localeCompare(b.name));
+  }, [activeFactionInfo]);
 
   const activeLayerCount = useMemo(
     () => Object.values(layerVisibility).filter(Boolean).length,
     [layerVisibility]
   );
 
+  // Instant Map Quick Search across Grid Coordinates, POIs, COPs, LZs & Keys
+  const mapSearchResults = useMemo(() => {
+    const raw = mapSearchQuery.trim();
+    if (!raw) return { gridJump: null as ReturnType<typeof parseGridInputToMeters>, pois: [] as LamangPoi[], keys: [] as GzwKeyDoorDef[] };
+    const gridJump = parseGridInputToMeters(raw);
+    const q = raw.toLowerCase();
+    const pois = LAMANG_POIS.filter(
+      (p) =>
+        p.id !== "poi-ground-zero" &&
+        (p.name.toLowerCase().includes(q) ||
+          p.lz.toLowerCase().includes(q) ||
+          (p.parentRegion || "").toLowerCase().includes(q))
+    ).slice(0, 7);
+    const keys = keysList
+      .filter(
+        (k) =>
+          k.name.toLowerCase().includes(q) ||
+          k.doorTarget.toLowerCase().includes(q) ||
+          k.region.toLowerCase().includes(q)
+      )
+      .slice(0, 5);
+    return { gridJump, pois, keys };
+  }, [mapSearchQuery, keysList]);
+
+  // Precomputed Zone Intel for directly clicked POIs/Compounds/COPs/LZs
+  const zoneIntel = useMemo(() => {
+    if (!inspectedPoi) return null;
+    const regionName =
+      inspectedPoi.kind === "major" || inspectedPoi.kind === "tier4"
+        ? inspectedPoi.name
+        : inspectedPoi.parentRegion || inspectedPoi.name;
+
+    const nearestLzs = LAMANG_POIS.filter((p) => p.kind === "lz")
+      .map((p) => ({
+        poi: p,
+        dist: Math.round(
+          Math.hypot(p.x - inspectedPoi.x, p.y - inspectedPoi.y)
+        ),
+        bearing: formatBearing(p.x - inspectedPoi.x, p.y - inspectedPoi.y),
+      }))
+      .sort((a, b) => a.dist - b.dist)
+      .slice(0, 4);
+
+    const nearestCops = LAMANG_POIS.filter((p) => p.kind === "cop")
+      .map((p) => ({
+        poi: p,
+        dist: Math.round(
+          Math.hypot(p.x - inspectedPoi.x, p.y - inspectedPoi.y)
+        ),
+        bearing: formatBearing(p.x - inspectedPoi.x, p.y - inspectedPoi.y),
+      }))
+      .sort((a, b) => a.dist - b.dist)
+      .slice(0, 3);
+
+    const nearbyKeys = keysList.filter(
+      (k) =>
+        k.region.toLowerCase() === regionName.toLowerCase() ||
+        (k.sublocation || "").toLowerCase() === inspectedPoi.name.toLowerCase() ||
+        Math.hypot(k.x - inspectedPoi.x, k.y - inspectedPoi.y) < 350
+    );
+
+    const zoneTasks = allTasks.filter((t) =>
+      t.areas.some(
+        (a) =>
+          a.toLowerCase() === regionName.toLowerCase() ||
+          a.toLowerCase() === inspectedPoi.name.toLowerCase()
+      )
+    );
+
+    const cratesNearby = BLUE_CRATES_05.filter(
+      (c) =>
+        c.poi.toLowerCase().includes(regionName.toLowerCase()) ||
+        Math.hypot(c.x - inspectedPoi.x, c.y - inspectedPoi.y) < 600
+    ).length;
+
+    const disassemblyNearby = DISASSEMBLY_SPAWNS_05.filter(
+      (d) =>
+        d.poi.toLowerCase().includes(regionName.toLowerCase()) ||
+        Math.hypot(d.x - inspectedPoi.x, d.y - inspectedPoi.y) < 600
+    );
+
+    const chemicalsNearby = CHEMICAL_AREAS_05.filter(
+      (c) =>
+        c.poi.toLowerCase().includes(regionName.toLowerCase()) ||
+        Math.hypot(c.x - inspectedPoi.x, c.y - inspectedPoi.y) < 600
+    ).length;
+
+    const matchingMaterials = catalog
+      .filter((m) =>
+        inspectedPoi.tags.some(
+          (tag) =>
+            m.name.toLowerCase().includes(tag) ||
+            tag.includes(m.name.toLowerCase())
+        )
+      )
+      .slice(0, 8);
+
+    const flightFromFob =
+      activeFactionInfo && inspectedPoi.id !== activeFactionInfo.baseId
+        ? {
+            fobName: activeFactionInfo.short,
+            dist: Math.round(
+              Math.hypot(
+                inspectedPoi.x - activeFactionInfo.x,
+                inspectedPoi.y - activeFactionInfo.y
+              )
+            ),
+            bearing: formatBearing(
+              inspectedPoi.x - activeFactionInfo.x,
+              inspectedPoi.y - activeFactionInfo.y
+            ),
+          }
+        : null;
+
+    return {
+      regionName,
+      nearestLzs,
+      nearestCops,
+      nearbyKeys,
+      zoneTasks,
+      cratesNearby,
+      disassemblyNearby,
+      chemicalsNearby,
+      matchingMaterials,
+      flightFromFob,
+    };
+  }, [inspectedPoi, keysList, allTasks, catalog, activeFactionInfo]);
+
+  const userDroppedPins = useMemo(
+    () =>
+      customPins
+        .filter((p) => !p.id.startsWith("seed-"))
+        .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0)),
+    [customPins]
+  );
+
+  const seedCustomPins = useMemo(
+    () => customPins.filter((p) => p.id.startsWith("seed-")),
+    [customPins]
+  );
+
+  const visibleDrawerPins =
+    pinsFilterTab === "user" ? userDroppedPins : [...userDroppedPins, ...seedCustomPins];
+
+  const closePinModal = () => {
+    setCapturedCoords(null);
+    setEditingPin(null);
+    setRepositioningPin(false);
+  };
+
   const handleSavePin = () => {
     if (!capturedCoords) return;
     const linked = catalog.find(
       (m) => m.id === pinMaterialId || m.key === pinMaterialId
     );
-    onAddPin({
-      id: `pin_${Date.now()}`,
-      x: capturedCoords.x,
-      y: capturedCoords.y,
-      layer: pinLayer,
-      materialId: pinMaterialId,
-      label: pinNote.trim() || linked?.name || "Recon Pin",
-    });
+    const nextLabel = pinNote.trim() || linked?.name || "Recon Pin";
+
+    if (editingPin) {
+      onUpdatePin({
+        ...editingPin,
+        x: capturedCoords.x,
+        y: capturedCoords.y,
+        layer: pinLayer,
+        materialId: pinMaterialId,
+        label: nextLabel,
+      });
+    } else {
+      onAddPin({
+        id: `pin_${Date.now()}`,
+        x: capturedCoords.x,
+        y: capturedCoords.y,
+        layer: pinLayer,
+        materialId: pinMaterialId,
+        label: nextLabel,
+        createdAt: Date.now(),
+      });
+      onNotify(
+        `Saved pin at Grid ${formatGridSquare(capturedCoords.x, capturedCoords.y)}`
+      );
+    }
+
     setPinNote("");
-    setCapturedCoords(null);
-    onNotify(`Saved pin at Grid ${formatGridSquare(capturedCoords.x, capturedCoords.y)}`);
+    closePinModal();
+  };
+
+  const handleDeletePinById = (pinId: string) => {
+    if (editingPin?.id === pinId) {
+      closePinModal();
+    }
+    onRemovePin(pinId);
+  };
+
+  const focusPinOnMap = (pin: CustomMapPin) => {
+    const needsLayerEnable = !layerVisibility[pin.layer];
+    if (needsLayerEnable) {
+      setLayerVisibility((prev) => ({ ...prev, [pin.layer]: true }));
+    }
+    if (typeof window !== "undefined" && window.innerWidth < 640) {
+      setPinsDrawerOpen(false);
+    }
+    const map = mapRef.current;
+    if (!map) return;
+
+    const targetLl = toLatLng(pin.x, pin.y);
+    const alreadyCentered =
+      map.distance(map.getCenter(), targetLl) < 20 &&
+      Math.abs(map.getZoom() - 17) < 0.01 &&
+      !needsLayerEnable;
+
+    if (alreadyCentered) {
+      const m = markerByPinIdRef.current.get(pin.id);
+      if (m) {
+        m.openPopup();
+        return;
+      }
+    }
+
+    pendingFocusPinRef.current = { id: pin.id, moved: false };
+    const onMoveEnd = () => {
+      if (pendingFocusPinRef.current?.id !== pin.id) return;
+      pendingFocusPinRef.current.moved = true;
+      if (Math.abs(map.getZoom() - zoomLevelRef.current) < 0.01) {
+        const m = markerByPinIdRef.current.get(pin.id);
+        if (m) {
+          pendingFocusPinRef.current = null;
+          setTimeout(() => {
+            m.openPopup();
+          }, 30);
+        }
+      }
+    };
+    map.once("moveend", onMoveEnd);
+    map.flyTo(targetLl, 17, { duration: 0.45 });
   };
 
   return (
     <section className="relative flex-1 h-full min-h-0 bg-[#06090d] overflow-hidden">
       {/* Compact Floating Map Controls */}
-      <div className="absolute top-2.5 left-2.5 right-2.5 z-[650] flex items-start justify-between gap-1.5 pointer-events-none">
-        <div className="pointer-events-auto flex items-center gap-1.5 relative">
+      <div className="absolute top-2.5 left-2.5 right-2.5 z-[650] flex items-start justify-between gap-1.5 pointer-events-none flex-wrap">
+        <div className="pointer-events-auto flex items-center gap-1.5 relative flex-wrap">
+          {/* Quick Search (POIs, LZs, Keys, Grid 171 152) */}
+          <div className="relative">
+            <div className="relative flex items-center">
+              <Search className="w-3.5 h-3.5 text-[#7f8ea1] absolute left-2.5 pointer-events-none" />
+              <input
+                type="text"
+                value={mapSearchQuery}
+                onFocus={() => {
+                  setMapSearchOpen(true);
+                  setJumpOpen(false);
+                  setLayersOpen(false);
+                }}
+                onChange={(e) => {
+                  setMapSearchQuery(e.target.value);
+                  setMapSearchOpen(true);
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && mapSearchResults.gridJump) {
+                    const g = mapSearchResults.gridJump;
+                    mapRef.current?.flyTo(toLatLng(g.x, g.y), 16.5, {
+                      duration: 0.65,
+                    });
+                    setMapSearchOpen(false);
+                    onNotify(`Jumped to Grid ${g.grid}`);
+                  }
+                }}
+                placeholder="Search POI, grid, or key..."
+                aria-label="Search map locations or grid"
+                className="min-h-[38px] w-44 sm:w-56 pl-8 pr-7 py-1.5 rounded-lg bg-[#0d121a]/90 backdrop-blur-xl border border-white/[0.1] focus:border-[#38bdf8] text-xs text-[#eef3f8] placeholder:text-[#7a899c] shadow-xl focus:outline-none transition-colors"
+              />
+              {mapSearchQuery && (
+                <button
+                  type="button"
+                  aria-label="Clear map search"
+                  onClick={() => {
+                    setMapSearchQuery("");
+                    setMapSearchOpen(false);
+                  }}
+                  className="absolute right-2 text-[#7f8ea1] hover:text-white"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
+
+            {mapSearchOpen && mapSearchQuery.trim() && (
+              <div className="absolute top-full left-0 mt-1.5 w-72 max-h-80 overflow-y-auto rounded-xl bg-[#0d121a]/96 backdrop-blur-xl border border-white/[0.12] p-1.5 shadow-2xl z-[810] space-y-1">
+                {mapSearchResults.gridJump && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const g = mapSearchResults.gridJump!;
+                      mapRef.current?.flyTo(toLatLng(g.x, g.y), 16.5, {
+                        duration: 0.65,
+                      });
+                      setMapSearchOpen(false);
+                      onNotify(`Centered on Grid ${g.grid}`);
+                    }}
+                    className="w-full text-left px-2.5 py-2 rounded-lg bg-[#16202e] hover:bg-[#1d2a3c] flex items-center justify-between gap-2 text-xs text-[#7dd3fc]"
+                  >
+                    <span className="font-medium">
+                      Go to Grid {mapSearchResults.gridJump.grid}
+                    </span>
+                    <span className="font-mono-tabular text-[10px]">
+                      {mapSearchResults.gridJump.x}, {mapSearchResults.gridJump.y}
+                    </span>
+                  </button>
+                )}
+
+                {mapSearchResults.pois.map((poi) => (
+                  <button
+                    key={poi.id}
+                    type="button"
+                    onClick={() => {
+                      mapRef.current?.flyTo(
+                        toLatLng(poi.x, poi.y),
+                        poi.kind === "sublocation" ? 17 : 16,
+                        { duration: 0.65 }
+                      );
+                      openZoneBriefing(poi);
+                    }}
+                    className="w-full text-left px-2.5 py-1.5 rounded-lg hover:bg-white/[0.06] flex items-center justify-between gap-2 text-xs"
+                  >
+                    <div className="min-w-0">
+                      <div className="text-[#eef3f8] font-medium truncate">
+                        {poi.name}
+                      </div>
+                      <div className="text-[11px] text-[#8392a6] truncate">
+                        {poi.kind === "lz"
+                          ? `Landing Zone · ${poi.faction}`
+                          : poi.kind === "cop"
+                            ? `Combat Outpost · ${poi.parentRegion || "Lamang"}`
+                            : `${poi.tier}${poi.parentRegion ? ` · ${poi.parentRegion}` : ""}`}
+                      </div>
+                    </div>
+                    <span className="font-mono-tabular text-[10px] text-[#e5a93c] shrink-0">
+                      {formatGridSquare(poi.x, poi.y)}
+                    </span>
+                  </button>
+                ))}
+
+                {mapSearchResults.keys.map((k) => (
+                  <button
+                    key={k.id}
+                    type="button"
+                    onClick={() => {
+                      setInspectedPoi(null);
+                      setMapSearchOpen(false);
+                      onSelectKey?.(k);
+                    }}
+                    className="w-full text-left px-2.5 py-1.5 rounded-lg hover:bg-white/[0.06] flex items-center justify-between gap-2 text-xs"
+                  >
+                    <div className="min-w-0">
+                      <div className="text-[#fde68a] font-medium truncate">
+                        {k.name}
+                      </div>
+                      <div className="text-[11px] text-[#8392a6] truncate">
+                        {k.doorTarget} · {k.region}
+                      </div>
+                    </div>
+                    <span className="font-mono-tabular text-[10px] text-[#38bdf8] shrink-0">
+                      {k.grid}
+                    </span>
+                  </button>
+                ))}
+
+                {!mapSearchResults.gridJump &&
+                  mapSearchResults.pois.length === 0 &&
+                  mapSearchResults.keys.length === 0 && (
+                    <div className="px-2.5 py-3 text-center text-xs text-[#7f8ea1]">
+                      No locations, keys, or grids matched.
+                    </div>
+                  )}
+              </div>
+            )}
+          </div>
+
           {/* Region Quick-Jump Popover */}
           <div className="relative">
             <button
@@ -780,41 +1529,55 @@ export function TacticalMapPanel({
               onClick={() => {
                 setJumpOpen((v) => !v);
                 setLayersOpen(false);
+                setMapSearchOpen(false);
               }}
-              className="min-h-[38px] inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded bg-[#0c1016]/92 backdrop-blur-md border border-[#242e3c] hover:border-[#3c4b61] text-xs font-medium text-[#dce4ee] shadow-xl transition-colors"
+              className="min-h-[38px] inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#0d121a]/90 backdrop-blur-xl border border-white/[0.1] hover:border-white/[0.22] text-xs font-medium text-[#e2e9f2] shadow-xl transition-colors"
             >
               <Navigation className="w-3.5 h-3.5 text-[#e5a93c]" />
-              <span className="hidden sm:inline">Locate Region</span>
-              <span className="sm:hidden">Regions</span>
+              <span className="hidden md:inline">Regions</span>
               <ChevronDown className="w-3.5 h-3.5 text-[#7f8ea1]" />
             </button>
 
             {jumpOpen && (
-              <div className="absolute top-full left-0 mt-1.5 w-60 max-h-72 overflow-y-auto rounded-md bg-[#0c1016]/96 backdrop-blur-xl border border-[#242e3c] p-1.5 shadow-2xl z-[800]">
-                {quickJumpPois.map((poi) => (
-                  <button
-                    key={poi.id}
-                    type="button"
-                    onClick={() => {
-                      mapRef.current?.flyTo(toLatLng(poi.x, poi.y), 16, { duration: 0.65 });
-                      setJumpOpen(false);
-                    }}
-                    className="w-full min-h-[36px] text-left px-2.5 py-1.5 rounded hover:bg-[#151d28] flex items-center justify-between gap-2 text-xs transition-colors"
-                  >
-                    <span className="text-[#eef3f8] font-medium truncate">{poi.name}</span>
-                    <span
-                      className={`font-mono-tabular text-[10px] shrink-0 ${
-                        poi.kind === "tier4"
-                          ? "text-red-400"
-                          : poi.tier === "Tier 3"
-                            ? "text-[#e5a93c]"
-                            : "text-[#8b98a9]"
-                      }`}
+              <div className="absolute top-full left-0 mt-1.5 w-64 max-h-72 overflow-y-auto rounded-xl bg-[#0d121a]/96 backdrop-blur-xl border border-white/[0.12] p-1.5 shadow-2xl z-[800]">
+                {quickJumpPois.map((poi) => {
+                  const isOwnFob =
+                    activeFactionInfo && poi.id === activeFactionInfo.baseId;
+                  const isStarter =
+                    activeFactionInfo && poi.name === activeFactionInfo.starterTown;
+                  return (
+                    <button
+                      key={poi.id}
+                      type="button"
+                      onClick={() => {
+                        mapRef.current?.flyTo(toLatLng(poi.x, poi.y), 16, { duration: 0.65 });
+                        openZoneBriefing(poi);
+                      }}
+                      className="w-full min-h-[36px] text-left px-2.5 py-1.5 rounded-lg hover:bg-white/[0.06] flex items-center justify-between gap-2 text-xs transition-colors"
                     >
-                      {poi.tier}
-                    </span>
-                  </button>
-                ))}
+                      <span className="text-[#eef3f8] font-medium truncate">{poi.name}</span>
+                      <span
+                        className={`text-[11px] font-medium shrink-0 ${
+                          isOwnFob
+                            ? "text-[#38bdf8]"
+                            : isStarter
+                              ? "text-[#34d399]"
+                              : poi.kind === "tier4"
+                                ? "text-red-400"
+                                : poi.tier === "Tier 3"
+                                  ? "text-[#e5a93c]"
+                                  : "text-[#8b98a9]"
+                        }`}
+                      >
+                        {isOwnFob
+                          ? "Your FOB"
+                          : isStarter
+                            ? `${activeFactionInfo.short} Starter`
+                            : poi.tier}
+                      </span>
+                    </button>
+                  );
+                })}
               </div>
             )}
           </div>
@@ -826,23 +1589,25 @@ export function TacticalMapPanel({
               onClick={() => {
                 setLayersOpen((v) => !v);
                 setJumpOpen(false);
+                setMapSearchOpen(false);
               }}
-              className="min-h-[38px] inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded bg-[#0c1016]/92 backdrop-blur-md border border-[#242e3c] hover:border-[#3c4b61] text-xs font-medium text-[#dce4ee] shadow-xl transition-colors"
+              className="min-h-[38px] inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#0d121a]/90 backdrop-blur-xl border border-white/[0.1] hover:border-white/[0.22] text-xs font-medium text-[#e2e9f2] shadow-xl transition-colors"
             >
               <Layers className="w-3.5 h-3.5 text-[#38bdf8]" />
-              <span>Layers</span>
-              <span className="font-mono-tabular text-[10px] text-[#8b98a9]">
-                ({activeLayerCount})
+              <span className="hidden sm:inline">Layers</span>
+              <span className="font-mono-tabular text-[11px] text-[#8b98a9]">
+                {activeLayerCount}
               </span>
             </button>
 
             {layersOpen && (
-              <div className="absolute top-full left-0 mt-1.5 w-60 rounded-md bg-[#0c1016]/96 backdrop-blur-xl border border-[#242e3c] p-2.5 shadow-2xl z-[800] space-y-1.5">
+              <div className="absolute top-full left-0 mt-1.5 w-60 rounded-xl bg-[#0d121a]/96 backdrop-blur-xl border border-white/[0.12] p-2.5 shadow-2xl z-[800] space-y-1">
                 {(
                   [
-                    { key: "poiLabels", label: "Regions & Tier 4", dot: "bg-red-400" },
-                    { key: "subLocations", label: "Compounds (Zoomed)", dot: "bg-slate-300" },
-                    { key: "copsAndLzs", label: "COPs & LZs (Zoomed)", dot: "bg-yellow-400" },
+                    { key: "poiLabels", label: "Main Regions & Tier 4", dot: "bg-red-400" },
+                    { key: "subLocations", label: "Sub-Locations (Zoomed)", dot: "bg-sky-400" },
+                    { key: "copsAndLzs", label: "Outposts & Landing Zones", dot: "bg-yellow-400" },
+                    { key: "lockedDoors", label: "Locked Doors & Keys", dot: "bg-amber-400" },
                     { key: "tickedSpawns", label: "Material Spawns", dot: "bg-[#e5a93c]" },
                     { key: "blueCrates", label: "Blue Material Crates (95)", dot: "bg-blue-500" },
                     { key: "pcSpawns", label: "PC & Tech Spawns", dot: "bg-cyan-400" },
@@ -853,7 +1618,7 @@ export function TacticalMapPanel({
                 ).map((layer) => (
                   <label
                     key={layer.key}
-                    className="flex items-center justify-between gap-2 px-1.5 py-1 rounded hover:bg-[#141b25] text-xs text-[#cbd5e1] cursor-pointer select-none"
+                    className="flex items-center justify-between gap-2 px-2 py-1.5 rounded-lg hover:bg-white/[0.06] text-xs text-[#cbd5e1] cursor-pointer select-none"
                   >
                     <span className="inline-flex items-center gap-2 min-w-0">
                       <span className={`w-2 h-2 rounded-full shrink-0 ${layer.dot}`} />
@@ -877,43 +1642,414 @@ export function TacticalMapPanel({
           </div>
         </div>
 
-        {/* Top-Right Compact Controls */}
-        <div className="pointer-events-auto flex items-center gap-1.5">
+        {/* Top-Right Compact Controls: Measure, Drop Pin, Saved Pins Log, Reset View */}
+        <div className="pointer-events-auto flex items-center gap-1.5 flex-wrap justify-end">
           <button
             type="button"
-            onClick={() => onTogglePinDropMode()}
-            className={`min-h-[38px] inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded text-xs font-medium backdrop-blur-md shadow-xl transition-colors whitespace-nowrap shrink-0 ${
+            onClick={() => {
+              const next = !measureMode;
+              setMeasureMode(next);
+              if (next) {
+                onTogglePinDropMode(false);
+                setRepositioningPin(false);
+                onNotify("Click two points on the map to measure distance");
+              } else {
+                setMeasurePoints([]);
+              }
+            }}
+            title="Measure distance and bearing between two points"
+            className={`min-h-[38px] inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium backdrop-blur-xl shadow-xl transition-colors whitespace-nowrap shrink-0 ${
+              measureMode
+                ? "bg-[#38bdf8]/20 border border-[#38bdf8] text-[#bae6fd]"
+                : "bg-[#0d121a]/90 border border-white/[0.1] text-[#e2e9f2] hover:border-white/[0.22]"
+            }`}
+          >
+            <Ruler className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">
+              {measureMode ? "Measuring" : "Measure"}
+            </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              if (!pinDropMode) {
+                setMeasureMode(false);
+                setMeasurePoints([]);
+                setRepositioningPin(false);
+              }
+              onTogglePinDropMode();
+            }}
+            className={`min-h-[38px] inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium backdrop-blur-xl shadow-xl transition-colors whitespace-nowrap shrink-0 ${
               pinDropMode
                 ? "bg-cyan-500/20 border border-cyan-400 text-cyan-200"
-                : "bg-[#0c1016]/92 border border-[#242e3c] text-[#dce4ee] hover:border-[#3c4b61]"
+                : "bg-[#0d121a]/90 border border-white/[0.1] text-[#e2e9f2] hover:border-white/[0.22]"
             }`}
           >
             <Crosshair className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">{pinDropMode ? "Pin Drop: On" : "Pin Drop"}</span>
-            <span className="sm:hidden">{pinDropMode ? "Pin: On" : "Pin"}</span>
+            <span className="hidden sm:inline">{pinDropMode ? "Placing Pin" : "Drop Pin"}</span>
+            <span className="sm:hidden">{pinDropMode ? "Placing" : "Pin"}</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setPinsDrawerOpen((v) => !v);
+              setLayersOpen(false);
+              setJumpOpen(false);
+              setMapSearchOpen(false);
+            }}
+            aria-label="Open saved pins list"
+            className={`min-h-[38px] inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium backdrop-blur-xl shadow-xl transition-colors whitespace-nowrap shrink-0 ${
+              pinsDrawerOpen
+                ? "bg-[#10b981]/20 border border-[#34d399]/70 text-[#a7f3d0]"
+                : "bg-[#0d121a]/90 border border-white/[0.1] text-[#e2e9f2] hover:border-white/[0.22]"
+            }`}
+          >
+            <Bookmark className="w-3.5 h-3.5 text-[#34d399]" />
+            <span className="hidden sm:inline">My Pins</span>
+            <span
+              className={`font-mono-tabular text-[11px] px-1.5 py-0.5 rounded-md ${
+                userDroppedPins.length > 0
+                  ? "bg-[#10b981]/20 text-[#6ee7b7]"
+                  : "bg-white/[0.06] text-[#94a3b8]"
+              }`}
+            >
+              {userDroppedPins.length}
+            </span>
           </button>
 
           <button
             type="button"
             onClick={fitIslandView}
             title="Reset Island View"
-            className="min-h-[38px] inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded text-xs font-medium bg-[#0c1016]/92 backdrop-blur-md border border-[#242e3c] text-[#dce4ee] hover:border-[#3c4b61] shadow-xl transition-colors whitespace-nowrap shrink-0"
+            className="min-h-[38px] inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-[#0d121a]/90 backdrop-blur-xl border border-white/[0.1] text-[#e2e9f2] hover:border-white/[0.22] shadow-xl transition-colors whitespace-nowrap shrink-0"
           >
             <LocateFixed className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Reset View</span>
+            <span className="hidden md:inline">Reset View</span>
           </button>
         </div>
       </div>
 
+      {/* Interactive Zone Intel Slide-Over Drawer (Direct Map Click on any POI / Compound / COP / LZ) */}
+      {inspectedPoi && zoneIntel && !inspectedMaterial && !inspectedTask && !inspectedKey && (
+        <div className="absolute top-14 left-2.5 z-[710] w-[370px] max-w-[calc(100%-20px)] max-h-[58vh] lg:max-h-[calc(100%-84px)] overflow-y-auto rounded-xl bg-[#0d121a]/95 backdrop-blur-xl border border-white/[0.12] p-4 shadow-2xl">
+          <div className="flex items-start justify-between gap-2 pb-3 border-b border-white/[0.08]">
+            <div className="min-w-0">
+              <div className="text-[11px] font-medium text-[#e5a93c]">
+                {inspectedPoi.tier} · {inspectedPoi.faction} · Grid {formatGridSquare(inspectedPoi.x, inspectedPoi.y)}
+              </div>
+              <h3 className="font-display text-base font-semibold text-[#f1f5f9] leading-snug mt-0.5">
+                {inspectedPoi.name}
+              </h3>
+              {zoneIntel.flightFromFob && (
+                <div className="text-[11px] text-[#7dd3fc] font-mono-tabular mt-1">
+                  From {zoneIntel.flightFromFob.fobName} FOB: {zoneIntel.flightFromFob.dist} m · {zoneIntel.flightFromFob.bearing}
+                </div>
+              )}
+            </div>
+            <button
+              type="button"
+              aria-label="Close zone intel"
+              onClick={() => setInspectedPoi(null)}
+              className="p-1.5 rounded-lg text-[#8b98a9] hover:text-white hover:bg-white/[0.08] shrink-0 transition-colors"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+
+          <div className="mt-3 space-y-3 text-xs">
+            {/* Nearest LZs & COPs (Click to Fly) */}
+            <div>
+              <div className="font-mono-tabular text-[10px] uppercase tracking-wider text-[#38bdf8] mb-1.5">
+                Nearest LZs &amp; Outposts
+              </div>
+              <div className="grid grid-cols-2 gap-1.5">
+                {zoneIntel.nearestLzs.map(({ poi: lzPoi, dist, bearing }) => (
+                  <button
+                    key={lzPoi.id}
+                    type="button"
+                    onClick={() =>
+                      mapRef.current?.flyTo(toLatLng(lzPoi.x, lzPoi.y), 16, { duration: 0.55 })
+                    }
+                    className="text-left px-2 py-1.5 rounded bg-[#080b0f] border border-[#1f2834] hover:border-[#eab308] transition-colors"
+                  >
+                    <div className="text-[11px] font-semibold text-[#fde047] truncate">
+                      LZ {lzPoi.lz}
+                    </div>
+                    <div className="font-mono-tabular text-[10px] text-[#8b98a9]">
+                      {dist} m · {bearing}
+                    </div>
+                  </button>
+                ))}
+                {zoneIntel.nearestCops.map(({ poi: copPoi, dist, bearing }) => (
+                  <button
+                    key={copPoi.id}
+                    type="button"
+                    onClick={() =>
+                      mapRef.current?.flyTo(toLatLng(copPoi.x, copPoi.y), 16, { duration: 0.55 })
+                    }
+                    className="text-left px-2 py-1.5 rounded bg-[#080b0f] border border-[#1f2834] hover:border-[#38bdf8] transition-colors"
+                  >
+                    <div className="text-[11px] font-semibold text-[#bae6fd] truncate">
+                      {copPoi.name.replace(/^Outpost\s+/i, "COP ")}
+                    </div>
+                    <div className="font-mono-tabular text-[10px] text-[#8b98a9]">
+                      {dist} m · {bearing}
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Locked Doors & Keys in This Zone */}
+            {zoneIntel.nearbyKeys.length > 0 && (
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="font-mono-tabular text-[10px] uppercase tracking-wider text-[#e5a93c]">
+                    Locked Doors &amp; Keys ({zoneIntel.nearbyKeys.length})
+                  </span>
+                </div>
+                <div className="space-y-1">
+                  {zoneIntel.nearbyKeys.slice(0, 8).map((k) => {
+                    const isOwned = !!ownedKeys[k.id];
+                    return (
+                      <div
+                        key={k.id}
+                        className="flex items-center justify-between gap-2 px-2.5 py-1.5 rounded bg-[#080b0f] border border-[#1f2834]"
+                      >
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setInspectedPoi(null);
+                            onSelectKey?.(k);
+                          }}
+                          className="min-w-0 text-left flex-1 hover:text-[#38bdf8] transition-colors"
+                        >
+                          <div className="text-[11px] font-medium text-[#eef3f8] truncate">
+                            {k.name}
+                          </div>
+                          <div className="text-[10px] text-[#7f8ea1] truncate">
+                            {k.doorTarget}
+                          </div>
+                        </button>
+                        {onToggleOwnedKey && (
+                          <button
+                            type="button"
+                            onClick={() => onToggleOwnedKey(k.id)}
+                            className={`px-2 py-1 rounded border text-[10px] font-medium shrink-0 transition-colors ${
+                              isOwned
+                                ? "bg-[#112720] border-[#2b6b53] text-[#34d399]"
+                                : "bg-[#121720] border-[#253040] text-[#8b98a9] hover:text-white"
+                            }`}
+                          >
+                            {isOwned ? "Owned" : "Need"}
+                          </button>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Tasks in This Zone */}
+            {zoneIntel.zoneTasks.length > 0 && (
+              <div>
+                <div className="font-mono-tabular text-[10px] uppercase tracking-wider text-[#38bdf8] mb-1.5">
+                  Tasks in {zoneIntel.regionName} ({zoneIntel.zoneTasks.length})
+                </div>
+                <div className="space-y-1">
+                  {zoneIntel.zoneTasks.slice(0, 6).map((t) => (
+                    <button
+                      key={t.id}
+                      type="button"
+                      onClick={() => {
+                        setInspectedPoi(null);
+                        onSelectTask?.(t);
+                      }}
+                      className="w-full text-left px-2.5 py-1.5 rounded bg-[#080b0f] border border-[#1f2834] hover:border-[#38bdf8] flex items-center justify-between gap-2 transition-colors"
+                    >
+                      <div className="min-w-0">
+                        <div
+                          className={`text-[11px] font-medium truncate ${
+                            completedTasks[t.id]
+                              ? "text-[#7f8ea1] line-through"
+                              : "text-[#eef3f8]"
+                          }`}
+                        >
+                          {t.name}
+                        </div>
+                        <div className="text-[10px] text-[#8b98a9] truncate">
+                          {t.vendor} · {t.category}
+                        </div>
+                      </div>
+                      <span className="text-[10px] font-mono-tabular text-[#38bdf8] shrink-0">
+                        Walkthrough
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Loot Spawns & Hideout Materials in This Area */}
+            {(zoneIntel.cratesNearby > 0 ||
+              zoneIntel.disassemblyNearby.length > 0 ||
+              zoneIntel.chemicalsNearby > 0 ||
+              zoneIntel.matchingMaterials.length > 0) && (
+              <div>
+                <div className="font-mono-tabular text-[10px] uppercase tracking-wider text-[#8b98a9] mb-1.5">
+                  Area Loot &amp; Hideout Materials
+                </div>
+                <div className="font-mono-tabular text-[11px] text-[#cbd5e1] mb-2">
+                  {zoneIntel.cratesNearby} Blue Crates
+                  <span className="mx-1.5 text-[#3a4657]">·</span>
+                  {zoneIntel.disassemblyNearby.length} Disassembly
+                  <span className="mx-1.5 text-[#3a4657]">·</span>
+                  {zoneIntel.chemicalsNearby} Chemical Spawns
+                </div>
+                {zoneIntel.matchingMaterials.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5">
+                    {zoneIntel.matchingMaterials.map((mat) => (
+                      <button
+                        key={mat.key}
+                        type="button"
+                        onClick={() => {
+                          setInspectedPoi(null);
+                          onSelectMaterial?.(mat);
+                        }}
+                        className="px-2 py-1 rounded bg-[#080b0f] border border-[#222c3a] hover:border-[#e5a93c] text-[11px] text-[#dce4ee] transition-colors"
+                      >
+                        {mat.name}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Locked Door & Key Slide-Over Drawer */}
+      {inspectedKey && !inspectedMaterial && !inspectedTask && (
+        <div className="absolute top-14 left-2.5 z-[710] w-[355px] max-w-[calc(100%-20px)] max-h-[58vh] lg:max-h-[calc(100%-84px)] overflow-y-auto rounded-xl bg-[#0d121a]/95 backdrop-blur-xl border border-white/[0.12] p-4 shadow-2xl">
+          <div className="flex items-start justify-between gap-2 pb-3 border-b border-white/[0.08]">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <ItemThumbnail
+                src={inspectedKey.image}
+                alt={inspectedKey.name}
+                sizeClass="w-10 h-10"
+              />
+              <div className="min-w-0">
+                <div className="text-[11px] font-medium text-[#e5a93c]">
+                  {inspectedKey.kind} · {inspectedKey.region}
+                </div>
+                <h3 className="font-display text-base font-semibold text-[#f1f5f9] leading-snug">
+                  {inspectedKey.name}
+                </h3>
+              </div>
+            </div>
+            <button
+              type="button"
+              aria-label="Close key drawer"
+              onClick={onCloseInspectKey}
+              className="p-1.5 rounded-lg text-[#8b98a9] hover:text-white hover:bg-white/[0.08] shrink-0 transition-colors"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+
+          <div className="mt-3 space-y-3 text-xs">
+            <p className="text-[#dce4ee] leading-relaxed">{inspectedKey.usage}</p>
+
+            <div className="rounded bg-[#080b0f] border border-[#1d2531] px-2.5 py-2 space-y-1 font-mono-tabular text-[11px]">
+              <div className="flex items-center justify-between">
+                <span className="text-[#8b98a9]">Door Location</span>
+                <span className="text-[#eef3f8]">
+                  {inspectedKey.sublocation || inspectedKey.region}
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-[#8b98a9]">Grid Square</span>
+                <span className="text-[#38bdf8]">Grid {inspectedKey.grid}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-[#8b98a9]">Nearest LZ</span>
+                <span className="text-[#fde047]">{inspectedKey.lz}</span>
+              </div>
+            </div>
+
+            {onToggleOwnedKey && (
+              <button
+                type="button"
+                onClick={() => onToggleOwnedKey(inspectedKey.id)}
+                className={`w-full min-h-[38px] inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded border text-xs font-medium transition-colors ${
+                  ownedKeys[inspectedKey.id]
+                    ? "bg-[#112720] border-[#2b6b53] text-[#34d399]"
+                    : "bg-[#141a23] border-[#2b3748] text-[#dce4ee] hover:border-[#e5a93c]"
+                }`}
+              >
+                {ownedKeys[inspectedKey.id] && <Check className="w-3.5 h-3.5" />}
+                <span>
+                  {ownedKeys[inspectedKey.id]
+                    ? "In Your Keyholder"
+                    : "Mark Key as Owned"}
+                </span>
+              </button>
+            )}
+
+            {inspectedKey.linkedTasks.length > 0 && (
+              <div>
+                <div className="font-mono-tabular text-[10px] uppercase tracking-wider text-[#38bdf8] mb-1.5">
+                  Required for Tasks
+                </div>
+                <div className="space-y-1">
+                  {inspectedKey.linkedTasks.map((lt) => {
+                    const fullTask = allTasks.find((t) => t.id === lt.id);
+                    return (
+                      <button
+                        key={lt.id}
+                        type="button"
+                        onClick={() => {
+                          if (fullTask && onSelectTask) {
+                            onCloseInspectKey?.();
+                            onSelectTask(fullTask);
+                          }
+                        }}
+                        className="w-full text-left px-2.5 py-1.5 rounded bg-[#080b0f] border border-[#1f2834] hover:border-[#38bdf8] flex items-center justify-between gap-2 transition-colors"
+                      >
+                        <div className="min-w-0">
+                          <div className="text-xs font-medium text-[#eef3f8] truncate">
+                            {lt.name}
+                          </div>
+                          <div className="text-[10px] text-[#8b98a9]">
+                            {lt.vendor}
+                          </div>
+                        </div>
+                        <span className="text-[10px] font-mono-tabular text-[#38bdf8] shrink-0">
+                          Walkthrough
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Task AO & Full Walkthrough Slide-Over Drawer */}
       {inspectedTask && !inspectedMaterial && (
-        <div className="absolute top-14 left-2.5 z-[710] w-[385px] max-w-[calc(100%-20px)] max-h-[58vh] lg:max-h-[calc(100%-84px)] overflow-y-auto rounded-md bg-[#0c1016]/96 backdrop-blur-xl border border-[#38bdf8]/60 p-3.5 shadow-2xl">
-          <div className="flex items-start justify-between gap-2 pb-2.5 border-b border-[#212a36]">
+        <div className="absolute top-14 left-2.5 z-[710] w-[385px] max-w-[calc(100%-20px)] max-h-[58vh] lg:max-h-[calc(100%-84px)] overflow-y-auto rounded-xl bg-[#0d121a]/95 backdrop-blur-xl border border-white/[0.12] p-4 shadow-2xl">
+          <div className="flex items-start justify-between gap-2 pb-3 border-b border-white/[0.08]">
             <div className="min-w-0">
-              <div className="font-mono-tabular text-[10px] uppercase tracking-wider text-[#38bdf8]">
+              <div className="text-[11px] font-medium text-[#38bdf8]">
                 {inspectedTask.vendor} · {inspectedTask.areas.join(", ")} · {inspectedTask.category}
               </div>
-              <h3 className="font-display text-sm font-semibold text-[#eef3f8] leading-snug mt-0.5">
+              <h3 className="font-display text-base font-semibold text-[#f1f5f9] leading-snug mt-0.5">
                 {inspectedTask.name}
               </h3>
             </div>
@@ -1135,27 +2271,17 @@ export function TacticalMapPanel({
               </div>
             )}
 
-            {/* Boss Warning & Tactical Tip */}
-            {(inspectedTask.bossWarning || inspectedTask.guideTip) && (
-              <div className="rounded bg-[#18120c] border border-[#e5a93c]/40 px-2.5 py-2 space-y-1 text-[11px] text-[#f3d49b]">
-                {inspectedTask.bossWarning && (
-                  <div className="flex items-start gap-1.5">
-                    <AlertTriangle className="w-3.5 h-3.5 text-[#f59e0b] shrink-0 mt-0.5" />
-                    <span>{inspectedTask.bossWarning}</span>
-                  </div>
-                )}
-                {inspectedTask.guideTip && (
-                  <div className="text-[#cbd5e1]">
-                    Tip: {inspectedTask.guideTip}
-                  </div>
-                )}
+            {/* Tactical Tip */}
+            {inspectedTask.guideTip && (
+              <div className="rounded bg-[#18120c] border border-[#e5a93c]/40 px-2.5 py-2 text-[11px] text-[#cbd5e1]">
+                Tip: {inspectedTask.guideTip}
               </div>
             )}
 
             {/* Full Vendor Briefing */}
             {inspectedTask.briefing && (
-              <div className="text-[11px] text-[#9fb0c4] leading-relaxed border-l-2 border-[#2a3646] pl-2.5">
-                <div className="font-mono-tabular text-[9px] uppercase tracking-wider text-[#6f7e91] mb-0.5">
+              <div className="rounded-lg bg-white/[0.025] border border-white/[0.07] px-3 py-2.5 text-[11px] text-[#9fb0c4] leading-relaxed">
+                <div className="text-[10px] font-medium text-[#7f8ea1] mb-1">
                   {inspectedTask.vendor} Briefing
                 </div>
                 {inspectedTask.briefing}
@@ -1167,8 +2293,8 @@ export function TacticalMapPanel({
 
       {/* Material Spawn & Upgrade Intel Slide-Over Drawer */}
       {inspectedMaterial && (
-        <div className="absolute top-14 left-2.5 z-[710] w-[335px] max-w-[calc(100%-20px)] max-h-[50vh] lg:max-h-[calc(100%-96px)] overflow-y-auto rounded-md bg-[#0c1016]/95 backdrop-blur-xl border border-[#38bdf8]/50 p-3.5 shadow-2xl">
-          <div className="flex items-start justify-between gap-3 pb-3 border-b border-[#212a36]">
+        <div className="absolute top-14 left-2.5 z-[710] w-[335px] max-w-[calc(100%-20px)] max-h-[50vh] lg:max-h-[calc(100%-96px)] overflow-y-auto rounded-xl bg-[#0d121a]/95 backdrop-blur-xl border border-white/[0.12] p-4 shadow-2xl">
+          <div className="flex items-start justify-between gap-3 pb-3 border-b border-white/[0.08]">
             <div className="flex items-center gap-3 min-w-0">
               <ItemThumbnail
                 src={inspectedMaterial.image}
@@ -1176,10 +2302,10 @@ export function TacticalMapPanel({
                 sizeClass="w-10 h-10"
               />
               <div className="min-w-0">
-                <div className="text-[10px] font-mono-tabular uppercase tracking-wider text-[#38bdf8]">
-                  Reported Spawn Locations
+                <div className="text-[11px] font-medium text-[#38bdf8]">
+                  Known Material Spawns
                 </div>
-                <h3 className="font-display text-sm font-semibold text-[#eef3f8] truncate">
+                <h3 className="font-display text-base font-semibold text-[#f1f5f9] truncate">
                   {inspectedMaterial.name}
                 </h3>
               </div>
@@ -1188,7 +2314,7 @@ export function TacticalMapPanel({
               type="button"
               aria-label="Close spawn drawer"
               onClick={onCloseInspect}
-              className="p-1 rounded text-[#8b98a9] hover:text-white hover:bg-[#1a222d]"
+              className="p-1.5 rounded-lg text-[#8b98a9] hover:text-white hover:bg-white/[0.08] transition-colors"
             >
               <X className="w-4 h-4" />
             </button>
@@ -1315,42 +2441,240 @@ export function TacticalMapPanel({
         </div>
       )}
 
-      {/* Pin Drop Quick-Attach Modal */}
-      {capturedCoords && (
-        <div className="absolute top-14 right-3 z-[720] w-[290px] rounded-md bg-[#0c1016]/96 backdrop-blur-xl border border-[#38bdf8]/60 p-4 shadow-2xl space-y-3">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-[#38bdf8]">
-              Grid {formatGridSquare(capturedCoords.x, capturedCoords.y)} Captured
-            </span>
+      {/* Recorded Dropped Pins Drawer */}
+      {pinsDrawerOpen && (
+        <div className="absolute top-[98px] sm:top-14 right-2.5 z-[715] w-[345px] max-w-[calc(100%-20px)] max-h-[54vh] lg:max-h-[calc(100%-96px)] flex flex-col rounded-xl bg-[#0d121a]/96 backdrop-blur-xl border border-white/[0.12] shadow-2xl overflow-hidden">
+          <div className="px-4 py-3 border-b border-white/[0.08] flex items-center justify-between gap-2 shrink-0">
+            <div className="min-w-0">
+              <h3 className="font-display text-sm font-semibold text-[#f8fafc] flex items-center gap-2">
+                <Bookmark className="w-4 h-4 text-[#34d399]" />
+                <span>Dropped Pins Log</span>
+                <span className="font-mono-tabular text-xs text-[#34d399]">
+                  ({userDroppedPins.length})
+                </span>
+              </h3>
+              <p className="text-[11px] text-[#9fb0c4] mt-0.5">
+                Auto-syncs when you add, edit, or delete map pins.
+              </p>
+            </div>
             <button
               type="button"
-              onClick={() => setCapturedCoords(null)}
-              className="p-1 rounded text-[#8b98a9] hover:text-white"
+              aria-label="Close saved pins drawer"
+              onClick={() => setPinsDrawerOpen(false)}
+              className="p-1.5 rounded-lg text-[#94a3b8] hover:text-white hover:bg-white/[0.08] transition-colors"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+
+          <div className="px-3.5 py-2.5 border-b border-white/[0.07] bg-[#090d14] flex items-center justify-between gap-2 shrink-0">
+            <div className="flex items-center rounded-lg bg-[#06090e] border border-white/[0.08] p-0.5">
+              <button
+                type="button"
+                onClick={() => setPinsFilterTab("user")}
+                className={`px-2.5 py-1 rounded-md text-[11px] font-medium transition-colors ${
+                  pinsFilterTab === "user"
+                    ? "bg-[#1a2232] text-[#f8fafc]"
+                    : "text-[#8fa1b6] hover:text-white"
+                }`}
+              >
+                My Pins ({userDroppedPins.length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setPinsFilterTab("all")}
+                className={`px-2.5 py-1 rounded-md text-[11px] font-medium transition-colors ${
+                  pinsFilterTab === "all"
+                    ? "bg-[#1a2232] text-[#f8fafc]"
+                    : "text-[#8fa1b6] hover:text-white"
+                }`}
+              >
+                All ({userDroppedPins.length + seedCustomPins.length})
+              </button>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => {
+                setMeasureMode(false);
+                setMeasurePoints([]);
+                onTogglePinDropMode(!pinDropMode);
+              }}
+              className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border text-[11px] font-medium transition-colors ${
+                pinDropMode
+                  ? "bg-cyan-500/20 border-cyan-400 text-cyan-200"
+                  : "bg-[#121822] border-white/[0.1] text-[#e2e8f0] hover:border-[#38bdf8]"
+              }`}
+            >
+              <Crosshair className="w-3 h-3" />
+              <span>{pinDropMode ? "Placing..." : "+ Drop Pin"}</span>
+            </button>
+          </div>
+
+          <div className="flex-1 overflow-y-auto p-3 space-y-2">
+            {visibleDrawerPins.length === 0 ? (
+              <div className="rounded-xl border border-white/[0.08] bg-[#121822] p-5 text-center space-y-2">
+                <p className="text-xs text-[#cbd5e1] leading-relaxed">
+                  No dropped pins recorded yet.
+                </p>
+                <p className="text-[11px] text-[#8fa1b6] leading-relaxed">
+                  Click <strong className="text-[#7dd3fc]">Drop Pin</strong> and tap any spot on Lamang Island to save &amp; track custom notes or material spawns.
+                </p>
+              </div>
+            ) : (
+              visibleDrawerPins.map((pin) => {
+                const linkedMat = catalog.find(
+                  (m) => m.id === pin.materialId || m.key === pin.materialId
+                );
+                const layerMeta =
+                  pin.layer === "blueCrates"
+                    ? { dot: "bg-blue-500", text: "text-blue-300", name: "Blue Crate" }
+                    : pin.layer === "pcSpawns"
+                      ? { dot: "bg-cyan-400", text: "text-cyan-300", name: "PC / Tech" }
+                      : { dot: "bg-emerald-400", text: "text-emerald-300", name: "Recon Pin" };
+                const isEditingThis = editingPin?.id === pin.id;
+
+                return (
+                  <div
+                    key={pin.id}
+                    className={`rounded-xl border p-3 transition-colors ${
+                      isEditingThis
+                        ? "bg-[#152030] border-[#38bdf8]"
+                        : "bg-[#121822] border-white/[0.08] hover:border-white/[0.18]"
+                    }`}
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <button
+                        type="button"
+                        onClick={() => focusPinOnMap(pin)}
+                        className="min-w-0 flex-1 text-left group"
+                      >
+                        <div className="flex items-center gap-2">
+                          <span className={`w-2 h-2 rounded-full shrink-0 ${layerMeta.dot}`} />
+                          <span className="text-[13px] font-semibold text-[#f8fafc] group-hover:text-[#7dd3fc] truncate transition-colors">
+                            {pin.label}
+                          </span>
+                        </div>
+                        <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 mt-1 text-[11px] text-[#9fb0c4]">
+                          <span className={layerMeta.text}>{layerMeta.name}</span>
+                          {linkedMat && (
+                            <>
+                              <span className="text-[#4a596c]">·</span>
+                              <span className="text-[#e5a93c] truncate max-w-[140px]">
+                                {linkedMat.name}
+                              </span>
+                            </>
+                          )}
+                          <span className="text-[#4a596c]">·</span>
+                          <span className="font-mono-tabular text-[#cbd5e1]">
+                            Grid {formatGridSquare(pin.x, pin.y)}
+                          </span>
+                        </div>
+                      </button>
+
+                      <div className="flex items-center gap-1 shrink-0">
+                        <button
+                          type="button"
+                          title="Locate pin on map"
+                          aria-label={`Locate ${pin.label}`}
+                          onClick={() => focusPinOnMap(pin)}
+                          className="p-1.5 rounded-lg bg-[#090d14] border border-white/[0.08] text-[#9fb0c4] hover:text-[#38bdf8] hover:border-[#38bdf8]/50 transition-colors"
+                        >
+                          <MapPin className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          type="button"
+                          title="Edit pin"
+                          aria-label={`Edit ${pin.label}`}
+                          onClick={() => startEditingPin(pin)}
+                          className="p-1.5 rounded-lg bg-[#090d14] border border-white/[0.08] text-[#9fb0c4] hover:text-[#e5a93c] hover:border-[#e5a93c]/50 transition-colors"
+                        >
+                          <Pencil className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          type="button"
+                          title="Delete pin"
+                          aria-label={`Delete ${pin.label}`}
+                          onClick={() => handleDeletePinById(pin.id)}
+                          className="p-1.5 rounded-lg bg-[#090d14] border border-white/[0.08] text-[#9fb0c4] hover:text-red-400 hover:border-red-500/50 transition-colors"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Pin Drop Create / Edit Modal */}
+      {capturedCoords && (
+        <div className="absolute top-[98px] sm:top-14 right-2.5 z-[730] w-[315px] max-w-[calc(100%-20px)] rounded-xl bg-[#0d121a]/98 backdrop-blur-xl border border-[#38bdf8]/60 p-4 shadow-2xl space-y-3">
+          <div className="flex items-center justify-between gap-2">
+            <div>
+              <div className="text-[10px] font-mono-tabular uppercase tracking-wider text-[#e5a93c] font-semibold">
+                {editingPin ? "Edit Dropped Pin" : "New Map Pin"}
+              </div>
+              <span className="text-xs font-semibold text-[#38bdf8]">
+                Grid {formatGridSquare(capturedCoords.x, capturedCoords.y)}
+              </span>
+            </div>
+            <button
+              type="button"
+              aria-label="Close pin modal"
+              onClick={closePinModal}
+              className="p-1 rounded-lg text-[#8b98a9] hover:text-white hover:bg-white/[0.08] transition-colors"
             >
               <X className="w-4 h-4" />
             </button>
           </div>
 
           <div>
-            <label className="block text-[11px] text-[#8b98a9] mb-1">
-              Captured Coordinates
-            </label>
+            <div className="flex items-center justify-between mb-1">
+              <label className="text-[11px] text-[#9fb0c4]">
+                Coordinates (X, Y)
+              </label>
+              {editingPin && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    const next = !repositioningPin;
+                    setRepositioningPin(next);
+                    if (next) {
+                      setMeasureMode(false);
+                      onNotify("Click anywhere on the map to move this pin");
+                    }
+                  }}
+                  className={`text-[11px] font-medium px-2 py-0.5 rounded border transition-colors ${
+                    repositioningPin
+                      ? "bg-cyan-500/20 border-cyan-400 text-cyan-200"
+                      : "bg-[#121822] border-white/[0.1] text-[#7dd3fc] hover:border-[#38bdf8]"
+                  }`}
+                >
+                  {repositioningPin ? "Click map now..." : "Move on Map"}
+                </button>
+              )}
+            </div>
             <input
               type="text"
               readOnly
               value={`${capturedCoords.x}, ${capturedCoords.y}`}
-              className="w-full bg-[#070a0e] border border-[#222b38] rounded px-2.5 py-1.5 font-mono-tabular text-xs text-[#38bdf8]"
+              className="w-full bg-[#070a0f] border border-white/[0.09] rounded-lg px-2.5 py-1.5 font-mono-tabular text-xs text-[#38bdf8]"
             />
           </div>
 
           <div>
-            <label className="block text-[11px] text-[#8b98a9] mb-1">
+            <label className="block text-[11px] text-[#9fb0c4] mb-1">
               Attach Pin to Material
             </label>
             <select
+              aria-label="Attach Pin to Material"
               value={pinMaterialId}
               onChange={(e) => setPinMaterialId(e.target.value)}
-              className="w-full bg-[#070a0e] border border-[#222b38] rounded px-2.5 py-1.5 text-xs text-[#dce4ee]"
+              className="w-full bg-[#070a0f] border border-white/[0.09] rounded-lg px-2.5 py-1.5 text-xs text-[#f1f5f9]"
             >
               <option value="">General Recon Pin</option>
               {catalog.map((m) => (
@@ -1362,17 +2686,18 @@ export function TacticalMapPanel({
           </div>
 
           <div>
-            <label className="block text-[11px] text-[#8b98a9] mb-1">
+            <label className="block text-[11px] text-[#9fb0c4] mb-1">
               Layer Category
             </label>
             <select
+              aria-label="Layer Category"
               value={pinLayer}
               onChange={(e) =>
                 setPinLayer(
                   e.target.value as "customPins" | "blueCrates" | "pcSpawns"
                 )
               }
-              className="w-full bg-[#070a0e] border border-[#222b38] rounded px-2.5 py-1.5 text-xs text-[#dce4ee]"
+              className="w-full bg-[#070a0f] border border-white/[0.09] rounded-lg px-2.5 py-1.5 text-xs text-[#f1f5f9]"
             >
               <option value="customPins">Custom Item Pin (Green)</option>
               <option value="blueCrates">Blue-Planked Crate (Blue)</option>
@@ -1381,39 +2706,78 @@ export function TacticalMapPanel({
           </div>
 
           <div>
-            <label className="block text-[11px] text-[#8b98a9] mb-1">
+            <label className="block text-[11px] text-[#9fb0c4] mb-1">
               Location Note
             </label>
             <input
               type="text"
               value={pinNote}
               onChange={(e) => setPinNote(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") handleSavePin();
+              }}
               placeholder="e.g. Northern Reach Armory shelf"
-              className="w-full bg-[#070a0e] border border-[#222b38] rounded px-2.5 py-1.5 text-xs text-[#eef3f8] placeholder:text-[#5d6b7c]"
+              className="w-full bg-[#070a0f] border border-white/[0.09] rounded-lg px-2.5 py-1.5 text-xs text-[#f8fafc] placeholder:text-[#66778b]"
             />
           </div>
 
-          <button
-            type="button"
-            onClick={handleSavePin}
-            className="w-full py-2 px-4 rounded bg-[#e5a93c] hover:bg-[#f0b94d] text-[#0c0f14] font-semibold text-xs transition-colors"
-          >
-            Save Map Pin
-          </button>
+          <div className="flex items-center gap-2 pt-1">
+            <button
+              type="button"
+              onClick={handleSavePin}
+              className="flex-1 py-2 px-4 rounded-lg bg-[#e5a93c] hover:bg-[#f0b94d] text-[#0c0f14] font-semibold text-xs transition-colors"
+            >
+              {editingPin ? "Save Changes" : "Save Map Pin"}
+            </button>
+            {editingPin && (
+              <button
+                type="button"
+                onClick={() => handleDeletePinById(editingPin.id)}
+                className="py-2 px-3 rounded-lg bg-[#261215] border border-red-500/60 text-red-300 hover:bg-red-950/60 font-semibold text-xs transition-colors"
+              >
+                Delete
+              </button>
+            )}
+          </div>
         </div>
       )}
 
       {/* Leaflet Canvas (keep ref element className static so Leaflet classes are never overwritten by React) */}
       <div
-        className={`w-full h-full ${pinDropMode ? "pin-drop-active" : ""} ${
-          isResizing ? "pointer-events-none" : ""
-        }`}
+        className={`w-full h-full ${
+          pinDropMode || measureMode || repositioningPin ? "pin-drop-active" : ""
+        } ${isResizing ? "pointer-events-none" : ""}`}
       >
         <div ref={mapContainerRef} className="w-full h-full" />
       </div>
 
-      {/* Minimal Bottom-Right Coordinate Telemetry */}
-      <div className="absolute bottom-2.5 right-2.5 z-[650] pointer-events-auto bg-[#0c1016]/88 backdrop-blur-md border border-[#242e3c] rounded px-2 py-1 font-mono-tabular text-[11px] text-[#8b98a9] flex items-center gap-2 shadow-lg">
+      {/* Minimal Bottom-Right Coordinate & Measure Telemetry */}
+      <div className="absolute bottom-2.5 right-2.5 z-[650] pointer-events-auto bg-[#0d121a]/90 backdrop-blur-xl border border-white/[0.1] rounded-lg px-2.5 py-1.5 font-mono-tabular text-[11px] text-[#94a3b8] flex items-center gap-2 shadow-xl">
+        {measurePoints.length > 0 && (
+          <>
+            <span className="text-[#38bdf8] font-semibold">
+              {measurePoints.length === 1
+                ? `A: ${measurePoints[0].grid} (Click B)`
+                : `${Math.round(
+                    Math.hypot(
+                      measurePoints[1].x - measurePoints[0].x,
+                      measurePoints[1].y - measurePoints[0].y
+                    )
+                  )} m · ${formatBearing(
+                    measurePoints[1].x - measurePoints[0].x,
+                    measurePoints[1].y - measurePoints[0].y
+                  )}`}
+            </span>
+            <button
+              type="button"
+              onClick={() => setMeasurePoints([])}
+              className="text-[10px] text-[#e5a93c] hover:underline"
+            >
+              Clear
+            </button>
+            <span className="text-[#3a4657]">·</span>
+          </>
+        )}
         <span>
           Grid{" "}
           <strong className="text-[#e5a93c]">

@@ -2,7 +2,7 @@ import { GzwDataClient } from "@zoniboy/gzw-data-client";
 
 export const API_ROOT = "https://gzw-data.dev/api/v1";
 
-const CACHE_KEY = "lamang_ops_gzw_api_cache_v8";
+const CACHE_KEY = "lamang_ops_gzw_api_cache_v9";
 const SPAWN_LOOKUP_CACHE_KEY = "lamang_ops_spawn_lookup_v3";
 
 const PRIORITY_DATASETS = [
@@ -18,28 +18,26 @@ const PRIORITY_DATASETS = [
   "loot_container",
   "regions",
   "vendors",
+  "vendor_stock",
   "tasks",
   "main_task",
   "side_task",
   "hidden_task",
   "contract",
   "contracts",
-  "squad_strike_missions",
-  "squad_strike_missions_item",
   "task_items",
   "task_guides",
   "intels",
-  "bosses",
 ];
 
 const MAX_PAGES_BY_DATASET: Record<string, number> = {
+  vendor_stock: 13,
   tasks: 7,
   side_task: 3,
   keys: 3,
   task_items: 3,
   task_guides: 2,
   intels: 6,
-  squad_strike_missions_item: 2,
   contract: 2,
   contracts: 2,
   loot_container: 2,
@@ -511,3 +509,391 @@ export async function searchLiveApi(
     return {};
   }
 }
+
+const categoryDatasetCache = new Map<string, NormalizedApiRecord[]>();
+const inflightCategoryLoads = new Map<
+  string,
+  Promise<NormalizedApiRecord[]>
+>();
+
+/**
+ * Lazy-load full records (thumbnails, prices, weights, combat/medical specs)
+ * for any item category (e.g. weapons, ammo, medical, plate_carriers).
+ */
+export async function fetchCategoryDataset(
+  datasetName: string
+): Promise<NormalizedApiRecord[]> {
+  const dataset = datasetName.trim().toLowerCase();
+  if (!/^[a-z0-9_]+$/.test(dataset)) return [];
+
+  const cached = categoryDatasetCache.get(dataset);
+  if (cached) return cached;
+
+  const inflight = inflightCategoryLoads.get(dataset);
+  if (inflight) return inflight;
+
+  const task = (async (): Promise<NormalizedApiRecord[]> => {
+    if (!isStaticHostingEnvironment()) {
+      try {
+        const res = await fetch(
+          `/api/gzw/dataset/${encodeURIComponent(dataset)}`,
+          { headers: { Accept: "application/json" } }
+        );
+        const ct = res.headers.get("content-type") || "";
+        if (res.ok && ct.includes("application/json")) {
+          const json = (await res.json()) as {
+            records?: NormalizedApiRecord[];
+          };
+          const recs = Array.isArray(json.records) ? json.records : [];
+          if (recs.length > 0) {
+            categoryDatasetCache.set(dataset, recs);
+            return recs;
+          }
+        }
+      } catch {
+        // Fall through to direct browser fetch
+      }
+    }
+
+    const rows: NormalizedApiRecord[] = [];
+    let page = 1;
+    const maxPages = 5;
+    while (page <= maxPages) {
+      try {
+        const upstreamRes = await fetch(
+          `${API_ROOT}/${encodeURIComponent(dataset)}?page=${page}`,
+          { signal: AbortSignal.timeout(10000) }
+        );
+        if (!upstreamRes.ok) break;
+        const resp = (await upstreamRes.json()) as {
+          data?: Record<string, unknown>[];
+          totalPages?: number;
+          perPage?: number;
+        };
+        const batch = Array.isArray(resp.data) ? resp.data : [];
+        if (batch.length === 0) break;
+
+        const pageSize = resp.perPage || batch.length || 50;
+        rows.push(
+          ...batch.map((item, idx) =>
+            normalizeRecordClient(dataset, item, (page - 1) * pageSize + idx)
+          )
+        );
+        if (resp.totalPages && page >= resp.totalPages) break;
+        page += 1;
+      } catch {
+        break;
+      }
+    }
+
+    const clean = rows.filter((r) => !r.name.startsWith("<DEV>"));
+    categoryDatasetCache.set(dataset, clean);
+    return clean;
+  })();
+
+  inflightCategoryLoads.set(dataset, task);
+  try {
+    return await task;
+  } finally {
+    inflightCategoryLoads.delete(dataset);
+  }
+}
+
+export interface TaskWikiImage {
+  url: string;
+  fullUrl: string;
+  caption: string;
+}
+
+export interface TaskWikiIntel {
+  title: string;
+  wikiUrl: string;
+  walkthroughSteps: string[];
+  tips: string[];
+  images: TaskWikiImage[];
+  fetchedAt: string;
+}
+
+const TASK_WIKI_CACHE_KEY = "lamang_ops_task_wiki_v1";
+const taskWikiMemCache = new Map<string, TaskWikiIntel>();
+const inflightTaskWiki = new Map<string, Promise<TaskWikiIntel>>();
+
+function decodeEntitiesClient(str: string): string {
+  return str
+    .replace(/&#(\d+);/g, (_m, dec) => String.fromCharCode(Number(dec)))
+    .replace(/&#x([0-9a-f]+);/gi, (_m, hex) =>
+      String.fromCharCode(parseInt(hex, 16))
+    )
+    .replace(/&quot;/g, '"')
+    .replace(/&#039;|&apos;/g, "'")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&nbsp;/g, " ");
+}
+
+function stripHtmlClient(html: string): string {
+  return decodeEntitiesClient(
+    html
+      .replace(/<style[\s\S]*?<\/style>/gi, " ")
+      .replace(/<script[\s\S]*?<\/script>/gi, " ")
+      .replace(/<[^>]+>/g, " ")
+  )
+    .replace(/\[edit\]/gi, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function parseWikiHtmlClient(
+  taskName: string,
+  pageTitle: string,
+  html: string
+): TaskWikiIntel {
+  const images: TaskWikiImage[] = [];
+  const seenUrls = new Set<string>();
+
+  const cleanImageUrl = (rawUrl: string): string =>
+    rawUrl
+      .replace(/\/revision\/latest\/scale-to-width-down\/\d+/i, "/revision/latest")
+      .replace(/\/revision\/latest\/window-crop\/[^?]+/i, "/revision/latest");
+
+  const isUseful = (url: string, imgName: string): boolean => {
+    const lower = `${url} ${imgName}`.toLowerCase();
+    if (!url.startsWith("https://static.wikia.nocookie.net/")) return false;
+    if (
+      lower.includes("_banner") ||
+      lower.includes("red_cross") ||
+      lower.includes("missing_icon") ||
+      lower.includes("check_mark") ||
+      lower.includes("_icon.") ||
+      lower.includes("site-logo")
+    ) {
+      return false;
+    }
+    if (/scale-to-width-down\/(?:1[0-9]|[1-5][0-9])\b/.test(url)) return false;
+    return true;
+  };
+
+  for (const chunk of html.split('<div class="wikia-gallery-item"').slice(1)) {
+    const block = chunk.slice(0, 2600);
+    const srcMatch = block.match(
+      /(?:data-src|src)="(https:\/\/static\.wikia\.nocookie\.net\/[^"]+)"/i
+    );
+    if (!srcMatch) continue;
+    const rawThumb = srcMatch[1];
+    const nameMatch = block.match(/data-image-name="([^"]+)"/i);
+    const imgName = nameMatch ? decodeEntitiesClient(nameMatch[1]) : "";
+    if (!isUseful(rawThumb, imgName)) continue;
+
+    const fullUrl = cleanImageUrl(rawThumb);
+    const dedup = fullUrl.split("?")[0];
+    if (seenUrls.has(dedup)) continue;
+    seenUrls.add(dedup);
+
+    const capMatch = block.match(/class="lightbox-caption"[^>]*>([\s\S]*?)<\/div>/i);
+    const dataCapMatch = block.match(/data-caption="([^"]+)"/i);
+    const altMatch = block.match(/alt="([^"]+)"/i);
+    let caption = stripHtmlClient(
+      capMatch?.[1] || dataCapMatch?.[1] || altMatch?.[1] || ""
+    );
+    if (!caption && imgName) {
+      caption = imgName
+        .replace(/\.(png|jpg|jpeg|webp)$/i, "")
+        .replace(/[_-]+/g, " ")
+        .trim();
+    }
+    images.push({
+      url: rawThumb,
+      fullUrl,
+      caption: caption || `${taskName} location reference`,
+    });
+  }
+
+  for (const fm of html.matchAll(/<figure\b[\s\S]*?<\/figure>/gi)) {
+    const block = fm[0];
+    const srcMatch = block.match(
+      /(?:data-src|src)="(https:\/\/static\.wikia\.nocookie\.net\/[^"]+)"/i
+    );
+    if (!srcMatch) continue;
+    const rawThumb = srcMatch[1];
+    const nameMatch = block.match(/data-image-name="([^"]+)"/i);
+    const imgName = nameMatch ? decodeEntitiesClient(nameMatch[1]) : "";
+    if (!isUseful(rawThumb, imgName)) continue;
+
+    const fullUrl = cleanImageUrl(rawThumb);
+    const dedup = fullUrl.split("?")[0];
+    if (seenUrls.has(dedup)) continue;
+    seenUrls.add(dedup);
+
+    const figCap = block.match(/<figcaption[^>]*>([\s\S]*?)<\/figcaption>/i);
+    const altMatch = block.match(/alt="([^"]+)"/i);
+    let caption = stripHtmlClient(figCap?.[1] || altMatch?.[1] || "");
+    if (!caption && imgName) {
+      caption = imgName
+        .replace(/\.(png|jpg|jpeg|webp)$/i, "")
+        .replace(/[_-]+/g, " ")
+        .trim();
+    }
+    images.push({
+      url: rawThumb,
+      fullUrl,
+      caption: caption || `${taskName} location reference`,
+    });
+  }
+
+  const walkthroughSteps: string[] = [];
+  const tips: string[] = [];
+  const extractSec = (names: string[]) => {
+    for (const n of names) {
+      const re = new RegExp(
+        `<h[23][^>]*>[\\s\\S]*?${n}[\\s\\S]*?<\\/h[23]>([\\s\\S]*?)(?=<h[23]\\b|$)`,
+        "i"
+      );
+      const m = html.match(re);
+      if (m && m[1]) return m[1];
+    }
+    return "";
+  };
+
+  const wtHtml = extractSec(["Walkthrough", "Guide", "Strategy", "Mission Guide"]);
+  if (wtHtml) {
+    const cleaned = wtHtml
+      .replace(/<div class="wikia-gallery[\s\S]*?<\/div>\s*<\/div>/gi, " ")
+      .replace(/<figure[\s\S]*?<\/figure>/gi, " ");
+    for (const b of cleaned.matchAll(/<(?:li|p)[^>]*>([\s\S]*?)<\/(?:li|p)>/gi)) {
+      const txt = stripHtmlClient(b[1]);
+      if (
+        txt.length >= 16 &&
+        !/^(?:see also|notes?|gallery|video|rewards?)$/i.test(txt) &&
+        !walkthroughSteps.some((s) => s.toLowerCase() === txt.toLowerCase())
+      ) {
+        walkthroughSteps.push(txt);
+      }
+    }
+  }
+
+  const tipsHtml = extractSec(["Tips", "Notes", "Trivia"]);
+  if (tipsHtml) {
+    for (const b of tipsHtml.matchAll(/<(?:li|p)[^>]*>([\s\S]*?)<\/(?:li|p)>/gi)) {
+      const txt = stripHtmlClient(b[1]);
+      if (txt.length >= 16 && tips.length < 4) tips.push(txt);
+    }
+  }
+
+  const slug = encodeURIComponent(pageTitle.replace(/\s+/g, "_"));
+  return {
+    title: pageTitle || taskName,
+    wikiUrl: `https://gray-zone-warfare.fandom.com/wiki/${slug}`,
+    walkthroughSteps: walkthroughSteps.slice(0, 14),
+    tips,
+    images: images.slice(0, 14),
+    fetchedAt: new Date().toISOString(),
+  };
+}
+
+/**
+ * Fetches live building/room location screenshots & community walkthrough steps
+ * from Gray Zone Warfare Wiki (via Express proxy on server or CORS-enabled MediaWiki API on static hosts).
+ */
+export async function fetchTaskWalkthroughIntel(
+  taskName: string,
+  force = false
+): Promise<TaskWikiIntel> {
+  const key = taskName.trim().toLowerCase();
+  if (!force) {
+    const mem = taskWikiMemCache.get(key);
+    if (mem) return mem;
+
+    const stored = safeStorageGet<Record<string, TaskWikiIntel>>(
+      TASK_WIKI_CACHE_KEY,
+      {}
+    );
+    const entry = stored[key];
+    if (entry) {
+      const ageMs = Date.now() - new Date(entry.fetchedAt).getTime();
+      if (ageMs < 24 * 60 * 60 * 1000) {
+        taskWikiMemCache.set(key, entry);
+        return entry;
+      }
+    }
+  }
+
+  const inflight = inflightTaskWiki.get(key);
+  if (inflight && !force) return inflight;
+
+  const task = (async (): Promise<TaskWikiIntel> => {
+    if (!isStaticHostingEnvironment()) {
+      try {
+        const res = await fetch(
+          `/api/gzw/task-wiki?name=${encodeURIComponent(taskName)}${
+            force ? "&force=1" : ""
+          }`,
+          { headers: { Accept: "application/json" } }
+        );
+        const ct = res.headers.get("content-type") || "";
+        if (res.ok && ct.includes("application/json")) {
+          const data = (await res.json()) as TaskWikiIntel;
+          taskWikiMemCache.set(key, data);
+          const stored = safeStorageGet<Record<string, TaskWikiIntel>>(
+            TASK_WIKI_CACHE_KEY,
+            {}
+          );
+          stored[key] = data;
+          safeStorageSet(TASK_WIKI_CACHE_KEY, stored);
+          return data;
+        }
+      } catch {
+        // Fall through to direct CORS wiki API
+      }
+    }
+
+    try {
+      const wikiUrl = `https://gray-zone-warfare.fandom.com/api.php?action=parse&page=${encodeURIComponent(
+        taskName.replace(/\s+/g, "_")
+      )}&prop=text|displaytitle&redirects=1&format=json&origin=*`;
+      const res = await fetch(wikiUrl, { signal: AbortSignal.timeout(9000) });
+      if (res.ok) {
+        const json = (await res.json()) as {
+          parse?: { title?: string; text?: { "*"?: string } };
+        };
+        const html = json.parse?.text?.["*"];
+        if (html) {
+          const parsed = parseWikiHtmlClient(
+            taskName,
+            json.parse?.title || taskName,
+            html
+          );
+          taskWikiMemCache.set(key, parsed);
+          const stored = safeStorageGet<Record<string, TaskWikiIntel>>(
+            TASK_WIKI_CACHE_KEY,
+            {}
+          );
+          stored[key] = parsed;
+          safeStorageSet(TASK_WIKI_CACHE_KEY, stored);
+          return parsed;
+        }
+      }
+    } catch {
+      // Fallback empty
+    }
+
+    return {
+      title: taskName,
+      wikiUrl: `https://gray-zone-warfare.fandom.com/wiki/${encodeURIComponent(
+        taskName.replace(/\s+/g, "_")
+      )}`,
+      walkthroughSteps: [],
+      tips: [],
+      images: [],
+      fetchedAt: new Date().toISOString(),
+    };
+  })();
+
+  inflightTaskWiki.set(key, task);
+  try {
+    return await task;
+  } finally {
+    inflightTaskWiki.delete(key);
+  }
+}
+
