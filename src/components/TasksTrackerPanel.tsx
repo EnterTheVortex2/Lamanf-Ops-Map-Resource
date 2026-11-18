@@ -68,6 +68,9 @@ export function TasksTrackerPanel({
     src: string;
     title: string;
   } | null>(null);
+  const [failedImgUrls, setFailedImgUrls] = useState<Record<string, boolean>>({});
+  const markImgFailed = (url: string) =>
+    setFailedImgUrls((prev) => (prev[url] ? prev : { ...prev, [url]: true }));
 
   const vendorStats = useMemo(() => {
     const map = new Map<string, { total: number; done: number }>();
@@ -207,11 +210,12 @@ export function TasksTrackerPanel({
                     : "bg-[#10151c] border-[#1f2834] text-[#8d9bad] hover:text-white hover:border-[#344254]"
                 }`}
               >
-                {vendor.image ? (
+                {vendor.image && !failedImgUrls[vendor.image] ? (
                   <img
                     src={vendor.image}
                     alt={vendor.name}
                     referrerPolicy="no-referrer"
+                    onError={() => markImgFailed(vendor.image!)}
                     className="w-6 h-6 rounded object-cover border border-[#2a3646] bg-[#080b0f] shrink-0"
                     loading="lazy"
                   />
@@ -348,11 +352,13 @@ export function TasksTrackerPanel({
         {activeVendorProfile && (
           <div className="rounded-md bg-[#10161e] border border-[#232d3b] p-3 flex items-center justify-between gap-3">
             <div className="flex items-center gap-3 min-w-0">
-              {activeVendorProfile.image ? (
+              {activeVendorProfile.image &&
+              !failedImgUrls[activeVendorProfile.image] ? (
                 <img
                   src={activeVendorProfile.image}
                   alt={activeVendorProfile.name}
                   referrerPolicy="no-referrer"
+                  onError={() => markImgFailed(activeVendorProfile.image!)}
                   className="w-10 h-10 rounded object-cover border border-[#324054] shrink-0"
                 />
               ) : (
@@ -569,7 +575,7 @@ export function TasksTrackerPanel({
                         onClick={(e) => e.stopPropagation()}
                       >
                         {/* Guide / Location Image */}
-                        {previewImg && (
+                        {previewImg && !failedImgUrls[previewImg] && (
                           <div className="rounded bg-[#080b0f] border border-[#222c3a] overflow-hidden">
                             <button
                               type="button"
@@ -589,6 +595,7 @@ export function TasksTrackerPanel({
                                 src={previewImg}
                                 alt={`${task.name} visual reference`}
                                 referrerPolicy="no-referrer"
+                                onError={() => markImgFailed(previewImg)}
                                 className={`w-full object-cover ${
                                   task.guideImage ? "max-h-44" : "max-h-24 opacity-85"
                                 } group-hover:opacity-100 transition-opacity`}

@@ -19,6 +19,7 @@ import {
  * ============================================================================
  */
 export const LAMANG_TILE_URL = "/api/map/tiles/{z}/{x}/{y}.png";
+export const LAMANG_DIRECT_TILE_URL = "https://cdn.gzwtacmap.com/0.5/lamang/{z}/{x}/{y}.png";
 
 export const MAP_EXTENT = {
   minX: 0,

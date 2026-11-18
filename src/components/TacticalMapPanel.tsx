@@ -19,13 +19,18 @@ import {
   CHEMICAL_AREAS_05,
   DISASSEMBLY_SPAWNS_05,
   formatGridSquare,
+  LAMANG_DIRECT_TILE_URL,
   LAMANG_POIS,
   LAMANG_TILE_URL,
   MAP_EXTENT,
   type CustomMapPin,
   type MapLayerKey,
 } from "../config/mapConfig";
-import type { ItemSpawnLookupResult, NormalizedApiRecord } from "../services/gzwApi";
+import {
+  isStaticHostingEnvironment,
+  type ItemSpawnLookupResult,
+  type NormalizedApiRecord,
+} from "../services/gzwApi";
 import {
   resolveSpawnPointsForMaterial,
   type CatalogMaterial,
@@ -216,15 +221,36 @@ export function TacticalMapPanel({
 
     L.control.zoom({ position: "bottomleft" }).addTo(map);
 
-    L.tileLayer(LAMANG_TILE_URL, {
-      minZoom: 13.5,
-      maxZoom: 19,
-      minNativeZoom: 14,
-      maxNativeZoom: 19,
-      tileSize: 256,
-      bounds: L.latLngBounds(toLatLng(0, 0), toLatLng(14000, 8000)),
-      keepBuffer: 4,
-    }).addTo(map);
+    let disposed = false;
+    const attachTileLayer = (tileUrl: string) => {
+      if (disposed) return;
+      L.tileLayer(tileUrl, {
+        minZoom: 13.5,
+        maxZoom: 19,
+        minNativeZoom: 14,
+        maxNativeZoom: 19,
+        tileSize: 256,
+        bounds: L.latLngBounds(toLatLng(0, 0), toLatLng(14000, 8000)),
+        keepBuffer: 4,
+      }).addTo(map);
+    };
+
+    if (isStaticHostingEnvironment()) {
+      attachTileLayer(LAMANG_DIRECT_TILE_URL);
+    } else {
+      fetch("/api/gzw/health", { signal: AbortSignal.timeout(1200) })
+        .then((res) => {
+          const ct = res.headers.get("content-type") || "";
+          attachTileLayer(
+            res.ok && ct.includes("application/json")
+              ? LAMANG_TILE_URL
+              : LAMANG_DIRECT_TILE_URL
+          );
+        })
+        .catch(() => {
+          attachTileLayer(LAMANG_DIRECT_TILE_URL);
+        });
+    }
 
     map.fitBounds(L.latLngBounds(toLatLng(2800, 850), toLatLng(11200, 7300)));
     setZoomLevel(map.getZoom());
@@ -258,6 +284,7 @@ export function TacticalMapPanel({
     mapRef.current = map;
 
     return () => {
+      disposed = true;
       map.remove();
       mapRef.current = null;
     };
@@ -937,6 +964,10 @@ export function TacticalMapPanel({
                   src={inspectedTask.guideImage || inspectedTask.image || ""}
                   alt={inspectedTask.name}
                   referrerPolicy="no-referrer"
+                  onError={(e) => {
+                    const btn = e.currentTarget.closest("button");
+                    if (btn) btn.style.display = "none";
+                  }}
                   className={`w-full object-cover ${
                     inspectedTask.guideImage ? "max-h-40" : "max-h-20 opacity-85"
                   }`}
