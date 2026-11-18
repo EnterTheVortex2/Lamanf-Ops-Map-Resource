@@ -58,6 +58,7 @@ export interface LamangPoi extends RawPoi05 {
 }
 
 export type MapLayerKey =
+  | "gridOverlay"
   | "blueCrates"
   | "pcSpawns"
   | "chemicalAreas"
