@@ -1,18 +1,22 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
+  Check,
   CheckSquare,
+  ChevronDown,
+  Eye,
   GripVertical,
   Hammer,
   KeyRound,
   Map as MapIcon,
   Maximize2,
   Minimize2,
+  Pencil,
   RefreshCw,
   RotateCcw,
   ShoppingBag,
+  Users,
 } from "lucide-react";
 import {
-  DEFAULT_SEED_PINS,
   doesTaskBelongToFaction,
   FACTIONS,
   type CustomMapPin,
@@ -45,21 +49,25 @@ import {
 } from "./utils/catalogBuilder";
 import { buildKeysAndDoorsCatalog, type GzwKeyDoorDef } from "./utils/keyBuilder";
 import {
+  loadActiveOperatorId,
+  loadOperatorProfiles,
+  loadOperatorSnapshot,
+  OPERATOR_SLOT_IDS,
+  saveActiveOperatorId,
+  saveOperatorProfiles,
+  saveOperatorSnapshot,
+  type OperatorProfileMeta,
+  type OperatorSlotId,
+  type OperatorStateSnapshot,
+} from "./utils/operatorStorage";
+import {
   buildAllTasks,
   buildVendorProfiles,
   type GzwTaskDef,
 } from "./utils/taskBuilder";
 import { buildVendorShopCatalog } from "./utils/vendorBuilder";
 
-const BUILT_KEY = "lamang_ops_built_upgrades_v1";
-const PLANNED_KEY = "lamang_ops_planned_upgrades_v1";
-const STASH_KEY = "lamang_ops_stash_counts_v1";
-const COMPLETED_TASKS_KEY = "lamang_ops_completed_tasks_v1";
-const OWNED_KEYS_KEY = "lamang_ops_owned_keys_v1";
-const MAP_TICKED_KEY = "lamang_ops_ticked_materials_v5";
-const CUSTOM_PINS_KEY = "lamang_ops_custom_pins_v5";
 const PANEL_WIDTH_KEY = "lamang_ops_panel_width_v1";
-const FACTION_KEY = "lamang_ops_faction_v1";
 
 const DEFAULT_COMPACT_WIDTH = 468;
 const MIN_PANEL_WIDTH = 360;
@@ -77,6 +85,7 @@ function clampPanelWidth(rawWidth: number): number {
 export default function App() {
   const [workspaceMode, setWorkspaceMode] = useState<WorkspaceMode>("hideout");
   const [mobileTab, setMobileTab] = useState<MobileTab>("hideout");
+  const [glanceMode, setGlanceMode] = useState(false);
   const [isDesktop, setIsDesktop] = useState(() =>
     typeof window !== "undefined" ? window.innerWidth >= 1024 : true
   );
@@ -173,31 +182,70 @@ export default function App() {
     return { mode: "loading", label: "Syncing data..." };
   });
 
-  const [builtUpgrades, setBuiltUpgrades] = useState<Record<string, boolean>>(() =>
-    safeStorageGet<Record<string, boolean>>(BUILT_KEY, {})
+  // Multi-Operator Slots (Operator 1 / Operator 2 / Operator 3)
+  const [activeOperatorId, setActiveOperatorId] = useState<OperatorSlotId>(() =>
+    loadActiveOperatorId()
   );
-  const [plannedUpgrades, setPlannedUpgrades] = useState<Record<string, boolean>>(
-    () => safeStorageGet<Record<string, boolean>>(PLANNED_KEY, {})
+  const activeOperatorIdRef = useRef<OperatorSlotId>(activeOperatorId);
+  activeOperatorIdRef.current = activeOperatorId;
+
+  const [operatorProfiles, setOperatorProfiles] = useState<OperatorProfileMeta[]>(
+    () => loadOperatorProfiles()
   );
-  const [stashCounts, setStashCounts] = useState<Record<string, number>>(() =>
-    safeStorageGet<Record<string, number>>(STASH_KEY, {})
+  const [opState, setOpState] = useState<OperatorStateSnapshot>(() =>
+    loadOperatorSnapshot(loadActiveOperatorId())
   );
-  const [completedTasks, setCompletedTasks] = useState<Record<string, boolean>>(
-    () => safeStorageGet<Record<string, boolean>>(COMPLETED_TASKS_KEY, {})
+  const [operatorMenuOpen, setOperatorMenuOpen] = useState(false);
+  const [renamingOpId, setRenamingOpId] = useState<OperatorSlotId | null>(null);
+  const [renameDraft, setRenameDraft] = useState("");
+  const operatorMenuRef = useRef<HTMLDivElement | null>(null);
+
+  const updateOpState = useCallback(
+    (updater: (prev: OperatorStateSnapshot) => OperatorStateSnapshot) => {
+      const slotId = activeOperatorIdRef.current;
+      setOpState((prev) => {
+        const next = updater(prev);
+        saveOperatorSnapshot(slotId, next);
+        return next;
+      });
+    },
+    []
   );
-  const [ownedKeys, setOwnedKeys] = useState<Record<string, boolean>>(() =>
-    safeStorageGet<Record<string, boolean>>(OWNED_KEYS_KEY, {})
+
+  const builtUpgrades = opState.builtUpgrades;
+  const plannedUpgrades = opState.plannedUpgrades;
+  const stashCounts = opState.stashCounts;
+  const completedTasks = opState.completedTasks;
+  const ownedKeys = opState.ownedKeys;
+  const tickedMapMaterials = opState.tickedMapMaterials;
+  const customPins = opState.customPins;
+  const selectedFaction = opState.faction;
+
+  const activeOperatorProfile = useMemo(
+    () =>
+      operatorProfiles.find((p) => p.id === activeOperatorId) || {
+        id: activeOperatorId,
+        name: "Operator 1",
+        faction: selectedFaction,
+        updatedAt: Date.now(),
+      },
+    [operatorProfiles, activeOperatorId, selectedFaction]
   );
-  const [tickedMapMaterials, setTickedMapMaterials] = useState<
-    Record<string, boolean>
-  >(() => safeStorageGet<Record<string, boolean>>(MAP_TICKED_KEY, {}));
-  const [customPins, setCustomPins] = useState<CustomMapPin[]>(() =>
-    safeStorageGet<CustomMapPin[]>(CUSTOM_PINS_KEY, DEFAULT_SEED_PINS)
-  );
-  const [selectedFaction, setSelectedFaction] = useState<FactionId>(() => {
-    const saved = safeStorageGet<string>(FACTION_KEY, "ALL");
-    return saved === "LRI" || saved === "MSS" || saved === "CSI" ? saved : "ALL";
-  });
+
+  useEffect(() => {
+    if (!operatorMenuOpen) return;
+    const handleOutside = (e: MouseEvent) => {
+      if (
+        operatorMenuRef.current &&
+        !operatorMenuRef.current.contains(e.target as Node)
+      ) {
+        setOperatorMenuOpen(false);
+        setRenamingOpId(null);
+      }
+    };
+    window.addEventListener("mousedown", handleOutside);
+    return () => window.removeEventListener("mousedown", handleOutside);
+  }, [operatorMenuOpen]);
 
   const [selectedUpgrade, setSelectedUpgrade] =
     useState<HideoutUpgradeDef | null>(null);
@@ -318,56 +366,83 @@ export default function App() {
     return list;
   }, [apiCache]);
 
-  const handleToggleBuilt = useCallback((upgradeId: string) => {
-    setBuiltUpgrades((prev) => {
-      const next = { ...prev, [upgradeId]: !prev[upgradeId] };
-      safeStorageSet(BUILT_KEY, next);
-      return next;
-    });
-  }, []);
+  const handleToggleBuilt = useCallback(
+    (upgradeId: string) => {
+      updateOpState((prev) => ({
+        ...prev,
+        builtUpgrades: {
+          ...prev.builtUpgrades,
+          [upgradeId]: !prev.builtUpgrades[upgradeId],
+        },
+      }));
+    },
+    [updateOpState]
+  );
 
-  const handleTogglePlanned = useCallback((upgradeId: string) => {
-    setPlannedUpgrades((prev) => {
-      const next = { ...prev, [upgradeId]: !prev[upgradeId] };
-      safeStorageSet(PLANNED_KEY, next);
-      return next;
-    });
-  }, []);
+  const handleTogglePlanned = useCallback(
+    (upgradeId: string) => {
+      updateOpState((prev) => ({
+        ...prev,
+        plannedUpgrades: {
+          ...prev.plannedUpgrades,
+          [upgradeId]: !prev.plannedUpgrades[upgradeId],
+        },
+      }));
+    },
+    [updateOpState]
+  );
 
-  const handleSetStashCount = useCallback((key: string, value: number) => {
-    setStashCounts((prev) => {
-      const next = { ...prev, [key]: Math.max(0, value) };
-      safeStorageSet(STASH_KEY, next);
-      return next;
-    });
-  }, []);
+  const handleSetStashCount = useCallback(
+    (key: string, value: number) => {
+      updateOpState((prev) => ({
+        ...prev,
+        stashCounts: {
+          ...prev.stashCounts,
+          [key]: Math.max(0, value),
+        },
+      }));
+    },
+    [updateOpState]
+  );
 
-  const handleToggleTaskComplete = useCallback((taskId: string) => {
-    setCompletedTasks((prev) => {
-      const next = { ...prev, [taskId]: !prev[taskId] };
-      safeStorageSet(COMPLETED_TASKS_KEY, next);
-      return next;
-    });
-  }, []);
+  const handleToggleTaskComplete = useCallback(
+    (taskId: string) => {
+      updateOpState((prev) => ({
+        ...prev,
+        completedTasks: {
+          ...prev.completedTasks,
+          [taskId]: !prev.completedTasks[taskId],
+        },
+      }));
+    },
+    [updateOpState]
+  );
 
-  const handleToggleOwnedKey = useCallback((keyId: string) => {
-    setOwnedKeys((prev) => {
-      const next = { ...prev, [keyId]: !prev[keyId] };
-      safeStorageSet(OWNED_KEYS_KEY, next);
-      return next;
-    });
-  }, []);
+  const handleToggleOwnedKey = useCallback(
+    (keyId: string) => {
+      updateOpState((prev) => ({
+        ...prev,
+        ownedKeys: {
+          ...prev.ownedKeys,
+          [keyId]: !prev.ownedKeys[keyId],
+        },
+      }));
+    },
+    [updateOpState]
+  );
 
   const handleToggleMapMaterial = useCallback(
     (matKey: string, visible: boolean) => {
-      setTickedMapMaterials((prev) => {
-        const next = { ...prev, [matKey]: visible };
-        safeStorageSet(MAP_TICKED_KEY, next);
-        return next;
-      });
+      updateOpState((prev) => ({
+        ...prev,
+        tickedMapMaterials: {
+          ...prev.tickedMapMaterials,
+          [matKey]: visible,
+        },
+      }));
       if (visible) showToast("Material spawn zones pinned to map");
     },
-    [showToast]
+    [updateOpState, showToast]
   );
 
   const handleInspectMaterial = useCallback(async (mat: CatalogMaterial) => {
@@ -438,57 +513,58 @@ export default function App() {
     [catalog, handleInspectMaterial]
   );
 
-  const handleAddPin = useCallback((pin: CustomMapPin) => {
-    setCustomPins((prev) => {
-      const next = [...prev, pin];
-      safeStorageSet(CUSTOM_PINS_KEY, next);
-      return next;
-    });
-  }, []);
+  const handleAddPin = useCallback(
+    (pin: CustomMapPin) => {
+      updateOpState((prev) => ({
+        ...prev,
+        customPins: [...prev.customPins, pin],
+      }));
+    },
+    [updateOpState]
+  );
 
   const handleUpdatePin = useCallback(
     (updated: CustomMapPin) => {
-      setCustomPins((prev) => {
-        const next = prev.map((p) => (p.id === updated.id ? updated : p));
-        safeStorageSet(CUSTOM_PINS_KEY, next);
-        return next;
-      });
+      updateOpState((prev) => ({
+        ...prev,
+        customPins: prev.customPins.map((p) =>
+          p.id === updated.id ? updated : p
+        ),
+      }));
       showToast("Map pin updated");
     },
-    [showToast]
+    [updateOpState, showToast]
   );
 
   const handleRemovePin = useCallback(
     (pinId: string) => {
-      setCustomPins((prev) => {
-        const next = prev.filter((p) => p.id !== pinId);
-        safeStorageSet(CUSTOM_PINS_KEY, next);
-        return next;
-      });
+      updateOpState((prev) => ({
+        ...prev,
+        customPins: prev.customPins.filter((p) => p.id !== pinId),
+      }));
       showToast("Map pin removed");
     },
-    [showToast]
+    [updateOpState, showToast]
   );
 
   const handleResetProgress = () => {
+    const opName = activeOperatorProfile.name;
     if (workspaceMode === "tasks") {
-      setCompletedTasks({});
-      safeStorageSet(COMPLETED_TASKS_KEY, {});
-      showToast("Vendor task progress cleared");
+      updateOpState((prev) => ({ ...prev, completedTasks: {} }));
+      showToast(`Cleared task progress for ${opName}`);
     } else if (workspaceMode === "keys") {
-      setOwnedKeys({});
-      safeStorageSet(OWNED_KEYS_KEY, {});
-      showToast("Keyholder owned list cleared");
+      updateOpState((prev) => ({ ...prev, ownedKeys: {} }));
+      showToast(`Cleared keyholder list for ${opName}`);
     } else if (workspaceMode === "vendors") {
       showToast("Vendor shop is synced live from gzw-data.dev");
     } else {
-      setBuiltUpgrades({});
-      setPlannedUpgrades({});
-      setStashCounts({});
-      safeStorageSet(BUILT_KEY, {});
-      safeStorageSet(PLANNED_KEY, {});
-      safeStorageSet(STASH_KEY, {});
-      showToast("Hideout planner progress cleared");
+      updateOpState((prev) => ({
+        ...prev,
+        builtUpgrades: {},
+        plannedUpgrades: {},
+        stashCounts: {},
+      }));
+      showToast(`Cleared hideout progress for ${opName}`);
     }
   };
 
@@ -503,18 +579,120 @@ export default function App() {
 
   const handleSelectFaction = useCallback(
     (nextFaction: FactionId) => {
-      setSelectedFaction(nextFaction);
-      safeStorageSet(FACTION_KEY, nextFaction);
+      const slotId = activeOperatorIdRef.current;
+      updateOpState((prev) => ({ ...prev, faction: nextFaction }));
+      setOperatorProfiles((prev) => {
+        const next = prev.map((p) =>
+          p.id === slotId
+            ? { ...p, faction: nextFaction, updatedAt: Date.now() }
+            : p
+        );
+        saveOperatorProfiles(next);
+        return next;
+      });
+
       if (nextFaction === "ALL") {
-        showToast("Showing all factions");
+        showToast(`${activeOperatorProfile.name}: showing all factions`);
       } else {
         const info = FACTIONS[nextFaction];
         showToast(
-          `Faction set to ${info.short} · Starter Town: ${info.starterTown}`
+          `${activeOperatorProfile.name} faction: ${info.short} · Starter: ${info.starterTown}`
         );
       }
     },
-    [showToast]
+    [updateOpState, activeOperatorProfile.name, showToast]
+  );
+
+  const handleSelectOperator = useCallback(
+    (nextSlotId: OperatorSlotId) => {
+      if (nextSlotId === activeOperatorIdRef.current) {
+        setOperatorMenuOpen(false);
+        return;
+      }
+      const currentSlot = activeOperatorIdRef.current;
+      saveOperatorSnapshot(currentSlot, opState);
+
+      const loaded = loadOperatorSnapshot(nextSlotId);
+      saveActiveOperatorId(nextSlotId);
+      setActiveOperatorId(nextSlotId);
+      setOpState(loaded);
+      setOperatorMenuOpen(false);
+      setRenamingOpId(null);
+
+      setOperatorProfiles((prev) => {
+        const next = prev.map((p) =>
+          p.id === nextSlotId
+            ? { ...p, faction: loaded.faction, updatedAt: Date.now() }
+            : p
+        );
+        saveOperatorProfiles(next);
+        return next;
+      });
+
+      const targetMeta = operatorProfiles.find((p) => p.id === nextSlotId);
+      const label = targetMeta?.name || "Operator";
+      const factionSuffix =
+        loaded.faction === "ALL" ? "All Factions" : loaded.faction;
+      showToast(`Switched to ${label} (${factionSuffix})`);
+    },
+    [opState, operatorProfiles, showToast]
+  );
+
+  const handleCommitRenameOperator = useCallback(
+    (slotId: OperatorSlotId) => {
+      const trimmed = renameDraft.trim();
+      if (!trimmed) {
+        setRenamingOpId(null);
+        return;
+      }
+      setOperatorProfiles((prev) => {
+        const next = prev.map((p) =>
+          p.id === slotId ? { ...p, name: trimmed, updatedAt: Date.now() } : p
+        );
+        saveOperatorProfiles(next);
+        return next;
+      });
+      setRenamingOpId(null);
+      showToast(`Renamed slot to ${trimmed}`);
+    },
+    [renameDraft, showToast]
+  );
+
+  const operatorSlotSummaries = useMemo(() => {
+    return OPERATOR_SLOT_IDS.map((id) => {
+      const meta = operatorProfiles.find((p) => p.id === id);
+      const snap = id === activeOperatorId ? opState : loadOperatorSnapshot(id);
+      const built = Object.values(snap.builtUpgrades).filter(Boolean).length;
+      const tasks = Object.values(snap.completedTasks).filter(Boolean).length;
+      const pins = snap.customPins.filter((p) => !p.id.startsWith("seed-")).length;
+      return {
+        id,
+        name: meta?.name || `Operator ${id.replace("op-", "")}`,
+        faction: snap.faction,
+        built,
+        tasks,
+        pins,
+      };
+    });
+  }, [operatorProfiles, activeOperatorId, opState]);
+
+  const handleToggleGlanceMode = useCallback(
+    (force?: boolean) => {
+      setGlanceMode((prev) => {
+        const next = force !== undefined ? force : !prev;
+        if (next) {
+          if (workspaceMode === "vendors") {
+            setWorkspaceMode("hideout");
+          }
+          if (window.innerWidth < 1024) {
+            setMobileTab("map");
+          }
+          showToast("Glance Mode on — clean Monitor 2 map & heading HUD");
+        }
+        return next;
+      });
+    },
+    [workspaceMode, showToast]
   );
 
   const activeModeProgress =
@@ -535,19 +713,144 @@ export default function App() {
   return (
     <div className="h-[100dvh] w-screen flex flex-col bg-[#090c11] text-[#e8eef5] overflow-hidden">
       {/* Sleek Single-Line Top Bar */}
-      <header className="h-13 shrink-0 px-3 sm:px-5 border-b border-white/[0.08] bg-[#0b0f16]/95 backdrop-blur-md flex items-center justify-between gap-4 z-30">
-        {/* Brand Wordmark + Compact Faction Selector */}
-        <div className="flex items-center gap-3 whitespace-nowrap shrink-0 min-w-0">
-          <div className="flex items-center gap-2.5">
-            <span className="font-display text-base sm:text-lg font-semibold tracking-tight text-[#f8fafc]">
+      <header className="h-13 shrink-0 px-3 sm:px-5 border-b border-white/[0.08] bg-[#0b0f16]/95 backdrop-blur-md flex items-center justify-between gap-2 sm:gap-4 z-40">
+        {/* Brand Wordmark + Operator Profile Switcher + Compact Faction Selector */}
+        <div className="flex items-center gap-2 sm:gap-3 whitespace-nowrap shrink-0 min-w-0">
+          <div className="flex items-center gap-2">
+            <span className="font-display text-sm sm:text-lg font-semibold tracking-tight text-[#f8fafc]">
               Lamang Operations
             </span>
-            <span className="hidden md:inline text-white/[0.2]" aria-hidden="true">
+            <span className="hidden xl:inline text-white/[0.2]" aria-hidden="true">
               ·
             </span>
-            <span className="hidden md:inline text-xs font-medium text-[#8b98a9]">
+            <span className="hidden xl:inline text-xs font-medium text-[#8b98a9]">
               Update 0.5
             </span>
+          </div>
+
+          {/* Multi-Operator Slot Switcher (Operator 1 / 2 / 3) */}
+          <div className="relative" ref={operatorMenuRef}>
+            <button
+              type="button"
+              aria-label="Switch operator profile"
+              aria-expanded={operatorMenuOpen}
+              onClick={() => setOperatorMenuOpen((v) => !v)}
+              className="min-h-[32px] inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#070a0f] border border-white/[0.1] hover:border-[#38bdf8]/60 text-xs font-medium text-[#eef3f8] transition-colors"
+            >
+              <Users className="w-3.5 h-3.5 text-[#38bdf8] shrink-0" />
+              <span className="max-w-[92px] sm:max-w-[120px] truncate">
+                {activeOperatorProfile.name}
+              </span>
+              {selectedFaction !== "ALL" && (
+                <span
+                  className="w-1.5 h-1.5 rounded-full shrink-0"
+                  style={{ backgroundColor: FACTIONS[selectedFaction].color }}
+                />
+              )}
+              <ChevronDown className="w-3 h-3 text-[#7f8ea1] shrink-0" />
+            </button>
+
+            {operatorMenuOpen && (
+              <div className="absolute top-full left-0 mt-1.5 w-80 max-w-[calc(100vw-24px)] rounded-xl bg-[#0d121a]/98 backdrop-blur-xl border border-white/[0.12] p-2 shadow-2xl z-[1200] space-y-1.5">
+                <div className="px-2 py-1 flex items-center justify-between border-b border-white/[0.07]">
+                  <span className="text-[11px] font-semibold text-[#e2e8f0]">
+                    Operator Slots (Local Saves)
+                  </span>
+                  <span className="text-[10px] text-[#7f8ea1]">
+                    Saved per character
+                  </span>
+                </div>
+
+                {operatorSlotSummaries.map((slot) => {
+                  const isActive = slot.id === activeOperatorId;
+                  const isRenaming = renamingOpId === slot.id;
+                  const factionInfo =
+                    slot.faction !== "ALL" ? FACTIONS[slot.faction] : null;
+                  return (
+                    <div
+                      key={slot.id}
+                      className={`rounded-lg border px-2.5 py-2 transition-colors ${
+                        isActive
+                          ? "bg-[#152030] border-[#38bdf8]/70"
+                          : "bg-[#080c12] border-white/[0.07] hover:border-white/[0.18]"
+                      }`}
+                    >
+                      {isRenaming ? (
+                        <div className="flex items-center gap-1.5">
+                          <input
+                            type="text"
+                            autoFocus
+                            maxLength={24}
+                            value={renameDraft}
+                            onChange={(e) => setRenameDraft(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") {
+                                handleCommitRenameOperator(slot.id);
+                              } else if (e.key === "Escape") {
+                                setRenamingOpId(null);
+                              }
+                            }}
+                            aria-label="Operator slot name"
+                            className="flex-1 min-w-0 bg-[#05080d] border border-[#38bdf8] rounded px-2 py-1 text-xs text-white focus:outline-none"
+                          />
+                          <button
+                            type="button"
+                            aria-label="Save operator name"
+                            onClick={() => handleCommitRenameOperator(slot.id)}
+                            className="p-1.5 rounded bg-[#e5a93c] text-[#090d12] font-semibold"
+                          >
+                            <Check className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="flex items-center justify-between gap-2">
+                          <button
+                            type="button"
+                            onClick={() => handleSelectOperator(slot.id)}
+                            className="flex-1 min-w-0 text-left"
+                          >
+                            <div className="flex items-center gap-1.5">
+                              {isActive && (
+                                <Check className="w-3.5 h-3.5 text-[#38bdf8] shrink-0" />
+                              )}
+                              <span className="text-xs font-semibold text-[#f8fafc] truncate">
+                                {slot.name}
+                              </span>
+                              <span
+                                className="inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded bg-white/[0.06] text-[#cbd5e1] shrink-0"
+                              >
+                                {factionInfo && (
+                                  <span
+                                    className="w-1.5 h-1.5 rounded-full"
+                                    style={{ backgroundColor: factionInfo.color }}
+                                  />
+                                )}
+                                {slot.faction === "ALL" ? "All" : slot.faction}
+                              </span>
+                            </div>
+                            <div className="font-mono-tabular text-[10px] text-[#8b98a9] mt-1">
+                              {slot.built} built · {slot.tasks} tasks · {slot.pins} pins
+                            </div>
+                          </button>
+                          <button
+                            type="button"
+                            title={`Rename ${slot.name}`}
+                            aria-label={`Rename ${slot.name}`}
+                            onClick={() => {
+                              setRenamingOpId(slot.id);
+                              setRenameDraft(slot.name);
+                            }}
+                            className="p-1.5 rounded-md text-[#8b98a9] hover:text-[#e5a93c] hover:bg-white/[0.07] shrink-0 transition-colors"
+                          >
+                            <Pencil className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
 
           {/* Desktop/Tablet Segmented Faction Switcher */}
@@ -588,8 +891,19 @@ export default function App() {
           </div>
         </div>
 
-        {/* Live Data Sync + Mobile Faction Select + Counter + Reset */}
-        <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+        {/* Live Data Sync + Glance Mode Exit + Mobile Faction Select + Counter + Reset */}
+        <div className="flex items-center gap-2 sm:gap-2.5 shrink-0">
+          {glanceMode && (
+            <button
+              type="button"
+              onClick={() => handleToggleGlanceMode(false)}
+              className="min-h-[34px] inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-[#e5a93c]/20 border border-[#e5a93c]/60 text-[#fde68a] hover:bg-[#e5a93c]/30 transition-colors whitespace-nowrap shrink-0"
+            >
+              <Eye className="w-3.5 h-3.5" />
+              <span>Exit Glance</span>
+            </button>
+          )}
+
           <select
             aria-label="Select faction mobile"
             value={selectedFaction}
@@ -601,7 +915,7 @@ export default function App() {
             <option value="MSS">MSS</option>
             <option value="CSI">CSI</option>
           </select>
-          <div className="hidden md:flex items-center gap-2 text-xs text-[#94a3b8] whitespace-nowrap">
+          <div className="hidden lg:flex items-center gap-2 text-xs text-[#94a3b8] whitespace-nowrap">
             <span
               className={`w-1.5 h-1.5 rounded-full shrink-0 ${
                 apiStatus.mode === "live"
@@ -621,24 +935,24 @@ export default function App() {
             disabled={apiStatus.mode === "loading"}
             onClick={() => handleRefreshApi(true)}
             aria-label="Sync Game Data"
-            className="min-h-[34px] inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-[#e2e8f0] hover:text-white border border-white/[0.1] hover:border-white/[0.2] bg-white/[0.04] hover:bg-white/[0.08] disabled:opacity-60 transition-colors whitespace-nowrap shrink-0"
+            className="min-h-[34px] inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-medium text-[#e2e8f0] hover:text-white border border-white/[0.1] hover:border-white/[0.2] bg-white/[0.04] hover:bg-white/[0.08] disabled:opacity-60 transition-colors whitespace-nowrap shrink-0"
           >
             <RefreshCw
               className={`w-3.5 h-3.5 ${
                 apiStatus.mode === "loading" ? "animate-spin" : ""
               }`}
             />
-            <span className="hidden sm:inline">Sync Data</span>
+            <span className="hidden xl:inline">Sync Data</span>
           </button>
 
-          <div className="text-right hidden xs:block sm:block pl-1">
+          <div className="text-right hidden sm:block pl-1">
             <div className="font-mono-tabular text-xs sm:text-sm font-semibold text-[#f1f5f9]">
               {activeModeProgress.done}{" "}
               <span className="text-[11px] font-normal text-[#7f8ea1]">
                 / {activeModeProgress.total}
               </span>
             </div>
-            <div className="w-16 sm:w-24 h-1 bg-white/[0.08] rounded-full overflow-hidden mt-0.5">
+            <div className="w-16 sm:w-20 h-1 bg-white/[0.08] rounded-full overflow-hidden mt-0.5">
               <div
                 className="h-full bg-[#e5a93c] transition-all duration-300"
                 style={{ width: `${progressPct}%` }}
@@ -649,8 +963,8 @@ export default function App() {
           <button
             type="button"
             onClick={handleResetProgress}
-            title="Reset saved progress"
-            className="min-h-[34px] inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-[#94a3b8] hover:text-white border border-white/[0.08] hover:border-white/[0.18] bg-white/[0.03] hover:bg-white/[0.07] transition-colors whitespace-nowrap shrink-0"
+            title={`Reset ${workspaceMode} progress for ${activeOperatorProfile.name}`}
+            className="min-h-[34px] inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-medium text-[#94a3b8] hover:text-white border border-white/[0.08] hover:border-white/[0.18] bg-white/[0.03] hover:bg-white/[0.07] transition-colors whitespace-nowrap shrink-0"
           >
             <RotateCcw className="w-3.5 h-3.5" />
             <span className="hidden sm:inline">Reset</span>
@@ -660,15 +974,19 @@ export default function App() {
 
       {/* Responsive Workspace: Fluid Draggable Split Sidebar + Dominant Map on Desktop, Full-Screen Tabbed Views on Mobile */}
       <main className="flex-1 min-h-0 flex flex-col lg:flex-row overflow-hidden">
-        {/* Left Operations Panel (Hideout + Tasks + Vendors + Keys) */}
+        {/* Left Operations Panel (Hideout + Tasks + Vendors + Keys, hidden when Glance Mode is active on Desktop) */}
         <aside
           style={
-            isDesktop && workspaceMode !== "vendors"
+            isDesktop && workspaceMode !== "vendors" && !glanceMode
               ? { width: `${panelWidth}px` }
               : undefined
           }
           className={`${
-            isSidebarVisibleOnMobile ? "flex" : "hidden lg:flex"
+            glanceMode
+              ? "hidden"
+              : isSidebarVisibleOnMobile
+                ? "flex"
+                : "hidden lg:flex"
           } flex-col flex-1 ${
             workspaceMode === "vendors"
               ? "lg:flex-1 lg:w-full"
@@ -851,8 +1169,8 @@ export default function App() {
           )}
         </aside>
 
-        {/* Fluid Draggable Split Divider (Desktop lg+, hidden when Vendors full-screen shop is active) */}
-        {workspaceMode !== "vendors" && (
+        {/* Fluid Draggable Split Divider (Desktop lg+, hidden when Vendors full-screen shop or Glance Mode is active) */}
+        {workspaceMode !== "vendors" && !glanceMode && (
           <div
             role="separator"
             aria-orientation="vertical"
@@ -892,14 +1210,14 @@ export default function App() {
           </div>
         )}
 
-        {/* Right Tactical Map Panel (Stays mounted for Leaflet pan/zoom persistence; hidden in full-screen Vendors shop) */}
+        {/* Right Tactical Map Panel (Stays mounted for Leaflet pan/zoom persistence; hidden in full-screen Vendors shop unless Glance Mode) */}
         <div
           className={`${
-            workspaceMode === "vendors"
+            workspaceMode === "vendors" && !glanceMode
               ? mobileTab === "map"
                 ? "flex flex-1 min-h-0 lg:hidden"
                 : "hidden"
-              : mobileTab === "map"
+              : glanceMode || mobileTab === "map"
                 ? "flex flex-1 min-h-0"
                 : "hidden lg:flex lg:flex-1 lg:min-h-0 lg:min-w-[280px]"
           }`}
@@ -921,6 +1239,9 @@ export default function App() {
             onSelectTask={handleLocateTaskOnMap}
             allTasks={factionTasks}
             selectedFaction={selectedFaction}
+            activeOperatorName={activeOperatorProfile.name}
+            glanceMode={glanceMode}
+            onToggleGlanceMode={handleToggleGlanceMode}
             keysList={keysCatalog}
             ownedKeys={ownedKeys}
             onToggleOwnedKey={handleToggleOwnedKey}
@@ -937,7 +1258,7 @@ export default function App() {
             }
             preselectedPinMaterialId={preselectedPinMatId}
             onNotify={showToast}
-            layoutTrigger={`${panelWidth}-${mobileTab}-${workspaceMode}`}
+            layoutTrigger={`${panelWidth}-${mobileTab}-${workspaceMode}-${glanceMode}`}
             isResizing={isDraggingSplitter}
           />
         </div>
@@ -951,6 +1272,7 @@ export default function App() {
         <button
           type="button"
           onClick={() => {
+            setGlanceMode(false);
             setMobileTab("hideout");
             setWorkspaceMode("hideout");
           }}
@@ -967,6 +1289,7 @@ export default function App() {
         <button
           type="button"
           onClick={() => {
+            setGlanceMode(false);
             setMobileTab("tasks");
             setWorkspaceMode("tasks");
           }}
@@ -983,6 +1306,7 @@ export default function App() {
         <button
           type="button"
           onClick={() => {
+            setGlanceMode(false);
             setMobileTab("vendors");
             setWorkspaceMode("vendors");
           }}
@@ -999,6 +1323,7 @@ export default function App() {
         <button
           type="button"
           onClick={() => {
+            setGlanceMode(false);
             setMobileTab("keys");
             setWorkspaceMode("keys");
           }}
@@ -1028,7 +1353,7 @@ export default function App() {
 
       {/* Subtle Action Toast */}
       {toast && (
-        <div className="fixed bottom-16 lg:bottom-5 left-1/2 -translate-x-1/2 z-[2000] px-4 py-2.5 rounded-xl bg-[#0d121a]/95 backdrop-blur-xl border border-[#e5a93c]/50 text-xs font-medium text-[#f1f5f9] shadow-2xl max-w-[calc(100vw-24px)] text-center">
+        <div className="fixed top-14 right-3 sm:right-4 z-[2000] pointer-events-none px-3.5 py-2 rounded-xl bg-[#0d121a]/96 backdrop-blur-xl border border-[#e5a93c]/55 text-xs font-medium text-[#f1f5f9] shadow-2xl max-w-[calc(100vw-24px)] sm:max-w-sm text-left">
           {toast}
         </div>
       )}

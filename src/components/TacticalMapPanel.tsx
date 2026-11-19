@@ -1,20 +1,26 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import L from "leaflet";
 import {
+  ArrowRight,
   BookOpen,
   Bookmark,
   Check,
   ChevronDown,
   Compass,
   Crosshair,
+  Eye,
+  Grid3X3,
   KeyRound,
   Layers,
   LocateFixed,
   MapPin,
+  Monitor,
   Navigation,
   Pencil,
+  Radio,
   Ruler,
   Search,
+  Square,
   Trash2,
   X,
 } from "lucide-react";
@@ -44,8 +50,31 @@ import {
   type CatalogMaterial,
 } from "../utils/catalogBuilder";
 import type { GzwKeyDoorDef } from "../utils/keyBuilder";
+import {
+  SCAN_PRESETS,
+  scanVideoFrameForLamangCoords,
+  terminateCoordOcrWorker,
+  type CropRectPct,
+  type ScanRegionPreset,
+} from "../utils/screenCoordOcr";
 import type { GzwTaskDef } from "../utils/taskBuilder";
 import { ItemThumbnail } from "./ItemThumbnail";
+
+interface NavEndpoint {
+  x: number;
+  y: number;
+  label: string;
+  grid: string;
+  kind: "live" | "lz" | "cop" | "fob" | "task" | "key" | "poi" | "pin" | "point";
+}
+
+interface LivePlayerPosition {
+  x: number;
+  y: number;
+  grid: string;
+  source: "ocr" | "manual";
+  updatedAt: number;
+}
 
 interface TacticalMapPanelProps {
   catalog: CatalogMaterial[];
@@ -64,6 +93,9 @@ interface TacticalMapPanelProps {
   onSelectTask?: (task: GzwTaskDef) => void;
   allTasks?: GzwTaskDef[];
   selectedFaction: FactionId;
+  activeOperatorName?: string;
+  glanceMode?: boolean;
+  onToggleGlanceMode?: (force?: boolean) => void;
   keysList?: GzwKeyDoorDef[];
   ownedKeys?: Record<string, boolean>;
   onToggleOwnedKey?: (keyId: string) => void;
@@ -166,6 +198,9 @@ export function TacticalMapPanel({
   onSelectTask,
   allTasks = [],
   selectedFaction,
+  activeOperatorName = "Operator 1",
+  glanceMode = false,
+  onToggleGlanceMode,
   keysList = [],
   ownedKeys = {},
   onToggleOwnedKey,
@@ -188,7 +223,10 @@ export function TacticalMapPanel({
   const taskPinsLayerRef = useRef<L.LayerGroup>(L.layerGroup());
   const keyFocusLayerRef = useRef<L.LayerGroup>(L.layerGroup());
   const measureLayerRef = useRef<L.LayerGroup>(L.layerGroup());
+  const navRouteLayerRef = useRef<L.LayerGroup>(L.layerGroup());
+  const playerPosLayerRef = useRef<L.LayerGroup>(L.layerGroup());
   const layersRef = useRef<Record<MapLayerKey, L.LayerGroup>>({
+    gridOverlay: L.layerGroup(),
     blueCrates: L.layerGroup(),
     pcSpawns: L.layerGroup(),
     chemicalAreas: L.layerGroup(),
@@ -203,6 +241,7 @@ export function TacticalMapPanel({
   });
 
   const [layerVisibility, setLayerVisibility] = useState<Record<MapLayerKey, boolean>>({
+    gridOverlay: true,
     blueCrates: true,
     pcSpawns: true,
     chemicalAreas: false,
@@ -229,6 +268,7 @@ export function TacticalMapPanel({
   >([]);
   const [cursorCoords, setCursorCoords] = useState({ x: 7000, y: 4200 });
   const [zoomLevel, setZoomLevel] = useState(14);
+  const [viewportVersion, setViewportVersion] = useState(0);
   const [capturedCoords, setCapturedCoords] = useState<{ x: number; y: number } | null>(null);
   const [editingPin, setEditingPin] = useState<CustomMapPin | null>(null);
   const [repositioningPin, setRepositioningPin] = useState(false);
@@ -236,6 +276,42 @@ export function TacticalMapPanel({
   const [pinLayer, setPinLayer] = useState<"customPins" | "blueCrates" | "pcSpawns">("customPins");
   const [pinNote, setPinNote] = useState("");
   const [mapLightbox, setMapLightbox] = useState<{ src: string; title: string } | null>(null);
+
+  // Monitor 2 Compass Bearing Lock & Live Operator Tracking ("You Are Here")
+  const [navOrigin, setNavOrigin] = useState<NavEndpoint | null>(null);
+  const [navTarget, setNavTarget] = useState<NavEndpoint | null>(null);
+  const [originLockedManually, setOriginLockedManually] = useState(false);
+  const [originPickerOpen, setOriginPickerOpen] = useState(false);
+  const [livePlayerPos, setLivePlayerPos] = useState<LivePlayerPosition | null>(null);
+  const [manualPosMode, setManualPosMode] = useState(false);
+  const [manualGridInput, setManualGridInput] = useState("");
+
+  // Browser Screen-Watcher (getDisplayMedia + Local OCR)
+  const [screenSyncPanelOpen, setScreenSyncPanelOpen] = useState(false);
+  const [screenSyncActive, setScreenSyncActive] = useState(false);
+  const [scanPreset, setScanPreset] = useState<ScanRegionPreset>("bottom-right");
+  const [customCrop, setCustomCrop] = useState<CropRectPct>(
+    SCAN_PRESETS["bottom-right"].rect
+  );
+  const [autoFollowLive, setAutoFollowLive] = useState(true);
+  const [scanIntervalMs, setScanIntervalMs] = useState(1200);
+  const [ocrStatusText, setOcrStatusText] = useState(
+    "Ready — 100% local in-browser scan"
+  );
+  const [lastOcrRawText, setLastOcrRawText] = useState("");
+  const [screenSyncError, setScreenSyncError] = useState<string | null>(null);
+
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const previewCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const mediaStreamRef = useRef<MediaStream | null>(null);
+  const isScanningRef = useRef(false);
+  const autoFollowLiveRef = useRef(autoFollowLive);
+  autoFollowLiveRef.current = autoFollowLive;
+  const livePlayerPosRef = useRef(livePlayerPos);
+  livePlayerPosRef.current = livePlayerPos;
+  const manualPosModeRef = useRef(manualPosMode);
+  manualPosModeRef.current = manualPosMode;
+
   const markerByPinIdRef = useRef<Map<string, L.Marker>>(new Map());
   const pendingFocusPinRef = useRef<{ id: string; moved: boolean } | null>(null);
   const zoomLevelRef = useRef(zoomLevel);
@@ -254,6 +330,233 @@ export function TacticalMapPanel({
   const repositioningPinRef = useRef(repositioningPin);
   repositioningPinRef.current = repositioningPin;
 
+  const stopScreenSync = useCallback(() => {
+    if (mediaStreamRef.current) {
+      mediaStreamRef.current.getTracks().forEach((t) => t.stop());
+      mediaStreamRef.current = null;
+    }
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
+    }
+    isScanningRef.current = false;
+    setScreenSyncActive(false);
+    setOcrStatusText("Stopped — local OCR worker closed");
+    terminateCoordOcrWorker();
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      stopScreenSync();
+    };
+  }, [stopScreenSync]);
+
+  const runSingleOcrScan = useCallback(async () => {
+    const video = videoRef.current;
+    if (!video || video.readyState < 2 || isScanningRef.current) return;
+    isScanningRef.current = true;
+    try {
+      const activeRect =
+        scanPreset === "custom" ? customCrop : SCAN_PRESETS[scanPreset].rect;
+      const { match, rawText } = await scanVideoFrameForLamangCoords(
+        video,
+        activeRect,
+        previewCanvasRef.current
+      );
+      if (rawText) setLastOcrRawText(rawText);
+      if (match) {
+        const prev = livePlayerPosRef.current;
+        const moved = !prev || prev.grid !== match.grid;
+        setLivePlayerPos({
+          x: match.x,
+          y: match.y,
+          grid: match.grid,
+          source: "ocr",
+          updatedAt: Date.now(),
+        });
+        setOcrStatusText(`Synced Grid ${match.grid}`);
+        if (moved && autoFollowLiveRef.current && mapRef.current) {
+          mapRef.current.panTo(toLatLng(match.x, match.y), { animate: true });
+        }
+      } else {
+        setOcrStatusText("Watching stream — open GZW map (M) to sync grid");
+      }
+    } catch {
+      setOcrStatusText("OCR busy — retrying next tick");
+    } finally {
+      isScanningRef.current = false;
+    }
+  }, [scanPreset, customCrop]);
+
+  useEffect(() => {
+    if (!screenSyncActive) return;
+    const t0 = setTimeout(() => {
+      void runSingleOcrScan();
+    }, 300);
+    const id = setInterval(() => {
+      void runSingleOcrScan();
+    }, scanIntervalMs);
+    return () => {
+      clearTimeout(t0);
+      clearInterval(id);
+    };
+  }, [screenSyncActive, scanIntervalMs, runSingleOcrScan]);
+
+  const startScreenSync = async () => {
+    setScreenSyncError(null);
+    if (
+      typeof navigator === "undefined" ||
+      !navigator.mediaDevices ||
+      !navigator.mediaDevices.getDisplayMedia
+    ) {
+      setScreenSyncError(
+        "Screen capture is unavailable in this browser context. Requires Chrome/Edge/Firefox on HTTPS or localhost."
+      );
+      return;
+    }
+
+    try {
+      stopScreenSync();
+      const stream = await navigator.mediaDevices.getDisplayMedia({
+        video: { frameRate: { ideal: 4, max: 6 } },
+        audio: false,
+      });
+      mediaStreamRef.current = stream;
+      const track = stream.getVideoTracks()[0];
+      if (track) {
+        track.addEventListener("ended", () => {
+          stopScreenSync();
+          onNotify("Screen Sync stopped");
+        });
+      }
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        await videoRef.current.play();
+      }
+      setScreenSyncActive(true);
+      setOcrStatusText("Watching captured screen locally...");
+      onNotify("Screen Sync active — tap M in-game anytime to sync position");
+    } catch (err) {
+      const msg =
+        err instanceof Error && err.name === "NotAllowedError"
+          ? "Screen capture permission cancelled."
+          : "Could not start screen capture. Make sure you allow window/screen access.";
+      setScreenSyncError(msg);
+      stopScreenSync();
+    }
+  };
+
+  const handleApplyManualGridPos = (rawInput: string) => {
+    const parsed = parseGridInputToMeters(rawInput);
+    if (!parsed) {
+      onNotify("Enter a valid 3-digit grid square, e.g. 174 142");
+      return;
+    }
+    setLivePlayerPos({
+      x: parsed.x,
+      y: parsed.y,
+      grid: parsed.grid,
+      source: "manual",
+      updatedAt: Date.now(),
+    });
+    mapRef.current?.flyTo(toLatLng(parsed.x, parsed.y), 16, { duration: 0.55 });
+    onNotify(`Marked your position at Grid ${parsed.grid}`);
+  };
+
+  const lockBearingTo = (
+    target: { x: number; y: number; label: string; kind: NavEndpoint["kind"] },
+    explicitOrigin?: NavEndpoint
+  ) => {
+    const targetEndpoint: NavEndpoint = {
+      ...target,
+      grid: formatGridSquare(target.x, target.y),
+    };
+    setOriginLockedManually(Boolean(explicitOrigin));
+    let nextOrigin: NavEndpoint | null = explicitOrigin || null;
+
+    if (!nextOrigin) {
+      const live = livePlayerPosRef.current;
+      if (live) {
+        nextOrigin = {
+          x: live.x,
+          y: live.y,
+          label: "You Are Here",
+          grid: live.grid,
+          kind: "live",
+        };
+      } else {
+        const closestLz = LAMANG_POIS.filter((p) => p.kind === "lz")
+          .map((lz) => ({
+            lz,
+            dist: Math.hypot(lz.x - target.x, lz.y - target.y),
+          }))
+          .sort((a, b) => a.dist - b.dist)[0]?.lz;
+        if (closestLz) {
+          nextOrigin = {
+            x: closestLz.x,
+            y: closestLz.y,
+            label: `LZ ${closestLz.lz}`,
+            grid: formatGridSquare(closestLz.x, closestLz.y),
+            kind: "lz",
+          };
+        }
+      }
+    }
+
+    setNavOrigin(nextOrigin);
+    setNavTarget(targetEndpoint);
+    setOriginPickerOpen(false);
+    if (nextOrigin) {
+      const b = formatBearing(
+        targetEndpoint.x - nextOrigin.x,
+        targetEndpoint.y - nextOrigin.y
+      );
+      const dist = Math.round(
+        Math.hypot(
+          targetEndpoint.x - nextOrigin.x,
+          targetEndpoint.y - nextOrigin.y
+        )
+      );
+      onNotify(`Bearing locked: HEAD ${b} · ${dist}m to ${targetEndpoint.label}`);
+    }
+  };
+
+  const handleLockExfilNearestLz = () => {
+    const startPt = livePlayerPosRef.current
+      ? {
+          x: livePlayerPosRef.current.x,
+          y: livePlayerPosRef.current.y,
+          label: "You Are Here",
+          grid: livePlayerPosRef.current.grid,
+          kind: "live" as const,
+        }
+      : navTarget || navOrigin;
+    if (!startPt) {
+      onNotify("Set your position or lock an objective first to calculate Exfil");
+      return;
+    }
+    const closestLz = LAMANG_POIS.filter((p) => p.kind === "lz")
+      .map((lz) => ({
+        lz,
+        dist: Math.hypot(lz.x - startPt.x, lz.y - startPt.y),
+      }))
+      .sort((a, b) => a.dist - b.dist)[0]?.lz;
+    if (!closestLz) return;
+
+    const exfilTarget: NavEndpoint = {
+      x: closestLz.x,
+      y: closestLz.y,
+      label: `Exfil LZ ${closestLz.lz}`,
+      grid: formatGridSquare(closestLz.x, closestLz.y),
+      kind: "lz",
+    };
+    setOriginLockedManually(false);
+    setNavOrigin(startPt);
+    setNavTarget(exfilTarget);
+    setOriginPickerOpen(false);
+    const b = formatBearing(exfilTarget.x - startPt.x, exfilTarget.y - startPt.y);
+    onNotify(`Exfil vector: HEAD ${b} to LZ ${closestLz.lz}`);
+  };
+
   const startEditingPin = (pin: CustomMapPin) => {
     setEditingPin(pin);
     setCapturedCoords({ x: pin.x, y: pin.y });
@@ -264,6 +567,7 @@ export function TacticalMapPanel({
     setLayersOpen(false);
     setJumpOpen(false);
     setMapSearchOpen(false);
+    setScreenSyncPanelOpen(false);
   };
   const startEditingPinRef = useRef(startEditingPin);
   startEditingPinRef.current = startEditingPin;
@@ -276,6 +580,7 @@ export function TacticalMapPanel({
     setMapSearchOpen(false);
     setJumpOpen(false);
     setLayersOpen(false);
+    setScreenSyncPanelOpen(false);
   };
 
   const fitIslandView = () => {
@@ -348,6 +653,8 @@ export function TacticalMapPanel({
     taskPinsLayerRef.current.addTo(map);
     keyFocusLayerRef.current.addTo(map);
     measureLayerRef.current.addTo(map);
+    navRouteLayerRef.current.addTo(map);
+    playerPosLayerRef.current.addTo(map);
 
     map.on("mousemove", (e: L.LeafletMouseEvent) => {
       setCursorCoords(fromLatLng(e.latlng));
@@ -355,15 +662,38 @@ export function TacticalMapPanel({
 
     map.on("zoomend", () => {
       setZoomLevel(map.getZoom());
+      setViewportVersion((v) => v + 1);
+    });
+
+    map.on("moveend", () => {
+      setViewportVersion((v) => v + 1);
+    });
+
+    map.on("resize", () => {
+      setViewportVersion((v) => v + 1);
     });
 
     map.on("click", (e: L.LeafletMouseEvent) => {
       setLayersOpen(false);
       setJumpOpen(false);
       setMapSearchOpen(false);
+      setOriginPickerOpen(false);
 
       const { x, y } = fromLatLng(e.latlng);
       const grid = formatGridSquare(x, y);
+
+      if (manualPosModeRef.current) {
+        setLivePlayerPos({
+          x,
+          y,
+          grid,
+          source: "manual",
+          updatedAt: Date.now(),
+        });
+        setManualPosMode(false);
+        onNotify(`Set Your Position at Grid ${grid}`);
+        return;
+      }
 
       if (measureModeRef.current) {
         setMeasurePoints((prev) =>
@@ -399,14 +729,16 @@ export function TacticalMapPanel({
     };
   }, [onNotify]);
 
-  // Keep Leaflet sizing accurate when switching mobile views or dragging split divider
+  // Keep Leaflet sizing accurate when switching mobile views, Glance Mode, or dragging split divider
   useEffect(() => {
     const raf = requestAnimationFrame(() => {
       mapRef.current?.invalidateSize({ animate: false });
+      setViewportVersion((v) => v + 1);
     });
     const t = setTimeout(() => {
       mapRef.current?.invalidateSize({ animate: false });
-    }, 120);
+      setViewportVersion((v) => v + 1);
+    }, 140);
     return () => {
       cancelAnimationFrame(raf);
       clearTimeout(t);
@@ -425,6 +757,274 @@ export function TacticalMapPanel({
       }
     });
   }, [layerVisibility]);
+
+  // Render crisp 100m In-Game Grid Lines & Coordinate Labels strictly inside visible padded viewport
+  useEffect(() => {
+    const map = mapRef.current;
+    const gridGroup = layersRef.current.gridOverlay;
+    gridGroup.clearLayers();
+    if (!map || !layerVisibility.gridOverlay) return;
+
+    const bounds = map.getBounds();
+    const sw = fromLatLng(bounds.getSouthWest());
+    const ne = fromLatLng(bounds.getNorthEast());
+
+    const pad = zoomLevel >= 16.5 ? 400 : zoomLevel >= 15 ? 800 : 1500;
+    const step = zoomLevel >= 15 ? 100 : zoomLevel >= 14.5 ? 500 : 1000;
+
+    const minX = Math.max(
+      MAP_EXTENT.minX,
+      Math.floor((sw.x - pad) / step) * step
+    );
+    const maxX = Math.min(
+      MAP_EXTENT.maxX,
+      Math.ceil((ne.x + pad) / step) * step
+    );
+    const minY = Math.max(
+      MAP_EXTENT.minY,
+      Math.floor((sw.y - pad) / step) * step
+    );
+    const maxY = Math.min(
+      MAP_EXTENT.maxY,
+      Math.ceil((ne.y + pad) / step) * step
+    );
+
+    if (maxX <= minX || maxY <= minY) return;
+
+    for (let x = minX; x <= maxX; x += step) {
+      const isMajor = x % 500 === 0;
+      L.polyline([toLatLng(x, minY), toLatLng(x, maxY)], {
+        color: isMajor ? "#e5a93c" : "#cbd5e1",
+        weight: isMajor ? 1.2 : 0.8,
+        opacity: isMajor ? 0.3 : zoomLevel >= 15 ? 0.18 : 0.2,
+        interactive: false,
+      }).addTo(gridGroup);
+    }
+
+    for (let y = minY; y <= maxY; y += step) {
+      const isMajor = y % 500 === 0;
+      L.polyline([toLatLng(minX, y), toLatLng(maxX, y)], {
+        color: isMajor ? "#e5a93c" : "#cbd5e1",
+        weight: isMajor ? 1.2 : 0.8,
+        opacity: isMajor ? 0.3 : zoomLevel >= 15 ? 0.18 : 0.2,
+        interactive: false,
+      }).addTo(gridGroup);
+    }
+
+    // Non-blocking grid square labels (1000m overview -> 500m -> 200m -> every 100m square at close zoom)
+    const labelStep =
+      zoomLevel >= 17.5
+        ? 100
+        : zoomLevel >= 16.5
+          ? 200
+          : zoomLevel >= 14.5
+            ? 500
+            : 1000;
+    const startLX = Math.max(MAP_EXTENT.minX, Math.floor(Math.max(sw.x, 0) / labelStep) * labelStep);
+    const endLX = Math.min(MAP_EXTENT.maxX - 100, Math.ceil(Math.min(ne.x, MAP_EXTENT.maxX) / labelStep) * labelStep);
+    const startLY = Math.max(MAP_EXTENT.minY, Math.floor(Math.max(sw.y, 0) / labelStep) * labelStep);
+    const endLY = Math.min(MAP_EXTENT.maxY - 100, Math.ceil(Math.min(ne.y, MAP_EXTENT.maxY) / labelStep) * labelStep);
+
+    let labelCount = 0;
+    for (let x = startLX; x <= endLX && labelCount < 200; x += labelStep) {
+      for (let y = startLY; y <= endLY && labelCount < 200; y += labelStep) {
+        labelCount += 1;
+        const gridStr = formatGridSquare(x + 10, y + 10);
+        L.marker(toLatLng(x + 10, y + 88), {
+          interactive: false,
+          keyboard: false,
+          zIndexOffset: 50,
+          icon: L.divIcon({
+            className: "gzw-grid-coord-label",
+            html: `<div style="
+              pointer-events:none;
+              font-family:'JetBrains Mono',monospace;
+              font-size:${zoomLevel >= 15 ? "9.5px" : "10px"};
+              font-weight:600;
+              color:rgba(241, 245, 249, ${zoomLevel >= 15 ? "0.56" : "0.42"});
+              text-shadow:0 1px 3px rgba(0,0,0,0.95);
+              white-space:nowrap;
+            ">${gridStr}</div>`,
+            iconSize: [0, 0],
+          }),
+        }).addTo(gridGroup);
+      }
+    }
+  }, [zoomLevel, viewportVersion, layerVisibility.gridOverlay]);
+
+  // Effective Origin (auto-follows Live Position unless user explicitly picked an FOB/LZ origin)
+  const effectiveNavOrigin = useMemo<NavEndpoint | null>(() => {
+    if (!navTarget) return null;
+    if (livePlayerPos && (!originLockedManually || navOrigin?.kind === "live")) {
+      return {
+        x: livePlayerPos.x,
+        y: livePlayerPos.y,
+        label: "You Are Here",
+        grid: livePlayerPos.grid,
+        kind: "live",
+      };
+    }
+    if (navOrigin) return navOrigin;
+    if (livePlayerPos) {
+      return {
+        x: livePlayerPos.x,
+        y: livePlayerPos.y,
+        label: "You Are Here",
+        grid: livePlayerPos.grid,
+        kind: "live",
+      };
+    }
+    return null;
+  }, [navOrigin, navTarget, livePlayerPos, originLockedManually]);
+
+  const activeNavTelemetry = useMemo(() => {
+    if (!effectiveNavOrigin || !navTarget) return null;
+    const dx = navTarget.x - effectiveNavOrigin.x;
+    const dy = navTarget.y - effectiveNavOrigin.y;
+    const dist = Math.round(Math.hypot(dx, dy));
+    const bearing = formatBearing(dx, dy);
+    const deg = Math.round(((Math.atan2(dx, dy) * 180) / Math.PI + 360) % 360);
+    const sprintSec = Math.round(dist / 6.2);
+    const etaLabel =
+      sprintSec >= 60
+        ? `~${Math.floor(sprintSec / 60)}m ${sprintSec % 60}s`
+        : `~${sprintSec}s`;
+    return { dx, dy, dist, bearing, deg, etaLabel };
+  }, [effectiveNavOrigin, navTarget]);
+
+  // Render Live Operator Beacon ("You Are Here")
+  useEffect(() => {
+    const layer = playerPosLayerRef.current;
+    layer.clearLayers();
+    if (!livePlayerPos) return;
+
+    const ll = toLatLng(livePlayerPos.x, livePlayerPos.y);
+    L.circle(ll, {
+      radius: 45,
+      color: "#10b981",
+      weight: 1.5,
+      fillColor: "#10b981",
+      fillOpacity: 0.14,
+      interactive: false,
+    }).addTo(layer);
+
+    const marker = L.marker(ll, {
+      zIndexOffset: 980,
+      icon: L.divIcon({
+        className: "gzw-map-label",
+        html: `<div style="
+          transform:translate(-50%,-50%);
+          display:flex;
+          flex-direction:column;
+          align-items:center;
+          gap:3px;
+          pointer-events:auto;
+        ">
+          <div style="
+            padding:2px 6px;
+            border-radius:6px;
+            background:rgba(6, 24, 18, 0.94);
+            border:1.5px solid #10b981;
+            color:#6ee7b7;
+            font-family:'JetBrains Mono',monospace;
+            font-size:10px;
+            font-weight:700;
+            white-space:nowrap;
+            box-shadow:0 0 14px rgba(16,185,129,0.45);
+          ">YOU · ${livePlayerPos.grid}</div>
+          <div style="
+            width:12px;
+            height:12px;
+            border-radius:9999px;
+            background:#10b981;
+            border:2px solid #06120e;
+            box-shadow:0 0 12px #10b981;
+          "></div>
+        </div>`,
+        iconSize: [0, 0],
+      }),
+    });
+    marker.bindPopup(`
+      <div style="min-width:190px;">
+        <div style="font-family:monospace;font-size:10px;color:#34d399;font-weight:700;">LIVE OPERATOR POSITION</div>
+        <div style="font-weight:700;font-size:13px;margin:2px 0;">Grid ${livePlayerPos.grid}</div>
+        <div style="font-size:11px;color:#94a3b8;">Source: ${livePlayerPos.source === "ocr" ? "Screen Sync OCR" : "Manual Map / Grid"}</div>
+      </div>
+    `);
+    marker.addTo(layer);
+  }, [livePlayerPos]);
+
+  // Render Compass Bearing Lock Route Vector
+  useEffect(() => {
+    const layer = navRouteLayerRef.current;
+    layer.clearLayers();
+    if (!effectiveNavOrigin || !navTarget || !activeNavTelemetry) return;
+
+    const aLl = toLatLng(effectiveNavOrigin.x, effectiveNavOrigin.y);
+    const bLl = toLatLng(navTarget.x, navTarget.y);
+
+    // Outer dark casing + glowing amber dashed vector
+    L.polyline([aLl, bLl], {
+      color: "#05080d",
+      weight: 5.5,
+      opacity: 0.78,
+      interactive: false,
+    }).addTo(layer);
+
+    L.polyline([aLl, bLl], {
+      color: "#e5a93c",
+      weight: 2.5,
+      dashArray: "9 6",
+      opacity: 0.96,
+      interactive: false,
+    }).addTo(layer);
+
+    // Midpoint directional arrow + distance badge
+    const midX = (effectiveNavOrigin.x + navTarget.x) / 2;
+    const midY = (effectiveNavOrigin.y + navTarget.y) / 2;
+    L.marker(toLatLng(midX, midY), {
+      interactive: false,
+      zIndexOffset: 940,
+      icon: L.divIcon({
+        className: "gzw-map-label",
+        html: `<div style="
+          transform:translate(-50%,-50%);
+          display:inline-flex;
+          align-items:center;
+          gap:6px;
+          white-space:nowrap;
+          background:rgba(11, 15, 22, 0.94);
+          border:1px solid #e5a93c;
+          color:#fde68a;
+          padding:3px 8px;
+          border-radius:6px;
+          font-family:'JetBrains Mono',monospace;
+          font-size:10.5px;
+          font-weight:700;
+          box-shadow:0 4px 14px rgba(0,0,0,0.85);
+        ">
+          <svg width="11" height="11" viewBox="0 0 12 12" style="transform:rotate(${activeNavTelemetry.deg}deg);flex-shrink:0;">
+            <path d="M6 1L10.5 10.5L6 8.2L1.5 10.5Z" fill="#e5a93c"/>
+          </svg>
+          <span>${activeNavTelemetry.bearing} · ${activeNavTelemetry.dist}m</span>
+        </div>`,
+        iconSize: [0, 0],
+      }),
+    }).addTo(layer);
+
+    // Origin ring & Target ring
+    L.marker(aLl, {
+      interactive: false,
+      zIndexOffset: 920,
+      icon: createTargetPinIcon("#38bdf8", "S", false),
+    }).addTo(layer);
+
+    L.marker(bLl, {
+      interactive: false,
+      zIndexOffset: 930,
+      icon: createTargetPinIcon("#e5a93c", "◎", true),
+    }).addTo(layer);
+  }, [effectiveNavOrigin, navTarget, activeNavTelemetry]);
 
   const inspectedSpawnPoints = useMemo(() => {
     if (!inspectedMaterial) return [];
@@ -591,7 +1191,9 @@ export function TacticalMapPanel({
   // Render clean, borderless, zoom-gated Update 0.5 markers
   useEffect(() => {
     const groups = layersRef.current;
-    (Object.keys(groups) as MapLayerKey[]).forEach((k) => groups[k].clearLayers());
+    (Object.keys(groups) as MapLayerKey[]).forEach((k) => {
+      if (k !== "gridOverlay") groups[k].clearLayers();
+    });
 
     const hasFocusedMaterial =
       !!inspectedMaterial || Object.values(tickedMapMaterials).some(Boolean);
@@ -1382,39 +1984,42 @@ export function TacticalMapPanel({
 
   return (
     <section className="relative flex-1 h-full min-h-0 bg-[#06090d] overflow-hidden">
-      {/* Compact Floating Map Controls */}
-      <div className="absolute top-2.5 left-2.5 right-2.5 z-[650] flex items-start justify-between gap-1.5 pointer-events-none flex-wrap">
-        <div className="pointer-events-auto flex items-center gap-1.5 relative flex-wrap">
-          {/* Quick Search (POIs, LZs, Keys, Grid 171 152) */}
-          <div className="relative">
-            <div className="relative flex items-center">
-              <Search className="w-3.5 h-3.5 text-[#7f8ea1] absolute left-2.5 pointer-events-none" />
-              <input
-                type="text"
-                value={mapSearchQuery}
-                onFocus={() => {
-                  setMapSearchOpen(true);
-                  setJumpOpen(false);
-                  setLayersOpen(false);
-                }}
-                onChange={(e) => {
-                  setMapSearchQuery(e.target.value);
-                  setMapSearchOpen(true);
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && mapSearchResults.gridJump) {
-                    const g = mapSearchResults.gridJump;
-                    mapRef.current?.flyTo(toLatLng(g.x, g.y), 16.5, {
-                      duration: 0.65,
-                    });
-                    setMapSearchOpen(false);
-                    onNotify(`Jumped to Grid ${g.grid}`);
-                  }
-                }}
-                placeholder="Search POI, grid, or key..."
-                aria-label="Search map locations or grid"
-                className="min-h-[38px] w-44 sm:w-56 pl-8 pr-7 py-1.5 rounded-lg bg-[#0d121a]/90 backdrop-blur-xl border border-white/[0.1] focus:border-[#38bdf8] text-xs text-[#eef3f8] placeholder:text-[#7a899c] shadow-xl focus:outline-none transition-colors"
-              />
+      {/* Floating Map Toolbar + Flowing Left/Right Drawers */}
+      <div className="absolute top-2.5 left-2.5 right-2.5 z-[725] flex flex-col gap-2 pointer-events-none">
+        {/* Compact Floating Map Controls */}
+        <div className="flex items-start justify-between gap-1.5 flex-wrap relative z-[740]">
+          <div className="pointer-events-auto flex items-center gap-1.5 relative flex-wrap">
+            {/* Quick Search (POIs, LZs, Keys, Grid 171 152) */}
+            <div className="relative">
+              <div className="relative flex items-center">
+                <Search className="w-3.5 h-3.5 text-[#7f8ea1] absolute left-2.5 pointer-events-none" />
+                <input
+                  type="text"
+                  value={mapSearchQuery}
+                  onFocus={() => {
+                    setMapSearchOpen(true);
+                    setJumpOpen(false);
+                    setLayersOpen(false);
+                    setScreenSyncPanelOpen(false);
+                  }}
+                  onChange={(e) => {
+                    setMapSearchQuery(e.target.value);
+                    setMapSearchOpen(true);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && mapSearchResults.gridJump) {
+                      const g = mapSearchResults.gridJump;
+                      mapRef.current?.flyTo(toLatLng(g.x, g.y), 16.5, {
+                        duration: 0.65,
+                      });
+                      setMapSearchOpen(false);
+                      onNotify(`Jumped to Grid ${g.grid}`);
+                    }
+                  }}
+                  placeholder="Search POI, grid, or key..."
+                  aria-label="Search map locations or grid"
+                  className="min-h-[38px] w-40 sm:w-44 xl:w-52 pl-8 pr-7 py-1.5 rounded-lg bg-[#0d121a]/90 backdrop-blur-xl border border-white/[0.1] focus:border-[#38bdf8] text-xs text-[#eef3f8] placeholder:text-[#7a899c] shadow-xl focus:outline-none transition-colors"
+                />
               {mapSearchQuery && (
                 <button
                   type="button"
@@ -1431,59 +2036,98 @@ export function TacticalMapPanel({
             </div>
 
             {mapSearchOpen && mapSearchQuery.trim() && (
-              <div className="absolute top-full left-0 mt-1.5 w-72 max-h-80 overflow-y-auto rounded-xl bg-[#0d121a]/96 backdrop-blur-xl border border-white/[0.12] p-1.5 shadow-2xl z-[810] space-y-1">
+              <div className="absolute top-full left-0 mt-1.5 w-76 max-h-80 overflow-y-auto rounded-xl bg-[#0d121a]/96 backdrop-blur-xl border border-white/[0.12] p-1.5 shadow-2xl z-[810] space-y-1">
                 {mapSearchResults.gridJump && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const g = mapSearchResults.gridJump!;
-                      mapRef.current?.flyTo(toLatLng(g.x, g.y), 16.5, {
-                        duration: 0.65,
-                      });
-                      setMapSearchOpen(false);
-                      onNotify(`Centered on Grid ${g.grid}`);
-                    }}
-                    className="w-full text-left px-2.5 py-2 rounded-lg bg-[#16202e] hover:bg-[#1d2a3c] flex items-center justify-between gap-2 text-xs text-[#7dd3fc]"
-                  >
-                    <span className="font-medium">
-                      Go to Grid {mapSearchResults.gridJump.grid}
-                    </span>
-                    <span className="font-mono-tabular text-[10px]">
-                      {mapSearchResults.gridJump.x}, {mapSearchResults.gridJump.y}
-                    </span>
-                  </button>
+                  <div className="flex items-center gap-1 rounded-lg bg-[#16202e] p-1">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const g = mapSearchResults.gridJump!;
+                        mapRef.current?.flyTo(toLatLng(g.x, g.y), 16.5, {
+                          duration: 0.65,
+                        });
+                        setMapSearchOpen(false);
+                        onNotify(`Centered on Grid ${g.grid}`);
+                      }}
+                      className="flex-1 text-left px-2 py-1.5 rounded hover:bg-[#1d2a3c] flex items-center justify-between gap-2 text-xs text-[#7dd3fc]"
+                    >
+                      <span className="font-medium">
+                        Go to Grid {mapSearchResults.gridJump.grid}
+                      </span>
+                      <span className="font-mono-tabular text-[10px]">
+                        {mapSearchResults.gridJump.x}, {mapSearchResults.gridJump.y}
+                      </span>
+                    </button>
+                    <button
+                      type="button"
+                      title="Lock bearing to this grid"
+                      onClick={() => {
+                        const g = mapSearchResults.gridJump!;
+                        lockBearingTo({
+                          x: g.x,
+                          y: g.y,
+                          label: `Grid ${g.grid}`,
+                          kind: "point",
+                        });
+                        setMapSearchOpen(false);
+                      }}
+                      className="px-2 py-1.5 rounded bg-[#e5a93c]/15 border border-[#e5a93c]/40 text-[#e5a93c] hover:bg-[#e5a93c]/25 text-[10px] font-semibold shrink-0"
+                    >
+                      Lock
+                    </button>
+                  </div>
                 )}
 
                 {mapSearchResults.pois.map((poi) => (
-                  <button
+                  <div
                     key={poi.id}
-                    type="button"
-                    onClick={() => {
-                      mapRef.current?.flyTo(
-                        toLatLng(poi.x, poi.y),
-                        poi.kind === "sublocation" ? 17 : 16,
-                        { duration: 0.65 }
-                      );
-                      openZoneBriefing(poi);
-                    }}
-                    className="w-full text-left px-2.5 py-1.5 rounded-lg hover:bg-white/[0.06] flex items-center justify-between gap-2 text-xs"
+                    className="flex items-center gap-1 rounded-lg hover:bg-white/[0.06] pr-1"
                   >
-                    <div className="min-w-0">
-                      <div className="text-[#eef3f8] font-medium truncate">
-                        {poi.name}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        mapRef.current?.flyTo(
+                          toLatLng(poi.x, poi.y),
+                          poi.kind === "sublocation" ? 17 : 16,
+                          { duration: 0.65 }
+                        );
+                        openZoneBriefing(poi);
+                      }}
+                      className="flex-1 min-w-0 text-left px-2.5 py-1.5 flex items-center justify-between gap-2 text-xs"
+                    >
+                      <div className="min-w-0">
+                        <div className="text-[#eef3f8] font-medium truncate">
+                          {poi.name}
+                        </div>
+                        <div className="text-[11px] text-[#8392a6] truncate">
+                          {poi.kind === "lz"
+                            ? `Landing Zone · ${poi.faction}`
+                            : poi.kind === "cop"
+                              ? `Combat Outpost · ${poi.parentRegion || "Lamang"}`
+                              : `${poi.tier}${poi.parentRegion ? ` · ${poi.parentRegion}` : ""}`}
+                        </div>
                       </div>
-                      <div className="text-[11px] text-[#8392a6] truncate">
-                        {poi.kind === "lz"
-                          ? `Landing Zone · ${poi.faction}`
-                          : poi.kind === "cop"
-                            ? `Combat Outpost · ${poi.parentRegion || "Lamang"}`
-                            : `${poi.tier}${poi.parentRegion ? ` · ${poi.parentRegion}` : ""}`}
-                      </div>
-                    </div>
-                    <span className="font-mono-tabular text-[10px] text-[#e5a93c] shrink-0">
-                      {formatGridSquare(poi.x, poi.y)}
-                    </span>
-                  </button>
+                      <span className="font-mono-tabular text-[10px] text-[#e5a93c] shrink-0">
+                        {formatGridSquare(poi.x, poi.y)}
+                      </span>
+                    </button>
+                    <button
+                      type="button"
+                      title={`Lock bearing to ${poi.name}`}
+                      onClick={() => {
+                        lockBearingTo({
+                          x: poi.x,
+                          y: poi.y,
+                          label: poi.name,
+                          kind: "poi",
+                        });
+                        setMapSearchOpen(false);
+                      }}
+                      className="p-1.5 rounded text-[#8b98a9] hover:text-[#e5a93c] shrink-0"
+                    >
+                      <Compass className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
                 ))}
 
                 {mapSearchResults.keys.map((k) => (
@@ -1522,65 +2166,89 @@ export function TacticalMapPanel({
             )}
           </div>
 
-          {/* Region Quick-Jump Popover */}
-          <div className="relative">
-            <button
-              type="button"
-              onClick={() => {
-                setJumpOpen((v) => !v);
-                setLayersOpen(false);
-                setMapSearchOpen(false);
-              }}
-              className="min-h-[38px] inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#0d121a]/90 backdrop-blur-xl border border-white/[0.1] hover:border-white/[0.22] text-xs font-medium text-[#e2e9f2] shadow-xl transition-colors"
-            >
-              <Navigation className="w-3.5 h-3.5 text-[#e5a93c]" />
-              <span className="hidden md:inline">Regions</span>
-              <ChevronDown className="w-3.5 h-3.5 text-[#7f8ea1]" />
-            </button>
+          {/* Region Quick-Jump Popover (Hidden in Glance Mode to reduce clutter) */}
+          {!glanceMode && (
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => {
+                  setJumpOpen((v) => !v);
+                  setLayersOpen(false);
+                  setMapSearchOpen(false);
+                  setScreenSyncPanelOpen(false);
+                }}
+                className="min-h-[38px] inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg bg-[#0d121a]/90 backdrop-blur-xl border border-white/[0.1] hover:border-white/[0.22] text-xs font-medium text-[#e2e9f2] shadow-xl transition-colors"
+              >
+                <Navigation className="w-3.5 h-3.5 text-[#e5a93c]" />
+                <span className="hidden md:inline">Regions</span>
+                <ChevronDown className="w-3.5 h-3.5 text-[#7f8ea1]" />
+              </button>
 
-            {jumpOpen && (
-              <div className="absolute top-full left-0 mt-1.5 w-64 max-h-72 overflow-y-auto rounded-xl bg-[#0d121a]/96 backdrop-blur-xl border border-white/[0.12] p-1.5 shadow-2xl z-[800]">
-                {quickJumpPois.map((poi) => {
-                  const isOwnFob =
-                    activeFactionInfo && poi.id === activeFactionInfo.baseId;
-                  const isStarter =
-                    activeFactionInfo && poi.name === activeFactionInfo.starterTown;
-                  return (
-                    <button
-                      key={poi.id}
-                      type="button"
-                      onClick={() => {
-                        mapRef.current?.flyTo(toLatLng(poi.x, poi.y), 16, { duration: 0.65 });
-                        openZoneBriefing(poi);
-                      }}
-                      className="w-full min-h-[36px] text-left px-2.5 py-1.5 rounded-lg hover:bg-white/[0.06] flex items-center justify-between gap-2 text-xs transition-colors"
-                    >
-                      <span className="text-[#eef3f8] font-medium truncate">{poi.name}</span>
-                      <span
-                        className={`text-[11px] font-medium shrink-0 ${
-                          isOwnFob
-                            ? "text-[#38bdf8]"
-                            : isStarter
-                              ? "text-[#34d399]"
-                              : poi.kind === "tier4"
-                                ? "text-red-400"
-                                : poi.tier === "Tier 3"
-                                  ? "text-[#e5a93c]"
-                                  : "text-[#8b98a9]"
-                        }`}
+              {jumpOpen && (
+                <div className="absolute top-full left-0 mt-1.5 w-64 max-h-72 overflow-y-auto rounded-xl bg-[#0d121a]/96 backdrop-blur-xl border border-white/[0.12] p-1.5 shadow-2xl z-[800]">
+                  {quickJumpPois.map((poi) => {
+                    const isOwnFob =
+                      activeFactionInfo && poi.id === activeFactionInfo.baseId;
+                    const isStarter =
+                      activeFactionInfo && poi.name === activeFactionInfo.starterTown;
+                    return (
+                      <button
+                        key={poi.id}
+                        type="button"
+                        onClick={() => {
+                          mapRef.current?.flyTo(toLatLng(poi.x, poi.y), 16, { duration: 0.65 });
+                          openZoneBriefing(poi);
+                        }}
+                        className="w-full min-h-[36px] text-left px-2.5 py-1.5 rounded-lg hover:bg-white/[0.06] flex items-center justify-between gap-2 text-xs transition-colors"
                       >
-                        {isOwnFob
-                          ? "Your FOB"
-                          : isStarter
-                            ? `${activeFactionInfo.short} Starter`
-                            : poi.tier}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-          </div>
+                        <span className="text-[#eef3f8] font-medium truncate">{poi.name}</span>
+                        <span
+                          className={`text-[11px] font-medium shrink-0 ${
+                            isOwnFob
+                              ? "text-[#38bdf8]"
+                              : isStarter
+                                ? "text-[#34d399]"
+                                : poi.kind === "tier4"
+                                  ? "text-red-400"
+                                  : poi.tier === "Tier 3"
+                                    ? "text-[#e5a93c]"
+                                    : "text-[#8b98a9]"
+                          }`}
+                        >
+                          {isOwnFob
+                            ? "Your FOB"
+                            : isStarter
+                              ? `${activeFactionInfo.short} Starter`
+                              : poi.tier}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Quick 100m Grid Lines Toggle */}
+          <button
+            type="button"
+            aria-pressed={layerVisibility.gridOverlay}
+            onClick={() =>
+              setLayerVisibility((prev) => ({
+                ...prev,
+                gridOverlay: !prev.gridOverlay,
+              }))
+            }
+            title="Toggle 100m in-game map grid lines & coordinates"
+            className={`min-h-[38px] inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium backdrop-blur-xl shadow-xl transition-colors whitespace-nowrap shrink-0 ${
+              layerVisibility.gridOverlay
+                ? "bg-[#e5a93c]/16 border border-[#e5a93c]/55 text-[#fde68a]"
+                : "bg-[#0d121a]/90 border border-white/[0.1] text-[#94a3b8] hover:text-white"
+            }`}
+          >
+            <Grid3X3 className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">Grid</span>
+          </button>
 
           {/* Compact Layers Popover */}
           <div className="relative">
@@ -1590,8 +2258,9 @@ export function TacticalMapPanel({
                 setLayersOpen((v) => !v);
                 setJumpOpen(false);
                 setMapSearchOpen(false);
+                setScreenSyncPanelOpen(false);
               }}
-              className="min-h-[38px] inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#0d121a]/90 backdrop-blur-xl border border-white/[0.1] hover:border-white/[0.22] text-xs font-medium text-[#e2e9f2] shadow-xl transition-colors"
+              className="min-h-[38px] inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg bg-[#0d121a]/90 backdrop-blur-xl border border-white/[0.1] hover:border-white/[0.22] text-xs font-medium text-[#e2e9f2] shadow-xl transition-colors"
             >
               <Layers className="w-3.5 h-3.5 text-[#38bdf8]" />
               <span className="hidden sm:inline">Layers</span>
@@ -1604,6 +2273,7 @@ export function TacticalMapPanel({
               <div className="absolute top-full left-0 mt-1.5 w-60 rounded-xl bg-[#0d121a]/96 backdrop-blur-xl border border-white/[0.12] p-2.5 shadow-2xl z-[800] space-y-1">
                 {(
                   [
+                    { key: "gridOverlay", label: "100m Grid Lines & Coords", dot: "bg-slate-400" },
                     { key: "poiLabels", label: "Main Regions & Tier 4", dot: "bg-red-400" },
                     { key: "subLocations", label: "Sub-Locations (Zoomed)", dot: "bg-sky-400" },
                     { key: "copsAndLzs", label: "Outposts & Landing Zones", dot: "bg-yellow-400" },
@@ -1642,98 +2312,163 @@ export function TacticalMapPanel({
           </div>
         </div>
 
-        {/* Top-Right Compact Controls: Measure, Drop Pin, Saved Pins Log, Reset View */}
+        {/* Top-Right Monitor 2 Tools: Screen Sync, Glance Mode, Measure, Drop Pin, My Pins, Reset View */}
         <div className="pointer-events-auto flex items-center gap-1.5 flex-wrap justify-end">
+          {/* Screen Sync (Local OCR Position Tracker) */}
           <button
             type="button"
             onClick={() => {
-              const next = !measureMode;
-              setMeasureMode(next);
-              if (next) {
-                onTogglePinDropMode(false);
-                setRepositioningPin(false);
-                onNotify("Click two points on the map to measure distance");
-              } else {
-                setMeasurePoints([]);
-              }
-            }}
-            title="Measure distance and bearing between two points"
-            className={`min-h-[38px] inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium backdrop-blur-xl shadow-xl transition-colors whitespace-nowrap shrink-0 ${
-              measureMode
-                ? "bg-[#38bdf8]/20 border border-[#38bdf8] text-[#bae6fd]"
-                : "bg-[#0d121a]/90 border border-white/[0.1] text-[#e2e9f2] hover:border-white/[0.22]"
-            }`}
-          >
-            <Ruler className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">
-              {measureMode ? "Measuring" : "Measure"}
-            </span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => {
-              if (!pinDropMode) {
-                setMeasureMode(false);
-                setMeasurePoints([]);
-                setRepositioningPin(false);
-              }
-              onTogglePinDropMode();
-            }}
-            className={`min-h-[38px] inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium backdrop-blur-xl shadow-xl transition-colors whitespace-nowrap shrink-0 ${
-              pinDropMode
-                ? "bg-cyan-500/20 border border-cyan-400 text-cyan-200"
-                : "bg-[#0d121a]/90 border border-white/[0.1] text-[#e2e9f2] hover:border-white/[0.22]"
-            }`}
-          >
-            <Crosshair className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">{pinDropMode ? "Placing Pin" : "Drop Pin"}</span>
-            <span className="sm:hidden">{pinDropMode ? "Placing" : "Pin"}</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => {
-              setPinsDrawerOpen((v) => !v);
+              setScreenSyncPanelOpen((v) => !v);
+              setPinsDrawerOpen(false);
               setLayersOpen(false);
               setJumpOpen(false);
               setMapSearchOpen(false);
             }}
-            aria-label="Open saved pins list"
-            className={`min-h-[38px] inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium backdrop-blur-xl shadow-xl transition-colors whitespace-nowrap shrink-0 ${
-              pinsDrawerOpen
-                ? "bg-[#10b981]/20 border border-[#34d399]/70 text-[#a7f3d0]"
-                : "bg-[#0d121a]/90 border border-white/[0.1] text-[#e2e9f2] hover:border-white/[0.22]"
+            aria-label="Open screen sync tracker"
+            title="Live Position Sync (Local Screen Watcher OCR or Manual Grid)"
+            className={`min-h-[38px] inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-medium backdrop-blur-xl shadow-xl transition-colors whitespace-nowrap shrink-0 ${
+              screenSyncActive
+                ? "bg-emerald-500/20 border border-emerald-400 text-[#a7f3d0]"
+                : screenSyncPanelOpen
+                  ? "bg-[#38bdf8]/20 border border-[#38bdf8] text-[#bae6fd]"
+                  : "bg-[#0d121a]/90 border border-white/[0.1] text-[#e2e9f2] hover:border-white/[0.22]"
             }`}
           >
-            <Bookmark className="w-3.5 h-3.5 text-[#34d399]" />
-            <span className="hidden sm:inline">My Pins</span>
-            <span
-              className={`font-mono-tabular text-[11px] px-1.5 py-0.5 rounded-md ${
-                userDroppedPins.length > 0
-                  ? "bg-[#10b981]/20 text-[#6ee7b7]"
-                  : "bg-white/[0.06] text-[#94a3b8]"
-              }`}
-            >
-              {userDroppedPins.length}
+            {screenSyncActive ? (
+              <Radio className="w-3.5 h-3.5 text-emerald-400 animate-pulse" />
+            ) : (
+              <Monitor className="w-3.5 h-3.5 text-[#38bdf8]" />
+            )}
+            <span className="hidden sm:inline">
+              {screenSyncActive
+                ? livePlayerPos
+                  ? `Live ${livePlayerPos.grid}`
+                  : "Watching"
+                : livePlayerPos
+                  ? `Pos ${livePlayerPos.grid}`
+                  : "Screen Sync"}
             </span>
           </button>
+
+          {/* Glance Mode Toggle (Monitor 2 Fullscreen Intel) */}
+          {onToggleGlanceMode && (
+            <button
+              type="button"
+              onClick={() => onToggleGlanceMode(!glanceMode)}
+              title="Toggle Glance Mode — fullscreen map & oversized bearing HUD for Monitor 2"
+              className={`min-h-[38px] inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-medium backdrop-blur-xl shadow-xl transition-colors whitespace-nowrap shrink-0 ${
+                glanceMode
+                  ? "bg-[#e5a93c]/25 border border-[#e5a93c] text-[#fde68a]"
+                  : "bg-[#0d121a]/90 border border-white/[0.1] text-[#e2e9f2] hover:border-white/[0.22]"
+              }`}
+            >
+              <Eye className="w-3.5 h-3.5 text-[#e5a93c]" />
+              <span className="hidden sm:inline">
+                {glanceMode ? "Glance On" : "Glance"}
+              </span>
+            </button>
+          )}
+
+          {!glanceMode && (
+            <>
+              <button
+                type="button"
+                onClick={() => {
+                  const next = !measureMode;
+                  setMeasureMode(next);
+                  if (next) {
+                    onTogglePinDropMode(false);
+                    setManualPosMode(false);
+                    setRepositioningPin(false);
+                    onNotify("Click two points on the map to measure distance");
+                  } else {
+                    setMeasurePoints([]);
+                  }
+                }}
+                title="Measure distance and bearing between two points"
+                className={`min-h-[38px] inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-medium backdrop-blur-xl shadow-xl transition-colors whitespace-nowrap shrink-0 ${
+                  measureMode
+                    ? "bg-[#38bdf8]/20 border border-[#38bdf8] text-[#bae6fd]"
+                    : "bg-[#0d121a]/90 border border-white/[0.1] text-[#e2e9f2] hover:border-white/[0.22]"
+                }`}
+              >
+                <Ruler className="w-3.5 h-3.5" />
+                <span className="hidden md:inline">
+                  {measureMode ? "Measuring" : "Measure"}
+                </span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  if (!pinDropMode) {
+                    setMeasureMode(false);
+                    setMeasurePoints([]);
+                    setManualPosMode(false);
+                    setRepositioningPin(false);
+                  }
+                  onTogglePinDropMode();
+                }}
+                className={`min-h-[38px] inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-medium backdrop-blur-xl shadow-xl transition-colors whitespace-nowrap shrink-0 ${
+                  pinDropMode
+                    ? "bg-cyan-500/20 border border-cyan-400 text-cyan-200"
+                    : "bg-[#0d121a]/90 border border-white/[0.1] text-[#e2e9f2] hover:border-white/[0.22]"
+                }`}
+              >
+                <Crosshair className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">{pinDropMode ? "Placing Pin" : "Drop Pin"}</span>
+                <span className="sm:hidden">{pinDropMode ? "Placing" : "Pin"}</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setPinsDrawerOpen((v) => !v);
+                  setScreenSyncPanelOpen(false);
+                  setLayersOpen(false);
+                  setJumpOpen(false);
+                  setMapSearchOpen(false);
+                }}
+                aria-label="Open saved pins list"
+                className={`min-h-[38px] inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-medium backdrop-blur-xl shadow-xl transition-colors whitespace-nowrap shrink-0 ${
+                  pinsDrawerOpen
+                    ? "bg-[#10b981]/20 border border-[#34d399]/70 text-[#a7f3d0]"
+                    : "bg-[#0d121a]/90 border border-white/[0.1] text-[#e2e9f2] hover:border-white/[0.22]"
+                }`}
+              >
+                <Bookmark className="w-3.5 h-3.5 text-[#34d399]" />
+                <span className="hidden sm:inline">My Pins</span>
+                <span
+                  className={`font-mono-tabular text-[11px] px-1.5 py-0.5 rounded-md ${
+                    userDroppedPins.length > 0
+                      ? "bg-[#10b981]/20 text-[#6ee7b7]"
+                      : "bg-white/[0.06] text-[#94a3b8]"
+                  }`}
+                >
+                  {userDroppedPins.length}
+                </span>
+              </button>
+            </>
+          )}
 
           <button
             type="button"
             onClick={fitIslandView}
             title="Reset Island View"
-            className="min-h-[38px] inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-[#0d121a]/90 backdrop-blur-xl border border-white/[0.1] text-[#e2e9f2] hover:border-white/[0.22] shadow-xl transition-colors whitespace-nowrap shrink-0"
+            className="min-h-[38px] inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-medium bg-[#0d121a]/90 backdrop-blur-xl border border-white/[0.1] text-[#e2e9f2] hover:border-white/[0.22] shadow-xl transition-colors whitespace-nowrap shrink-0"
           >
             <LocateFixed className="w-3.5 h-3.5" />
-            <span className="hidden md:inline">Reset View</span>
+            <span className="hidden xl:inline">Reset View</span>
           </button>
         </div>
-      </div>
+        </div>
 
+        {/* Left & Right Floating Intel Drawers (Flows naturally below toolbar row so wrapped toolbars never collide) */}
+        <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-2.5 w-full pointer-events-none relative z-[715]">
+          <div className="min-w-0 max-w-full pointer-events-none">
       {/* Interactive Zone Intel Slide-Over Drawer (Direct Map Click on any POI / Compound / COP / LZ) */}
       {inspectedPoi && zoneIntel && !inspectedMaterial && !inspectedTask && !inspectedKey && (
-        <div className="absolute top-14 left-2.5 z-[710] w-[370px] max-w-[calc(100%-20px)] max-h-[58vh] lg:max-h-[calc(100%-84px)] overflow-y-auto rounded-xl bg-[#0d121a]/95 backdrop-blur-xl border border-white/[0.12] p-4 shadow-2xl">
+        <div className="pointer-events-auto w-[370px] max-w-full max-h-[52vh] lg:max-h-[calc(100vh-240px)] overflow-y-auto rounded-xl bg-[#0d121a]/95 backdrop-blur-xl border border-white/[0.12] p-4 shadow-2xl">
           <div className="flex items-start justify-between gap-2 pb-3 border-b border-white/[0.08]">
             <div className="min-w-0">
               <div className="text-[11px] font-medium text-[#e5a93c]">
@@ -1748,56 +2483,130 @@ export function TacticalMapPanel({
                 </div>
               )}
             </div>
-            <button
-              type="button"
-              aria-label="Close zone intel"
-              onClick={() => setInspectedPoi(null)}
-              className="p-1.5 rounded-lg text-[#8b98a9] hover:text-white hover:bg-white/[0.08] shrink-0 transition-colors"
-            >
-              <X className="w-4 h-4" />
-            </button>
+            <div className="flex items-center gap-1 shrink-0">
+              <button
+                type="button"
+                onClick={() =>
+                  lockBearingTo({
+                    x: inspectedPoi.x,
+                    y: inspectedPoi.y,
+                    label: inspectedPoi.name,
+                    kind: "poi",
+                  })
+                }
+                title="Lock compass bearing from nearest LZ / your position"
+                className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-[#e5a93c]/15 border border-[#e5a93c]/50 text-[#fde68a] hover:bg-[#e5a93c]/25 text-[11px] font-semibold shrink-0 transition-colors"
+              >
+                <Compass className="w-3.5 h-3.5 text-[#e5a93c]" />
+                <span>Lock Bearing</span>
+              </button>
+              <button
+                type="button"
+                aria-label="Close zone intel"
+                onClick={() => setInspectedPoi(null)}
+                className="p-1.5 rounded-lg text-[#8b98a9] hover:text-white hover:bg-white/[0.08] shrink-0 transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
           </div>
 
           <div className="mt-3 space-y-3 text-xs">
-            {/* Nearest LZs & COPs (Click to Fly) */}
+            {/* Nearest LZs & COPs (Click to Fly or Set Bearing Origin) */}
             <div>
               <div className="font-mono-tabular text-[10px] uppercase tracking-wider text-[#38bdf8] mb-1.5">
-                Nearest LZs &amp; Outposts
+                Nearest LZs &amp; Outposts (Fly or Start Bearing)
               </div>
               <div className="grid grid-cols-2 gap-1.5">
                 {zoneIntel.nearestLzs.map(({ poi: lzPoi, dist, bearing }) => (
-                  <button
+                  <div
                     key={lzPoi.id}
-                    type="button"
-                    onClick={() =>
-                      mapRef.current?.flyTo(toLatLng(lzPoi.x, lzPoi.y), 16, { duration: 0.55 })
-                    }
-                    className="text-left px-2 py-1.5 rounded bg-[#080b0f] border border-[#1f2834] hover:border-[#eab308] transition-colors"
+                    className="rounded bg-[#080b0f] border border-[#1f2834] hover:border-[#eab308] p-1.5 flex items-center justify-between gap-1 transition-colors"
                   >
-                    <div className="text-[11px] font-semibold text-[#fde047] truncate">
-                      LZ {lzPoi.lz}
-                    </div>
-                    <div className="font-mono-tabular text-[10px] text-[#8b98a9]">
-                      {dist} m · {bearing}
-                    </div>
-                  </button>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        mapRef.current?.flyTo(toLatLng(lzPoi.x, lzPoi.y), 16, { duration: 0.55 })
+                      }
+                      className="text-left min-w-0 flex-1"
+                    >
+                      <div className="text-[11px] font-semibold text-[#fde047] truncate">
+                        LZ {lzPoi.lz}
+                      </div>
+                      <div className="font-mono-tabular text-[10px] text-[#8b98a9]">
+                        {dist} m · {bearing}
+                      </div>
+                    </button>
+                    <button
+                      type="button"
+                      title={`Navigate from LZ ${lzPoi.lz} to ${inspectedPoi.name}`}
+                      onClick={() =>
+                        lockBearingTo(
+                          {
+                            x: inspectedPoi.x,
+                            y: inspectedPoi.y,
+                            label: inspectedPoi.name,
+                            kind: "poi",
+                          },
+                          {
+                            x: lzPoi.x,
+                            y: lzPoi.y,
+                            label: `LZ ${lzPoi.lz}`,
+                            grid: formatGridSquare(lzPoi.x, lzPoi.y),
+                            kind: "lz",
+                          }
+                        )
+                      }
+                      className="p-1 rounded bg-[#141a23] border border-white/[0.08] text-[#e5a93c] hover:border-[#e5a93c] shrink-0"
+                    >
+                      <ArrowRight className="w-3 h-3" />
+                    </button>
+                  </div>
                 ))}
                 {zoneIntel.nearestCops.map(({ poi: copPoi, dist, bearing }) => (
-                  <button
+                  <div
                     key={copPoi.id}
-                    type="button"
-                    onClick={() =>
-                      mapRef.current?.flyTo(toLatLng(copPoi.x, copPoi.y), 16, { duration: 0.55 })
-                    }
-                    className="text-left px-2 py-1.5 rounded bg-[#080b0f] border border-[#1f2834] hover:border-[#38bdf8] transition-colors"
+                    className="rounded bg-[#080b0f] border border-[#1f2834] hover:border-[#38bdf8] p-1.5 flex items-center justify-between gap-1 transition-colors"
                   >
-                    <div className="text-[11px] font-semibold text-[#bae6fd] truncate">
-                      {copPoi.name.replace(/^Outpost\s+/i, "COP ")}
-                    </div>
-                    <div className="font-mono-tabular text-[10px] text-[#8b98a9]">
-                      {dist} m · {bearing}
-                    </div>
-                  </button>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        mapRef.current?.flyTo(toLatLng(copPoi.x, copPoi.y), 16, { duration: 0.55 })
+                      }
+                      className="text-left min-w-0 flex-1"
+                    >
+                      <div className="text-[11px] font-semibold text-[#bae6fd] truncate">
+                        {copPoi.name.replace(/^Outpost\s+/i, "COP ")}
+                      </div>
+                      <div className="font-mono-tabular text-[10px] text-[#8b98a9]">
+                        {dist} m · {bearing}
+                      </div>
+                    </button>
+                    <button
+                      type="button"
+                      title={`Navigate from ${copPoi.name} to ${inspectedPoi.name}`}
+                      onClick={() =>
+                        lockBearingTo(
+                          {
+                            x: inspectedPoi.x,
+                            y: inspectedPoi.y,
+                            label: inspectedPoi.name,
+                            kind: "poi",
+                          },
+                          {
+                            x: copPoi.x,
+                            y: copPoi.y,
+                            label: copPoi.name.replace(/^Outpost\s+/i, "COP "),
+                            grid: formatGridSquare(copPoi.x, copPoi.y),
+                            kind: "cop",
+                          }
+                        )
+                      }
+                      className="p-1 rounded bg-[#141a23] border border-white/[0.08] text-[#38bdf8] hover:border-[#38bdf8] shrink-0"
+                    >
+                      <ArrowRight className="w-3 h-3" />
+                    </button>
+                  </div>
                 ))}
               </div>
             </div>
@@ -1934,7 +2743,7 @@ export function TacticalMapPanel({
 
       {/* Locked Door & Key Slide-Over Drawer */}
       {inspectedKey && !inspectedMaterial && !inspectedTask && (
-        <div className="absolute top-14 left-2.5 z-[710] w-[355px] max-w-[calc(100%-20px)] max-h-[58vh] lg:max-h-[calc(100%-84px)] overflow-y-auto rounded-xl bg-[#0d121a]/95 backdrop-blur-xl border border-white/[0.12] p-4 shadow-2xl">
+        <div className="pointer-events-auto w-[355px] max-w-full max-h-[52vh] lg:max-h-[calc(100vh-240px)] overflow-y-auto rounded-xl bg-[#0d121a]/95 backdrop-blur-xl border border-white/[0.12] p-4 shadow-2xl">
           <div className="flex items-start justify-between gap-2 pb-3 border-b border-white/[0.08]">
             <div className="flex items-center gap-2.5 min-w-0">
               <ItemThumbnail
@@ -1951,14 +2760,32 @@ export function TacticalMapPanel({
                 </h3>
               </div>
             </div>
-            <button
-              type="button"
-              aria-label="Close key drawer"
-              onClick={onCloseInspectKey}
-              className="p-1.5 rounded-lg text-[#8b98a9] hover:text-white hover:bg-white/[0.08] shrink-0 transition-colors"
-            >
-              <X className="w-4 h-4" />
-            </button>
+            <div className="flex items-center gap-1 shrink-0">
+              <button
+                type="button"
+                onClick={() =>
+                  lockBearingTo({
+                    x: inspectedKey.x,
+                    y: inspectedKey.y,
+                    label: inspectedKey.name,
+                    kind: "key",
+                  })
+                }
+                title="Lock compass bearing to this locked door"
+                className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-[#e5a93c]/15 border border-[#e5a93c]/50 text-[#fde68a] hover:bg-[#e5a93c]/25 text-[11px] font-semibold shrink-0 transition-colors"
+              >
+                <Compass className="w-3.5 h-3.5 text-[#e5a93c]" />
+                <span>Lock</span>
+              </button>
+              <button
+                type="button"
+                aria-label="Close key drawer"
+                onClick={onCloseInspectKey}
+                className="p-1.5 rounded-lg text-[#8b98a9] hover:text-white hover:bg-white/[0.08] shrink-0 transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
           </div>
 
           <div className="mt-3 space-y-3 text-xs">
@@ -2043,7 +2870,7 @@ export function TacticalMapPanel({
 
       {/* Task AO & Full Walkthrough Slide-Over Drawer */}
       {inspectedTask && !inspectedMaterial && (
-        <div className="absolute top-14 left-2.5 z-[710] w-[385px] max-w-[calc(100%-20px)] max-h-[58vh] lg:max-h-[calc(100%-84px)] overflow-y-auto rounded-xl bg-[#0d121a]/95 backdrop-blur-xl border border-white/[0.12] p-4 shadow-2xl">
+        <div className="pointer-events-auto w-[385px] max-w-full max-h-[52vh] lg:max-h-[calc(100vh-240px)] overflow-y-auto rounded-xl bg-[#0d121a]/95 backdrop-blur-xl border border-white/[0.12] p-4 shadow-2xl">
           <div className="flex items-start justify-between gap-2 pb-3 border-b border-white/[0.08]">
             <div className="min-w-0">
               <div className="text-[11px] font-medium text-[#38bdf8]">
@@ -2054,6 +2881,35 @@ export function TacticalMapPanel({
               </h3>
             </div>
             <div className="flex items-center gap-1 shrink-0">
+              {(inspectedTask.exactCoords.length > 0 ||
+                inspectedTask.matchedPois.length > 0) && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    const firstExact = inspectedTask.exactCoords[0];
+                    const firstPoi = inspectedTask.matchedPois[0];
+                    const target = firstExact
+                      ? {
+                          x: firstExact.x,
+                          y: firstExact.y,
+                          label: `${inspectedTask.name}`,
+                          kind: "task" as const,
+                        }
+                      : {
+                          x: firstPoi!.x,
+                          y: firstPoi!.y,
+                          label: `${inspectedTask.name} (${firstPoi!.name})`,
+                          kind: "task" as const,
+                        };
+                    lockBearingTo(target);
+                  }}
+                  title="Lock compass bearing to this task objective"
+                  className="inline-flex items-center gap-1 px-2 py-1 rounded border bg-[#e5a93c]/15 border-[#e5a93c]/50 text-[#fde68a] hover:bg-[#e5a93c]/25 text-[11px] font-semibold transition-colors"
+                >
+                  <Compass className="w-3 h-3 text-[#e5a93c]" />
+                  <span>Bearing</span>
+                </button>
+              )}
               {onToggleTaskComplete && (
                 <button
                   type="button"
@@ -2178,55 +3034,93 @@ export function TacticalMapPanel({
                 </div>
                 <div className="space-y-1.5">
                   {inspectedTask.exactCoords.map((coord, idx) => (
-                    <button
+                    <div
                       key={`coord-${coord.grid}`}
-                      type="button"
-                      onClick={() =>
-                        mapRef.current?.flyTo(toLatLng(coord.x, coord.y), 17, {
-                          duration: 0.55,
-                        })
-                      }
-                      className="w-full text-left px-2.5 py-2 rounded bg-[#14120c] border border-[#e5a93c]/40 hover:border-[#e5a93c] transition-colors flex items-center justify-between gap-2"
+                      className="rounded bg-[#14120c] border border-[#e5a93c]/40 hover:border-[#e5a93c] transition-colors flex items-center gap-1.5 pr-1.5"
                     >
-                      <div className="min-w-0">
-                        <div className="font-medium text-[#eef3f8] truncate">
-                          Waypoint #{idx + 1}: {coord.label}
+                      <button
+                        type="button"
+                        onClick={() =>
+                          mapRef.current?.flyTo(toLatLng(coord.x, coord.y), 17, {
+                            duration: 0.55,
+                          })
+                        }
+                        className="flex-1 min-w-0 text-left px-2.5 py-2 flex items-center justify-between gap-2"
+                      >
+                        <div className="min-w-0">
+                          <div className="font-medium text-[#eef3f8] truncate">
+                            Waypoint #{idx + 1}: {coord.label}
+                          </div>
+                          <div className="text-[11px] text-[#cbd5e1] truncate">
+                            Exact task coordinate marker
+                          </div>
                         </div>
-                        <div className="text-[11px] text-[#cbd5e1] truncate">
-                          Exact task coordinate marker
+                        <div className="flex items-center gap-1 font-mono-tabular text-[11px] text-[#e5a93c] shrink-0">
+                          <MapPin className="w-3 h-3" />
+                          {coord.grid}
                         </div>
-                      </div>
-                      <div className="flex items-center gap-1 font-mono-tabular text-[11px] text-[#e5a93c] shrink-0">
-                        <MapPin className="w-3 h-3" />
-                        {coord.grid}
-                      </div>
-                    </button>
+                      </button>
+                      <button
+                        type="button"
+                        title={`Lock bearing to Waypoint #${idx + 1}`}
+                        onClick={() =>
+                          lockBearingTo({
+                            x: coord.x,
+                            y: coord.y,
+                            label: `${inspectedTask.name} #${idx + 1}`,
+                            kind: "task",
+                          })
+                        }
+                        className="p-1.5 rounded bg-[#090d14] border border-[#e5a93c]/40 text-[#e5a93c] hover:bg-[#e5a93c]/20 shrink-0"
+                      >
+                        <Compass className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
                   ))}
 
                   {inspectedTask.matchedPois.map((poi) => (
-                    <button
+                    <div
                       key={poi.id}
-                      type="button"
-                      onClick={() =>
-                        mapRef.current?.flyTo(toLatLng(poi.x, poi.y), 16.5, {
-                          duration: 0.6,
-                        })
-                      }
-                      className="w-full text-left px-2.5 py-2 rounded bg-[#080b0f] border border-[#1f2834] hover:border-[#38bdf8] transition-colors flex items-center justify-between gap-2"
+                      className="rounded bg-[#080b0f] border border-[#1f2834] hover:border-[#38bdf8] transition-colors flex items-center gap-1.5 pr-1.5"
                     >
-                      <div className="min-w-0">
-                        <div className="font-medium text-[#eef3f8] truncate">
-                          {poi.name}
+                      <button
+                        type="button"
+                        onClick={() =>
+                          mapRef.current?.flyTo(toLatLng(poi.x, poi.y), 16.5, {
+                            duration: 0.6,
+                          })
+                        }
+                        className="flex-1 min-w-0 text-left px-2.5 py-2 flex items-center justify-between gap-2"
+                      >
+                        <div className="min-w-0">
+                          <div className="font-medium text-[#eef3f8] truncate">
+                            {poi.name}
+                          </div>
+                          <div className="text-[11px] text-[#8b98a9] truncate">
+                            {poi.tier} · LZ {poi.lz}
+                          </div>
                         </div>
-                        <div className="text-[11px] text-[#8b98a9] truncate">
-                          {poi.tier} · LZ {poi.lz}
+                        <div className="flex items-center gap-1 font-mono-tabular text-[11px] text-[#38bdf8] shrink-0">
+                          <MapPin className="w-3 h-3" />
+                          {formatGridSquare(poi.x, poi.y)}
                         </div>
-                      </div>
-                      <div className="flex items-center gap-1 font-mono-tabular text-[11px] text-[#38bdf8] shrink-0">
-                        <MapPin className="w-3 h-3" />
-                        {formatGridSquare(poi.x, poi.y)}
-                      </div>
-                    </button>
+                      </button>
+                      <button
+                        type="button"
+                        title={`Lock bearing to ${poi.name}`}
+                        onClick={() =>
+                          lockBearingTo({
+                            x: poi.x,
+                            y: poi.y,
+                            label: `${inspectedTask.name} · ${poi.name}`,
+                            kind: "task",
+                          })
+                        }
+                        className="p-1.5 rounded bg-[#090d14] border border-white/[0.1] text-[#38bdf8] hover:border-[#e5a93c] hover:text-[#e5a93c] shrink-0"
+                      >
+                        <Compass className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
                   ))}
                 </div>
               </div>
@@ -2293,7 +3187,7 @@ export function TacticalMapPanel({
 
       {/* Material Spawn & Upgrade Intel Slide-Over Drawer */}
       {inspectedMaterial && (
-        <div className="absolute top-14 left-2.5 z-[710] w-[335px] max-w-[calc(100%-20px)] max-h-[50vh] lg:max-h-[calc(100%-96px)] overflow-y-auto rounded-xl bg-[#0d121a]/95 backdrop-blur-xl border border-white/[0.12] p-4 shadow-2xl">
+        <div className="pointer-events-auto w-[335px] max-w-full max-h-[50vh] lg:max-h-[calc(100vh-240px)] overflow-y-auto rounded-xl bg-[#0d121a]/95 backdrop-blur-xl border border-white/[0.12] p-4 shadow-2xl">
           <div className="flex items-start justify-between gap-3 pb-3 border-b border-white/[0.08]">
             <div className="flex items-center gap-3 min-w-0">
               <ItemThumbnail
@@ -2441,9 +3335,32 @@ export function TacticalMapPanel({
         </div>
       )}
 
+          </div>
+
+          <div className="ml-auto flex flex-col items-end gap-2 max-w-full pointer-events-none">
+            {/* Glance Mode Monitor-2 Status Pill */}
+            {glanceMode && (
+              <div className="hidden lg:flex pointer-events-auto items-center gap-2 rounded-lg bg-[#0d121a]/92 backdrop-blur-xl border border-white/[0.1] px-2.5 py-1.5 text-[11px] text-[#cbd5e1] shadow-xl">
+                <span className="font-semibold text-[#f8fafc]">{activeOperatorName}</span>
+                {activeFactionInfo && (
+                  <span
+                    className="px-1.5 py-0.5 rounded bg-white/[0.06] text-[10px] font-semibold"
+                    style={{ color: activeFactionInfo.color }}
+                  >
+                    {activeFactionInfo.short}
+                  </span>
+                )}
+                {livePlayerPos && (
+                  <span className="font-mono-tabular text-[#34d399]">
+                    · Grid {livePlayerPos.grid}
+                  </span>
+                )}
+              </div>
+            )}
+
       {/* Recorded Dropped Pins Drawer */}
       {pinsDrawerOpen && (
-        <div className="absolute top-[98px] sm:top-14 right-2.5 z-[715] w-[345px] max-w-[calc(100%-20px)] max-h-[54vh] lg:max-h-[calc(100%-96px)] flex flex-col rounded-xl bg-[#0d121a]/96 backdrop-blur-xl border border-white/[0.12] shadow-2xl overflow-hidden">
+        <div className="pointer-events-auto w-[345px] max-w-full max-h-[52vh] lg:max-h-[calc(100vh-240px)] flex flex-col rounded-xl bg-[#0d121a]/96 backdrop-blur-xl border border-white/[0.12] shadow-2xl overflow-hidden">
           <div className="px-4 py-3 border-b border-white/[0.08] flex items-center justify-between gap-2 shrink-0">
             <div className="min-w-0">
               <h3 className="font-display text-sm font-semibold text-[#f8fafc] flex items-center gap-2">
@@ -2575,6 +3492,22 @@ export function TacticalMapPanel({
                       <div className="flex items-center gap-1 shrink-0">
                         <button
                           type="button"
+                          title="Lock compass bearing to this pin"
+                          aria-label={`Lock bearing to ${pin.label}`}
+                          onClick={() =>
+                            lockBearingTo({
+                              x: pin.x,
+                              y: pin.y,
+                              label: pin.label,
+                              kind: "pin",
+                            })
+                          }
+                          className="p-1.5 rounded-lg bg-[#090d14] border border-white/[0.08] text-[#9fb0c4] hover:text-[#e5a93c] hover:border-[#e5a93c]/50 transition-colors"
+                        >
+                          <Compass className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          type="button"
                           title="Locate pin on map"
                           aria-label={`Locate ${pin.label}`}
                           onClick={() => focusPinOnMap(pin)}
@@ -2612,7 +3545,7 @@ export function TacticalMapPanel({
 
       {/* Pin Drop Create / Edit Modal */}
       {capturedCoords && (
-        <div className="absolute top-[98px] sm:top-14 right-2.5 z-[730] w-[315px] max-w-[calc(100%-20px)] rounded-xl bg-[#0d121a]/98 backdrop-blur-xl border border-[#38bdf8]/60 p-4 shadow-2xl space-y-3">
+        <div className="pointer-events-auto w-[315px] max-w-full max-h-[54vh] lg:max-h-[calc(100vh-240px)] overflow-y-auto rounded-xl bg-[#0d121a]/98 backdrop-blur-xl border border-[#38bdf8]/60 p-4 shadow-2xl space-y-3">
           <div className="flex items-center justify-between gap-2">
             <div>
               <div className="text-[10px] font-mono-tabular uppercase tracking-wider text-[#e5a93c] font-semibold">
@@ -2742,10 +3675,442 @@ export function TacticalMapPanel({
         </div>
       )}
 
+      {/* Hidden video element backing client-side Screen Sync capture */}
+      <video ref={videoRef} muted playsInline className="hidden" />
+
+      {/* Screen Sync (Local Browser OCR Position Tracker & Manual Position Calibrator) */}
+      {screenSyncPanelOpen && (
+        <div className="pointer-events-auto w-[360px] max-w-full max-h-[58vh] lg:max-h-[calc(100vh-240px)] overflow-y-auto rounded-xl bg-[#0d121a]/98 backdrop-blur-xl border border-white/[0.14] p-4 shadow-2xl space-y-3">
+          <div className="flex items-start justify-between gap-2 pb-2.5 border-b border-white/[0.08]">
+            <div className="min-w-0">
+              <div className="flex items-center gap-2">
+                <Monitor className="w-4 h-4 text-[#38bdf8] shrink-0" />
+                <h3 className="font-display text-sm font-semibold text-[#f8fafc]">
+                  Monitor 2 Position Sync
+                </h3>
+              </div>
+              <p className="text-[11px] text-[#9fb0c4] mt-0.5 leading-relaxed">
+                100% in-browser video OCR. Nothing leaves your PC; works on GitHub Pages HTTPS.
+              </p>
+            </div>
+            <button
+              type="button"
+              aria-label="Close screen sync panel"
+              onClick={() => setScreenSyncPanelOpen(false)}
+              className="p-1 rounded-lg text-[#8b98a9] hover:text-white hover:bg-white/[0.08]"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+
+          {/* Primary Automated Capture Action */}
+          <div className="rounded-lg bg-[#080c12] border border-white/[0.08] p-3 space-y-2.5">
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-xs font-semibold text-[#eef3f8]">
+                Auto Screen-Watcher
+              </span>
+              <span
+                className={`font-mono-tabular text-[10px] font-semibold px-2 py-0.5 rounded ${
+                  screenSyncActive
+                    ? "bg-emerald-500/20 text-emerald-300"
+                    : "bg-white/[0.06] text-[#94a3b8]"
+                }`}
+              >
+                {screenSyncActive ? "ACTIVE" : "STANDBY"}
+              </span>
+            </div>
+
+            <div className="flex items-center gap-2">
+              {!screenSyncActive ? (
+                <button
+                  type="button"
+                  onClick={startScreenSync}
+                  className="flex-1 min-h-[36px] inline-flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-[#38bdf8] hover:bg-[#5ccbfd] text-[#061018] font-semibold text-xs transition-colors"
+                >
+                  <Radio className="w-3.5 h-3.5" />
+                  <span>Start Screen Sync (Select GZW Monitor)</span>
+                </button>
+              ) : (
+                <>
+                  <button
+                    type="button"
+                    onClick={stopScreenSync}
+                    className="flex-1 min-h-[36px] inline-flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-red-500/20 border border-red-500/60 hover:bg-red-500/30 text-red-200 font-semibold text-xs transition-colors"
+                  >
+                    <Square className="w-3.5 h-3.5" />
+                    <span>Stop Screen Sync</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => void runSingleOcrScan()}
+                    className="min-h-[36px] px-3 py-2 rounded-lg bg-[#141d2b] border border-white/[0.12] hover:border-[#38bdf8] text-xs font-medium text-[#e2e8f0]"
+                  >
+                    Scan Now
+                  </button>
+                </>
+              )}
+            </div>
+
+            <div className="text-[11px] text-[#9fb0c4] flex items-center justify-between gap-2">
+              <span className="truncate">{ocrStatusText}</span>
+              {livePlayerPos && (
+                <span className="font-mono-tabular text-[#34d399] font-semibold shrink-0">
+                  Grid {livePlayerPos.grid}
+                </span>
+              )}
+            </div>
+
+            {screenSyncError && (
+              <div className="rounded-lg bg-red-950/50 border border-red-500/50 px-2.5 py-2 text-[11px] text-red-200">
+                {screenSyncError}
+              </div>
+            )}
+
+            {/* Scan Region Preset */}
+            <div>
+              <label className="block text-[11px] text-[#9fb0c4] mb-1">
+                Coordinate Scan Area
+              </label>
+              <select
+                aria-label="Coordinate Scan Area"
+                value={scanPreset}
+                onChange={(e) => {
+                  const val = e.target.value as ScanRegionPreset;
+                  setScanPreset(val);
+                  if (val !== "custom") {
+                    setCustomCrop(SCAN_PRESETS[val].rect);
+                  }
+                }}
+                className="w-full bg-[#06090d] border border-white/[0.1] rounded-lg px-2.5 py-1.5 text-xs text-[#f1f5f9]"
+              >
+                <option value="bottom-right">Map Bottom-Right (M) — Recommended</option>
+                <option value="top-center">Top HUD Strip</option>
+                <option value="bottom-wide">Lower Corner Wide</option>
+                <option value="custom">Custom Crop Region</option>
+              </select>
+            </div>
+
+            {scanPreset === "custom" && (
+              <div className="grid grid-cols-2 gap-2 pt-1 text-[10px] font-mono-tabular text-[#9fb0c4]">
+                <label className="space-y-1">
+                  <span>Left {customCrop.xPct}%</span>
+                  <input
+                    type="range"
+                    min={0}
+                    max={85}
+                    value={customCrop.xPct}
+                    onChange={(e) =>
+                      setCustomCrop((c) => ({ ...c, xPct: Number(e.target.value) }))
+                    }
+                    className="w-full accent-[#38bdf8]"
+                  />
+                </label>
+                <label className="space-y-1">
+                  <span>Top {customCrop.yPct}%</span>
+                  <input
+                    type="range"
+                    min={0}
+                    max={85}
+                    value={customCrop.yPct}
+                    onChange={(e) =>
+                      setCustomCrop((c) => ({ ...c, yPct: Number(e.target.value) }))
+                    }
+                    className="w-full accent-[#38bdf8]"
+                  />
+                </label>
+                <label className="space-y-1">
+                  <span>Width {customCrop.wPct}%</span>
+                  <input
+                    type="range"
+                    min={10}
+                    max={60}
+                    value={customCrop.wPct}
+                    onChange={(e) =>
+                      setCustomCrop((c) => ({ ...c, wPct: Number(e.target.value) }))
+                    }
+                    className="w-full accent-[#38bdf8]"
+                  />
+                </label>
+                <label className="space-y-1">
+                  <span>Height {customCrop.hPct}%</span>
+                  <input
+                    type="range"
+                    min={8}
+                    max={50}
+                    value={customCrop.hPct}
+                    onChange={(e) =>
+                      setCustomCrop((c) => ({ ...c, hPct: Number(e.target.value) }))
+                    }
+                    className="w-full accent-[#38bdf8]"
+                  />
+                </label>
+              </div>
+            )}
+
+            <div className="flex items-center justify-between gap-2 text-[11px] text-[#cbd5e1]">
+              <label className="inline-flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={autoFollowLive}
+                  onChange={(e) => setAutoFollowLive(e.target.checked)}
+                  className="accent-[#10b981] w-3.5 h-3.5"
+                />
+                <span>Auto-pan map on update</span>
+              </label>
+              <select
+                aria-label="Scan interval"
+                value={scanIntervalMs}
+                onChange={(e) => setScanIntervalMs(Number(e.target.value))}
+                className="bg-[#06090d] border border-white/[0.1] rounded px-1.5 py-0.5 font-mono-tabular text-[10px] text-[#cbd5e1]"
+              >
+                <option value={900}>0.9s</option>
+                <option value={1200}>1.2s</option>
+                <option value={2000}>2.0s</option>
+              </select>
+            </div>
+
+            {screenSyncActive && (
+              <div className="space-y-1">
+                <div className="flex items-center justify-between text-[10px] font-mono-tabular text-[#8b98a9]">
+                  <span>Cropped OCR Feed</span>
+                  <span className="truncate max-w-[170px] text-[#7dd3fc]">
+                    {lastOcrRawText || "Scanning..."}
+                  </span>
+                </div>
+                <canvas
+                  ref={previewCanvasRef}
+                  className="w-full rounded border border-white/[0.1] bg-[#05070b]"
+                />
+              </div>
+            )}
+          </div>
+
+          {/* Instant Manual Position Anchor ("Mark My Pos" / Type Grid) */}
+          <div className="rounded-lg bg-[#080c12] border border-white/[0.08] p-3 space-y-2">
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-xs font-semibold text-[#eef3f8]">
+                Manual Position Anchor
+              </span>
+              {livePlayerPos && (
+                <button
+                  type="button"
+                  onClick={() => setLivePlayerPos(null)}
+                  className="text-[11px] text-red-300 hover:underline"
+                >
+                  Clear Pos
+                </button>
+              )}
+            </div>
+
+            <div className="flex items-center gap-1.5">
+              <input
+                type="text"
+                value={manualGridInput}
+                onChange={(e) => setManualGridInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") handleApplyManualGridPos(manualGridInput);
+                }}
+                placeholder="Type grid e.g. 174 142"
+                aria-label="Manual position grid square"
+                className="flex-1 min-w-0 bg-[#05080d] border border-white/[0.1] focus:border-[#10b981] rounded-lg px-2.5 py-1.5 font-mono-tabular text-xs text-[#eef3f8] placeholder:text-[#66778b] focus:outline-none"
+              />
+              <button
+                type="button"
+                onClick={() => handleApplyManualGridPos(manualGridInput)}
+                className="px-3 py-1.5 rounded-lg bg-[#10b981]/20 border border-[#10b981]/60 hover:bg-[#10b981]/30 text-[#a7f3d0] text-xs font-semibold shrink-0"
+              >
+                Set
+              </button>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => {
+                const next = !manualPosMode;
+                setManualPosMode(next);
+                if (next) {
+                  setMeasureMode(false);
+                  onTogglePinDropMode(false);
+                  setScreenSyncPanelOpen(false);
+                  onNotify("Click anywhere on Lamang Island to place 'You Are Here'");
+                }
+              }}
+              className={`w-full min-h-[34px] inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-medium transition-colors ${
+                manualPosMode
+                  ? "bg-emerald-500/20 border-emerald-400 text-emerald-200"
+                  : "bg-[#121822] border-white/[0.1] text-[#cbd5e1] hover:border-[#10b981]"
+              }`}
+            >
+              <Crosshair className="w-3.5 h-3.5 text-[#34d399]" />
+              <span>
+                {manualPosMode ? "Click Map Now..." : "Click Map to Mark My Pos"}
+              </span>
+            </button>
+          </div>
+        </div>
+      )}
+
+          </div>
+        </div>
+      </div>
+
+      {/* Live Compass Bearing Lock HUD Banner (Monitor 2 Top-HUD Compass Readout) */}
+      {navTarget && activeNavTelemetry && effectiveNavOrigin && (
+        <div
+          className={`absolute bottom-[78px] md:bottom-2.5 left-2.5 right-2.5 sm:right-auto md:left-1/2 md:-translate-x-1/2 z-[690] pointer-events-auto rounded-xl bg-[#0b1018]/96 backdrop-blur-xl border border-[#e5a93c]/65 shadow-2xl ${
+            glanceMode ? "px-4 py-2.5" : "px-3 py-2"
+          }`}
+        >
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="w-8 h-8 rounded-lg bg-[#e5a93c]/15 border border-[#e5a93c]/40 flex items-center justify-center shrink-0">
+                <Compass className="w-4 h-4 text-[#e5a93c]" />
+              </div>
+              <div className="min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span
+                    className={`font-mono-tabular font-bold text-[#fde68a] tracking-tight ${
+                      glanceMode ? "text-base sm:text-lg" : "text-sm"
+                    }`}
+                  >
+                    HEAD {activeNavTelemetry.bearing}
+                  </span>
+                  <span className="font-mono-tabular text-xs font-semibold text-[#38bdf8]">
+                    {activeNavTelemetry.dist} m
+                  </span>
+                  <span className="font-mono-tabular text-[11px] text-[#94a3b8]">
+                    {activeNavTelemetry.etaLabel}
+                  </span>
+                </div>
+                <div className="text-[11px] text-[#cbd5e1] truncate max-w-[260px] sm:max-w-[360px]">
+                  <span className="text-[#7dd3fc]">{effectiveNavOrigin.label}</span>{" "}
+                  ({effectiveNavOrigin.grid}) →{" "}
+                  <strong className="text-white">{navTarget.label}</strong> ({navTarget.grid})
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-1.5 relative shrink-0">
+              <button
+                type="button"
+                onClick={() => setOriginPickerOpen((v) => !v)}
+                className="px-2 py-1 rounded-lg bg-[#141c28] border border-white/[0.1] hover:border-[#38bdf8] text-[11px] font-medium text-[#cbd5e1]"
+              >
+                Origin
+              </button>
+              <button
+                type="button"
+                onClick={handleLockExfilNearestLz}
+                title="Lock bearing to nearest Exfil LZ"
+                className="px-2 py-1 rounded-lg bg-[#141c28] border border-white/[0.1] hover:border-[#e5a93c] text-[11px] font-medium text-[#fde047]"
+              >
+                Exfil LZ
+              </button>
+              <button
+                type="button"
+                aria-label="Clear bearing lock"
+                onClick={() => {
+                  setNavTarget(null);
+                  setNavOrigin(null);
+                  setOriginPickerOpen(false);
+                }}
+                className="p-1 rounded-lg text-[#8b98a9] hover:text-white hover:bg-white/[0.08]"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+
+              {originPickerOpen && (
+                <div className="absolute bottom-full right-0 mb-2 w-60 rounded-xl bg-[#0d121a]/98 backdrop-blur-xl border border-white/[0.14] p-1.5 shadow-2xl z-[760] space-y-1">
+                  <div className="px-2 py-1 text-[10px] font-mono-tabular uppercase text-[#8b98a9]">
+                    Switch Bearing Origin
+                  </div>
+                  {livePlayerPos && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setOriginLockedManually(false);
+                        setNavOrigin({
+                          x: livePlayerPos.x,
+                          y: livePlayerPos.y,
+                          label: "You Are Here",
+                          grid: livePlayerPos.grid,
+                          kind: "live",
+                        });
+                        setOriginPickerOpen(false);
+                      }}
+                      className="w-full text-left px-2.5 py-1.5 rounded-lg bg-[#0d241c] hover:bg-[#123328] text-xs text-[#6ee7b7] flex items-center justify-between"
+                    >
+                      <span>You Are Here (Live)</span>
+                      <span className="font-mono-tabular text-[10px]">{livePlayerPos.grid}</span>
+                    </button>
+                  )}
+                  {activeFactionInfo && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setOriginLockedManually(true);
+                        setNavOrigin({
+                          x: activeFactionInfo.x,
+                          y: activeFactionInfo.y,
+                          label: `${activeFactionInfo.short} FOB`,
+                          grid: formatGridSquare(activeFactionInfo.x, activeFactionInfo.y),
+                          kind: "fob",
+                        });
+                        setOriginPickerOpen(false);
+                      }}
+                      className="w-full text-left px-2.5 py-1.5 rounded-lg hover:bg-white/[0.06] text-xs text-[#eef3f8] flex items-center justify-between"
+                    >
+                      <span>{activeFactionInfo.short} Main FOB</span>
+                      <span className="font-mono-tabular text-[10px] text-[#38bdf8]">
+                        {formatGridSquare(activeFactionInfo.x, activeFactionInfo.y)}
+                      </span>
+                    </button>
+                  )}
+                  {LAMANG_POIS.filter((p) => p.kind === "lz")
+                    .map((lz) => ({
+                      lz,
+                      dist: Math.round(
+                        Math.hypot(lz.x - navTarget.x, lz.y - navTarget.y)
+                      ),
+                    }))
+                    .sort((a, b) => a.dist - b.dist)
+                    .slice(0, 4)
+                    .map(({ lz, dist }) => (
+                      <button
+                        key={lz.id}
+                        type="button"
+                        onClick={() => {
+                          setOriginLockedManually(true);
+                          setNavOrigin({
+                            x: lz.x,
+                            y: lz.y,
+                            label: `LZ ${lz.lz}`,
+                            grid: formatGridSquare(lz.x, lz.y),
+                            kind: "lz",
+                          });
+                          setOriginPickerOpen(false);
+                        }}
+                        className="w-full text-left px-2.5 py-1.5 rounded-lg hover:bg-white/[0.06] text-xs text-[#fde047] flex items-center justify-between"
+                      >
+                        <span className="truncate">LZ {lz.lz}</span>
+                        <span className="font-mono-tabular text-[10px] text-[#94a3b8] shrink-0">
+                          {dist} m
+                        </span>
+                      </button>
+                    ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Leaflet Canvas (keep ref element className static so Leaflet classes are never overwritten by React) */}
       <div
         className={`w-full h-full ${
-          pinDropMode || measureMode || repositioningPin ? "pin-drop-active" : ""
+          pinDropMode || measureMode || repositioningPin || manualPosMode
+            ? "pin-drop-active"
+            : ""
         } ${isResizing ? "pointer-events-none" : ""}`}
       >
         <div ref={mapContainerRef} className="w-full h-full" />
@@ -2753,6 +4118,25 @@ export function TacticalMapPanel({
 
       {/* Minimal Bottom-Right Coordinate & Measure Telemetry */}
       <div className="absolute bottom-2.5 right-2.5 z-[650] pointer-events-auto bg-[#0d121a]/90 backdrop-blur-xl border border-white/[0.1] rounded-lg px-2.5 py-1.5 font-mono-tabular text-[11px] text-[#94a3b8] flex items-center gap-2 shadow-xl">
+        {livePlayerPos && (
+          <>
+            <button
+              type="button"
+              onClick={() =>
+                mapRef.current?.flyTo(
+                  toLatLng(livePlayerPos.x, livePlayerPos.y),
+                  16,
+                  { duration: 0.45 }
+                )
+              }
+              title="Center map on your current live position"
+              className="text-[#34d399] hover:text-[#6ee7b7] font-semibold"
+            >
+              You {livePlayerPos.grid}
+            </button>
+            <span className="text-[#3a4657]">·</span>
+          </>
+        )}
         {measurePoints.length > 0 && (
           <>
             <span className="text-[#38bdf8] font-semibold">
