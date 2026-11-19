@@ -285,6 +285,10 @@ export function TacticalMapPanel({
   const [originLockedManually, setOriginLockedManually] = useState(false);
   const [originPickerOpen, setOriginPickerOpen] = useState(false);
   const [livePlayerPos, setLivePlayerPos] = useState<LivePlayerPosition | null>(null);
+  const [liveCompass, setLiveCompass] = useState<{
+    headingDeg: number;
+    compassLabel: string;
+  } | null>(null);
   const [manualPosMode, setManualPosMode] = useState(false);
   const [manualGridInput, setManualGridInput] = useState("");
 
@@ -299,7 +303,7 @@ export function TacticalMapPanel({
   const [autoFollowLive, setAutoFollowLive] = useState(true);
   const [scanIntervalMs, setScanIntervalMs] = useState(1200);
   const [ocrStatusText, setOcrStatusText] = useState(
-    "Ready — locks onto your green arrow across the full map"
+    "Ready — locks onto your green arrow (M or Hold-M) & top HUD compass"
   );
   const [lastOcrRawText, setLastOcrRawText] = useState("");
   const [screenSyncError, setScreenSyncError] = useState<string | null>(null);
@@ -343,6 +347,7 @@ export function TacticalMapPanel({
     }
     isScanningRef.current = false;
     setScreenSyncActive(false);
+    setLiveCompass(null);
     setOcrStatusText("Stopped — local OCR worker closed");
     terminateCoordOcrWorker();
   }, []);
@@ -374,24 +379,32 @@ export function TacticalMapPanel({
           !prev ||
           prev.grid !== match.grid ||
           Math.hypot(prev.x - match.x, prev.y - match.y) > 25;
+        const nextHeading = match.headingDeg ?? prev?.headingDeg;
+        const nextCompass = match.compassLabel ?? prev?.compassLabel;
+        if (nextHeading !== undefined && nextCompass) {
+          setLiveCompass({ headingDeg: nextHeading, compassLabel: nextCompass });
+        }
         setLivePlayerPos({
           x: match.x,
           y: match.y,
           grid: match.grid,
-          headingDeg: match.headingDeg ?? prev?.headingDeg,
-          compassLabel: match.compassLabel ?? prev?.compassLabel,
+          headingDeg: nextHeading,
+          compassLabel: nextCompass,
           source: "ocr",
           updatedAt: Date.now(),
         });
         setOcrStatusText(
           `Synced Grid ${match.grid}${
-            match.compassLabel ? ` · Facing ${match.compassLabel}` : ""
+            match.compassLabel
+              ? ` · Facing ${match.compassLabel}${match.headingDeg !== undefined ? ` (${match.headingDeg}°)` : ""}`
+              : ""
           }`
         );
         if (moved && autoFollowLiveRef.current && mapRef.current) {
           mapRef.current.panTo(toLatLng(match.x, match.y), { animate: true });
         }
       } else if (compassOnly) {
+        setLiveCompass(compassOnly);
         const prev = livePlayerPosRef.current;
         if (prev) {
           setLivePlayerPos({
@@ -402,14 +415,16 @@ export function TacticalMapPanel({
           });
         }
         setOcrStatusText(
-          `Facing ${compassOnly.compassLabel} (${compassOnly.headingDeg}°) · Open M to sync pos`
+          `Facing ${compassOnly.compassLabel} (${compassOnly.headingDeg}°) · Tap/Hold M to sync pos`
         );
       } else if (mapOpenDetected) {
         setOcrStatusText(
           "Map open — pan/zoom map to bring your green arrow into view"
         );
       } else {
-        setOcrStatusText("Watching full screen — tap M in-game to sync grid");
+        setOcrStatusText(
+          "Watching full screen — tap or hold M in-game to sync grid"
+        );
       }
     } catch {
       setOcrStatusText("Scanner busy — retrying next tick");
@@ -942,7 +957,9 @@ export function TacticalMapPanel({
     const hasHeading = typeof livePlayerPos.headingDeg === "number";
     const headingRot = hasHeading ? livePlayerPos.headingDeg! : 0;
     const facingTag = livePlayerPos.compassLabel
-      ? ` · ${livePlayerPos.compassLabel}`
+      ? hasHeading
+        ? ` · ${livePlayerPos.compassLabel} ${Math.round(headingRot)}°`
+        : ` · ${livePlayerPos.compassLabel}`
       : "";
 
     const marker = L.marker(ll, {
@@ -972,7 +989,7 @@ export function TacticalMapPanel({
           <div style="position:relative;width:36px;height:36px;display:flex;align-items:center;justify-content:center;">
             ${
               hasHeading
-                ? `<svg width="36" height="36" viewBox="0 0 36 36" style="position:absolute;inset:0;transform:rotate(${headingRot}deg);filter:drop-shadow(0 0 6px rgba(16,185,129,0.65));">
+                ? `<svg width="36" height="36" viewBox="0 0 36 36" style="position:absolute;inset:0;transition:transform 0.25s ease-out;transform:rotate(${headingRot}deg);filter:drop-shadow(0 0 6px rgba(16,185,129,0.65));">
                     <path d="M18 18 L9 4 A16 16 0 0 1 27 4 Z" fill="rgba(16,185,129,0.22)" />
                     <polygon points="18,4 22,12 18,10 14,12" fill="#34d399" stroke="#06120e" stroke-width="1"/>
                   </svg>`
@@ -2404,7 +2421,9 @@ export function TacticalMapPanel({
                         ? ` ${livePlayerPos.compassLabel}`
                         : ""
                     }`
-                  : "Watching"
+                  : liveCompass
+                    ? `Facing ${liveCompass.compassLabel} (${liveCompass.headingDeg}°)`
+                    : "Watching"
                 : livePlayerPos
                   ? `Pos ${livePlayerPos.grid}`
                   : "Screen Sync"}
@@ -3751,7 +3770,7 @@ export function TacticalMapPanel({
                 </h3>
               </div>
               <p className="text-[11px] text-[#9fb0c4] mt-0.5 leading-relaxed">
-                Locks onto your green player arrow anywhere on the in-game map (ignores your cursor) and calibrates against the left &amp; bottom grid rulers at any zoom. Works 100% locally on GitHub Pages HTTPS.
+                Locks onto your green player arrow on full Map (<strong className="text-[#e2e8f0]">M</strong>) or quick minimap (<strong className="text-[#e2e8f0]">Hold M</strong>), calibrates grid rulers at any zoom, and smoothly tracks N/NE/E/SE/S/SW/W/NW from your top HUD compass.
               </p>
             </div>
             <button
@@ -3814,14 +3833,18 @@ export function TacticalMapPanel({
 
             <div className="text-[11px] text-[#9fb0c4] flex items-center justify-between gap-2">
               <span className="truncate">{ocrStatusText}</span>
-              {livePlayerPos && (
+              {livePlayerPos ? (
                 <span className="font-mono-tabular text-[#34d399] font-semibold shrink-0">
                   Grid {livePlayerPos.grid}
                   {livePlayerPos.compassLabel
-                    ? ` · ${livePlayerPos.compassLabel}`
+                    ? ` · ${livePlayerPos.compassLabel}${livePlayerPos.headingDeg !== undefined ? ` ${livePlayerPos.headingDeg}°` : ""}`
                     : ""}
                 </span>
-              )}
+              ) : liveCompass ? (
+                <span className="font-mono-tabular text-[#38bdf8] font-semibold shrink-0">
+                  {liveCompass.compassLabel} ({liveCompass.headingDeg}°)
+                </span>
+              ) : null}
             </div>
 
             {screenSyncError && (
@@ -3953,6 +3976,7 @@ export function TacticalMapPanel({
                 onChange={(e) => setScanIntervalMs(Number(e.target.value))}
                 className="bg-[#06090d] border border-white/[0.1] rounded px-1.5 py-0.5 font-mono-tabular text-[10px] text-[#cbd5e1]"
               >
+                <option value={500}>0.5s</option>
                 <option value={900}>0.9s</option>
                 <option value={1200}>1.2s</option>
                 <option value={2000}>2.0s</option>
@@ -4212,7 +4236,7 @@ export function TacticalMapPanel({
 
       {/* Minimal Bottom-Right Coordinate & Measure Telemetry */}
       <div className="absolute bottom-2.5 right-2.5 z-[650] pointer-events-auto bg-[#0d121a]/90 backdrop-blur-xl border border-white/[0.1] rounded-lg px-2.5 py-1.5 font-mono-tabular text-[11px] text-[#94a3b8] flex items-center gap-2 shadow-xl">
-        {livePlayerPos && (
+        {livePlayerPos ? (
           <>
             <button
               type="button"
@@ -4227,11 +4251,24 @@ export function TacticalMapPanel({
               className="text-[#34d399] hover:text-[#6ee7b7] font-semibold"
             >
               You {livePlayerPos.grid}
-              {livePlayerPos.compassLabel ? ` · ${livePlayerPos.compassLabel}` : ""}
+              {livePlayerPos.compassLabel
+                ? ` · ${livePlayerPos.compassLabel}${
+                    livePlayerPos.headingDeg !== undefined
+                      ? ` ${Math.round(livePlayerPos.headingDeg)}°`
+                      : ""
+                  }`
+                : ""}
             </button>
             <span className="text-[#3a4657]">·</span>
           </>
-        )}
+        ) : liveCompass ? (
+          <>
+            <span className="text-[#38bdf8] font-semibold">
+              Facing {liveCompass.compassLabel} {liveCompass.headingDeg}°
+            </span>
+            <span className="text-[#3a4657]">·</span>
+          </>
+        ) : null}
         {measurePoints.length > 0 && (
           <>
             <span className="text-[#38bdf8] font-semibold">
