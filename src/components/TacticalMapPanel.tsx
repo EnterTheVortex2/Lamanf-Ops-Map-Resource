@@ -72,6 +72,8 @@ interface LivePlayerPosition {
   x: number;
   y: number;
   grid: string;
+  headingDeg?: number;
+  compassLabel?: string;
   source: "ocr" | "manual";
   updatedAt: number;
 }
@@ -286,17 +288,18 @@ export function TacticalMapPanel({
   const [manualPosMode, setManualPosMode] = useState(false);
   const [manualGridInput, setManualGridInput] = useState("");
 
-  // Browser Screen-Watcher (getDisplayMedia + Local OCR)
+  // Browser Screen-Watcher (getDisplayMedia + Full-Screen Green Arrow & Grid Rulers)
   const [screenSyncPanelOpen, setScreenSyncPanelOpen] = useState(false);
   const [screenSyncActive, setScreenSyncActive] = useState(false);
-  const [scanPreset, setScanPreset] = useState<ScanRegionPreset>("bottom-right");
+  const [scanPreset, setScanPreset] = useState<ScanRegionPreset>("full-map");
   const [customCrop, setCustomCrop] = useState<CropRectPct>(
-    SCAN_PRESETS["bottom-right"].rect
+    SCAN_PRESETS["full-map"].rect
   );
+  const [trackCompass, setTrackCompass] = useState(true);
   const [autoFollowLive, setAutoFollowLive] = useState(true);
   const [scanIntervalMs, setScanIntervalMs] = useState(1200);
   const [ocrStatusText, setOcrStatusText] = useState(
-    "Ready — 100% local in-browser scan"
+    "Ready — locks onto your green arrow across the full map"
   );
   const [lastOcrRawText, setLastOcrRawText] = useState("");
   const [screenSyncError, setScreenSyncError] = useState<string | null>(null);
@@ -357,35 +360,63 @@ export function TacticalMapPanel({
     try {
       const activeRect =
         scanPreset === "custom" ? customCrop : SCAN_PRESETS[scanPreset].rect;
-      const { match, rawText } = await scanVideoFrameForLamangCoords(
-        video,
-        activeRect,
-        previewCanvasRef.current
-      );
+      const { match, rawText, mapOpenDetected, compassOnly } =
+        await scanVideoFrameForLamangCoords(
+          video,
+          activeRect,
+          previewCanvasRef.current,
+          { preset: scanPreset, trackCompass }
+        );
       if (rawText) setLastOcrRawText(rawText);
       if (match) {
         const prev = livePlayerPosRef.current;
-        const moved = !prev || prev.grid !== match.grid;
+        const moved =
+          !prev ||
+          prev.grid !== match.grid ||
+          Math.hypot(prev.x - match.x, prev.y - match.y) > 25;
         setLivePlayerPos({
           x: match.x,
           y: match.y,
           grid: match.grid,
+          headingDeg: match.headingDeg ?? prev?.headingDeg,
+          compassLabel: match.compassLabel ?? prev?.compassLabel,
           source: "ocr",
           updatedAt: Date.now(),
         });
-        setOcrStatusText(`Synced Grid ${match.grid}`);
+        setOcrStatusText(
+          `Synced Grid ${match.grid}${
+            match.compassLabel ? ` · Facing ${match.compassLabel}` : ""
+          }`
+        );
         if (moved && autoFollowLiveRef.current && mapRef.current) {
           mapRef.current.panTo(toLatLng(match.x, match.y), { animate: true });
         }
+      } else if (compassOnly) {
+        const prev = livePlayerPosRef.current;
+        if (prev) {
+          setLivePlayerPos({
+            ...prev,
+            headingDeg: compassOnly.headingDeg,
+            compassLabel: compassOnly.compassLabel,
+            updatedAt: Date.now(),
+          });
+        }
+        setOcrStatusText(
+          `Facing ${compassOnly.compassLabel} (${compassOnly.headingDeg}°) · Open M to sync pos`
+        );
+      } else if (mapOpenDetected) {
+        setOcrStatusText(
+          "Map open — pan/zoom map to bring your green arrow into view"
+        );
       } else {
-        setOcrStatusText("Watching stream — open GZW map (M) to sync grid");
+        setOcrStatusText("Watching full screen — tap M in-game to sync grid");
       }
     } catch {
-      setOcrStatusText("OCR busy — retrying next tick");
+      setOcrStatusText("Scanner busy — retrying next tick");
     } finally {
       isScanningRef.current = false;
     }
-  }, [scanPreset, customCrop]);
+  }, [scanPreset, customCrop, trackCompass]);
 
   useEffect(() => {
     if (!screenSyncActive) return;
@@ -908,6 +939,12 @@ export function TacticalMapPanel({
       interactive: false,
     }).addTo(layer);
 
+    const hasHeading = typeof livePlayerPos.headingDeg === "number";
+    const headingRot = hasHeading ? livePlayerPos.headingDeg! : 0;
+    const facingTag = livePlayerPos.compassLabel
+      ? ` · ${livePlayerPos.compassLabel}`
+      : "";
+
     const marker = L.marker(ll, {
       zIndexOffset: 980,
       icon: L.divIcon({
@@ -931,15 +968,27 @@ export function TacticalMapPanel({
             font-weight:700;
             white-space:nowrap;
             box-shadow:0 0 14px rgba(16,185,129,0.45);
-          ">YOU · ${livePlayerPos.grid}</div>
-          <div style="
-            width:12px;
-            height:12px;
-            border-radius:9999px;
-            background:#10b981;
-            border:2px solid #06120e;
-            box-shadow:0 0 12px #10b981;
-          "></div>
+          ">YOU · ${livePlayerPos.grid}${facingTag}</div>
+          <div style="position:relative;width:36px;height:36px;display:flex;align-items:center;justify-content:center;">
+            ${
+              hasHeading
+                ? `<svg width="36" height="36" viewBox="0 0 36 36" style="position:absolute;inset:0;transform:rotate(${headingRot}deg);filter:drop-shadow(0 0 6px rgba(16,185,129,0.65));">
+                    <path d="M18 18 L9 4 A16 16 0 0 1 27 4 Z" fill="rgba(16,185,129,0.22)" />
+                    <polygon points="18,4 22,12 18,10 14,12" fill="#34d399" stroke="#06120e" stroke-width="1"/>
+                  </svg>`
+                : ""
+            }
+            <div style="
+              width:12px;
+              height:12px;
+              border-radius:9999px;
+              background:#10b981;
+              border:2px solid #06120e;
+              box-shadow:0 0 12px #10b981;
+              position:relative;
+              z-index:2;
+            "></div>
+          </div>
         </div>`,
         iconSize: [0, 0],
       }),
@@ -947,8 +996,16 @@ export function TacticalMapPanel({
     marker.bindPopup(`
       <div style="min-width:190px;">
         <div style="font-family:monospace;font-size:10px;color:#34d399;font-weight:700;">LIVE OPERATOR POSITION</div>
-        <div style="font-weight:700;font-size:13px;margin:2px 0;">Grid ${livePlayerPos.grid}</div>
-        <div style="font-size:11px;color:#94a3b8;">Source: ${livePlayerPos.source === "ocr" ? "Screen Sync OCR" : "Manual Map / Grid"}</div>
+        <div style="font-weight:700;font-size:13px;margin:2px 0;">Grid ${livePlayerPos.grid}${
+      hasHeading
+        ? ` · Facing ${livePlayerPos.compassLabel || ""} (${headingRot}°)`
+        : ""
+    }</div>
+        <div style="font-size:11px;color:#94a3b8;">Source: ${
+          livePlayerPos.source === "ocr"
+            ? "Screen Sync (Arrow + Rulers)"
+            : "Manual Map / Grid"
+        }</div>
       </div>
     `);
     marker.addTo(layer);
@@ -2342,7 +2399,11 @@ export function TacticalMapPanel({
             <span className="hidden sm:inline">
               {screenSyncActive
                 ? livePlayerPos
-                  ? `Live ${livePlayerPos.grid}`
+                  ? `Live ${livePlayerPos.grid}${
+                      livePlayerPos.compassLabel
+                        ? ` ${livePlayerPos.compassLabel}`
+                        : ""
+                    }`
                   : "Watching"
                 : livePlayerPos
                   ? `Pos ${livePlayerPos.grid}`
@@ -3690,7 +3751,7 @@ export function TacticalMapPanel({
                 </h3>
               </div>
               <p className="text-[11px] text-[#9fb0c4] mt-0.5 leading-relaxed">
-                100% in-browser video OCR. Nothing leaves your PC; works on GitHub Pages HTTPS.
+                Locks onto your green player arrow anywhere on the in-game map (ignores your cursor) and calibrates against the left &amp; bottom grid rulers at any zoom. Works 100% locally on GitHub Pages HTTPS.
               </p>
             </div>
             <button
@@ -3728,7 +3789,7 @@ export function TacticalMapPanel({
                   className="flex-1 min-h-[36px] inline-flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-[#38bdf8] hover:bg-[#5ccbfd] text-[#061018] font-semibold text-xs transition-colors"
                 >
                   <Radio className="w-3.5 h-3.5" />
-                  <span>Start Screen Sync (Select GZW Monitor)</span>
+                  <span>Start Screen Sync (Select Full GZW Screen)</span>
                 </button>
               ) : (
                 <>
@@ -3756,6 +3817,9 @@ export function TacticalMapPanel({
               {livePlayerPos && (
                 <span className="font-mono-tabular text-[#34d399] font-semibold shrink-0">
                   Grid {livePlayerPos.grid}
+                  {livePlayerPos.compassLabel
+                    ? ` · ${livePlayerPos.compassLabel}`
+                    : ""}
                 </span>
               )}
             </div>
@@ -3766,13 +3830,13 @@ export function TacticalMapPanel({
               </div>
             )}
 
-            {/* Scan Region Preset */}
+            {/* Tracking Mode Preset */}
             <div>
               <label className="block text-[11px] text-[#9fb0c4] mb-1">
-                Coordinate Scan Area
+                Tracking Mode
               </label>
               <select
-                aria-label="Coordinate Scan Area"
+                aria-label="Tracking Mode"
                 value={scanPreset}
                 onChange={(e) => {
                   const val = e.target.value as ScanRegionPreset;
@@ -3783,11 +3847,25 @@ export function TacticalMapPanel({
                 }}
                 className="w-full bg-[#06090d] border border-white/[0.1] rounded-lg px-2.5 py-1.5 text-xs text-[#f1f5f9]"
               >
-                <option value="bottom-right">Map Bottom-Right (M) — Recommended</option>
-                <option value="top-center">Top HUD Strip</option>
-                <option value="bottom-wide">Lower Corner Wide</option>
+                <option value="full-map">
+                  {SCAN_PRESETS["full-map"].label}
+                </option>
+                <option value="top-center">
+                  {SCAN_PRESETS["top-center"].label}
+                </option>
+                <option value="bottom-right">
+                  {SCAN_PRESETS["bottom-right"].label}
+                </option>
+                <option value="bottom-wide">
+                  {SCAN_PRESETS["bottom-wide"].label}
+                </option>
                 <option value="custom">Custom Crop Region</option>
               </select>
+              <p className="text-[10px] text-[#7c8da1] mt-1 leading-relaxed">
+                {scanPreset === "custom"
+                  ? "Legacy manual crop box for numeric overlays."
+                  : SCAN_PRESETS[scanPreset].hint}
+              </p>
             </div>
 
             {scanPreset === "custom" && (
@@ -3847,6 +3925,18 @@ export function TacticalMapPanel({
               </div>
             )}
 
+            {scanPreset === "full-map" && (
+              <label className="flex items-center gap-2 text-[11px] text-[#cbd5e1] cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={trackCompass}
+                  onChange={(e) => setTrackCompass(e.target.checked)}
+                  className="accent-[#38bdf8] w-3.5 h-3.5"
+                />
+                <span>Watch top HUD compass (N/NE/E...) while walking</span>
+              </label>
+            )}
+
             <div className="flex items-center justify-between gap-2 text-[11px] text-[#cbd5e1]">
               <label className="inline-flex items-center gap-2 cursor-pointer">
                 <input
@@ -3872,7 +3962,11 @@ export function TacticalMapPanel({
             {screenSyncActive && (
               <div className="space-y-1">
                 <div className="flex items-center justify-between text-[10px] font-mono-tabular text-[#8b98a9]">
-                  <span>Cropped OCR Feed</span>
+                  <span>
+                    {scanPreset === "full-map"
+                      ? "Full-Screen Arrow Lock Feed"
+                      : "Cropped OCR Feed"}
+                  </span>
                   <span className="truncate max-w-[170px] text-[#7dd3fc]">
                     {lastOcrRawText || "Scanning..."}
                   </span>
@@ -4133,6 +4227,7 @@ export function TacticalMapPanel({
               className="text-[#34d399] hover:text-[#6ee7b7] font-semibold"
             >
               You {livePlayerPos.grid}
+              {livePlayerPos.compassLabel ? ` · ${livePlayerPos.compassLabel}` : ""}
             </button>
             <span className="text-[#3a4657]">·</span>
           </>
