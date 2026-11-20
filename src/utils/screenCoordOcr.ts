@@ -20,7 +20,7 @@ export const SCAN_PRESETS: Record<
 > = {
   "full-map": {
     label: "Full Screen · Green Arrow + Grid Rulers (Recommended)",
-    hint: "Locks onto your green player arrow on full Map (M) or Hold-M quick map, calibrates grid rulers at any zoom, and tracks the top HUD compass while moving.",
+    hint: "Locks strictly onto your green directional chevron arrow on full Map (M) or Hold-M quick map (ignoring squadmate green squares), calibrates grid rulers at any zoom, and tracks the top HUD compass while moving.",
     rect: { xPct: 0, yPct: 0, wPct: 100, hPct: 100 },
   },
   "bottom-right": {
@@ -91,39 +91,126 @@ export function headingToCompass8(deg: number): string {
   return dirs[Math.round(norm / 45) % 8];
 }
 
-let ocrWorkerPromise: Promise<Worker> | null = null;
-let lastWorkerKey = "";
+let legacyWorkerPromise: Promise<Worker> | null = null;
+let lastLegacyWorkerKey = "";
+let rulerWorkerPromise: Promise<Worker> | null = null;
+let compassWorkerPromise: Promise<Worker> | null = null;
+
+async function getRulerOcrWorker(): Promise<Worker> {
+  if (!rulerWorkerPromise) {
+    rulerWorkerPromise = (async () => {
+      const w = await createWorker("eng");
+      await w.setParameters({
+        tessedit_char_whitelist: "0123456789 ",
+        tessedit_pageseg_mode: "11" as never,
+      });
+      return w;
+    })();
+  }
+  return rulerWorkerPromise;
+}
+
+async function getCompassOcrWorker(): Promise<Worker> {
+  if (!compassWorkerPromise) {
+    compassWorkerPromise = (async () => {
+      const w = await createWorker("eng");
+      await w.setParameters({
+        tessedit_char_whitelist: "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 ",
+        tessedit_pageseg_mode: "7" as never,
+      });
+      return w;
+    })();
+  }
+  return compassWorkerPromise;
+}
 
 async function getCoordOcrWorker(
   whitelist = "0123456789 ",
   psm = "3"
 ): Promise<Worker> {
-  if (!ocrWorkerPromise) {
-    ocrWorkerPromise = createWorker("eng");
+  if (!legacyWorkerPromise) {
+    legacyWorkerPromise = createWorker("eng");
   }
-  const worker = await ocrWorkerPromise;
+  const worker = await legacyWorkerPromise;
   const key = `${whitelist}::${psm}`;
-  if (lastWorkerKey !== key) {
+  if (lastLegacyWorkerKey !== key) {
     await worker.setParameters({
       tessedit_char_whitelist: whitelist,
       tessedit_pageseg_mode: psm as never,
     });
-    lastWorkerKey = key;
+    lastLegacyWorkerKey = key;
   }
   return worker;
 }
 
+// Module-level caches & reusable offscreen canvases to avoid DOM allocation & redundant OCR
+let reusableFullCanvas: HTMLCanvasElement | null = null;
+let reusableRulerBottomCanvas: HTMLCanvasElement | null = null;
+let reusableRulerLeftCanvas: HTMLCanvasElement | null = null;
+let reusableCompassProbeCanvas: HTMLCanvasElement | null = null;
+let reusableCompassCleanCanvas: HTMLCanvasElement | null = null;
+let reusableCompassOutCanvas: HTMLCanvasElement | null = null;
+
+interface RulerCacheEntry {
+  vw: number;
+  vh: number;
+  sig: Uint8Array;
+  fitX: AxisFit;
+  fitY: AxisFit;
+  ts: number;
+}
+
+let cachedFullRuler: RulerCacheEntry | null = null;
+let cachedHoldRuler: RulerCacheEntry | null = null;
+let lastLockedMapMode: "full" | "hold" | null = null;
+let lastArrowCenterHint: { x: number; y: number; vw: number; vh: number; ts: number } | null = null;
+
+interface CompassCacheEntry {
+  vw: number;
+  vh: number;
+  sig: Uint8Array;
+  result: {
+    headingDeg: number;
+    compassLabel: string;
+    rawText: string;
+    cropRect?: { sx: number; sy: number; sw: number; sh: number };
+  };
+  ts: number;
+}
+
+let cachedCompass: CompassCacheEntry | null = null;
+let lastGoodCompassLumMin: number = 196;
+let lastCompassOcrRunAt = 0;
+
+function resetTrackingCaches(): void {
+  cachedFullRuler = null;
+  cachedHoldRuler = null;
+  lastLockedMapMode = null;
+  lastArrowCenterHint = null;
+  cachedCompass = null;
+  lastCompassOcrRunAt = 0;
+}
+
 export async function terminateCoordOcrWorker(): Promise<void> {
-  if (!ocrWorkerPromise) return;
-  const pending = ocrWorkerPromise;
-  ocrWorkerPromise = null;
-  lastWorkerKey = "";
-  try {
-    const worker = await pending;
-    await worker.terminate();
-  } catch {
-    // Ignore cleanup errors
+  resetTrackingCaches();
+  const tasks: Promise<unknown>[] = [];
+  if (legacyWorkerPromise) {
+    const p = legacyWorkerPromise;
+    legacyWorkerPromise = null;
+    lastLegacyWorkerKey = "";
+    tasks.push(p.then((w) => w.terminate()).catch(() => {}));
   }
+  if (rulerWorkerPromise) {
+    const p = rulerWorkerPromise;
+    rulerWorkerPromise = null;
+    tasks.push(p.then((w) => w.terminate()).catch(() => {}));
+  }
+  if (compassWorkerPromise) {
+    const p = compassWorkerPromise;
+    compassWorkerPromise = null;
+    tasks.push(p.then((w) => w.terminate()).catch(() => {}));
+  }
+  await Promise.all(tasks);
 }
 
 /**
@@ -161,30 +248,85 @@ export function extractLamangCoordsFromOcrText(
   return null;
 }
 
+interface ArrowGeometryAnalysis {
+  headingDeg: number;
+  m3Norm: number;
+  p3Norm: number;
+  reachRatio: number;
+  taperRatio: number;
+  maxSpanTaper: number;
+  reflectionOverlap: number;
+  isArrow: boolean;
+  shapeScore: number;
+}
+
+let greenMaskBuffer: Uint8Array | null = null;
+
+function getGreenMaskBuffer(size: number): Uint8Array {
+  if (!greenMaskBuffer || greenMaskBuffer.length < size) {
+    greenMaskBuffer = new Uint8Array(size);
+  }
+  return greenMaskBuffer;
+}
+
 /**
- * Estimates facing angle (0°=N/Up, 90°=E/Right, 180°=S/Down, 270°=W/Left)
- * from the green player chevron using bilateral symmetry (|Σp³| ≈ 0) +
- * forward axial skewness (Σf³ > 0) + nose-to-tail reach asymmetry.
+ * Analyzes a connected lime-green component to distinguish the player's directional
+ * chevron/arrow from symmetric squadmate icons (squares, hollow squares, diamonds, circles).
+ * Estimates facing angle (0°=N/Up, 90°=E/Right, 180°=S/Down, 270°=W/Left).
  */
-function estimateArrowHeadingDeg(
+function analyzeGreenArrowGeometry(
   pts: [number, number][],
   cx: number,
-  cy: number
-): number | undefined {
+  cy: number,
+  fill: number,
+  mask: Uint8Array,
+  vw: number,
+  vh: number
+): ArrowGeometryAnalysis | null {
   const n = pts.length;
-  if (n < 8) return undefined;
+  if (n < 14) return null;
+
+  // Reject solid/rounded filled squares immediately (GZW arrow fill is ~0.51–0.65; solid squares are ~0.85–1.00)
+  if (fill < 0.24 || fill > 0.78) return null;
+
+  // 180° centrosymmetry test around centroid (cx, cy):
+  // Squares, hollow squares, diamonds, and circles reflect onto themselves (~0.85–1.00);
+  // a directional chevron arrow reflects poorly (~0.62–0.74).
+  let reflHits = 0;
+  for (let i = 0; i < n; i += 1) {
+    const rx = Math.round(2 * cx - pts[i][0]);
+    const ry = Math.round(2 * cy - pts[i][1]);
+    if (rx >= 0 && rx < vw && ry >= 0 && ry < vh && mask[ry * vw + rx] > 0) {
+      reflHits += 1;
+    }
+  }
+  const reflectionOverlap = reflHits / n;
+  if (reflectionOverlap > 0.8) return null;
 
   let sumR2 = 0;
-  for (const [x, y] of pts) {
-    const dx = x - cx;
-    const dy = y - cy;
+  for (let i = 0; i < n; i += 1) {
+    const dx = pts[i][0] - cx;
+    const dy = pts[i][1] - cy;
     sumR2 += dx * dx + dy * dy;
   }
   const rms = Math.sqrt(sumR2 / n);
-  if (rms < 1.5) return undefined;
+  if (rms < 1.5) return null;
+
+  const normDx = new Float64Array(n);
+  const normDy = new Float64Array(n);
+  for (let i = 0; i < n; i += 1) {
+    normDx[i] = (pts[i][0] - cx) / rms;
+    normDy[i] = (pts[i][1] - cy) / rms;
+  }
 
   let bestDeg = 0;
   let bestScore = -Infinity;
+  let bestM3Norm = 0;
+  let bestP3Norm = 0;
+  let bestMaxF = 0;
+  let bestMinF = 0;
+  let bestUx = 0;
+  let bestUy = -1;
 
   for (let deg = 0; deg < 360; deg += 1) {
     const rad = (deg * Math.PI) / 180;
@@ -195,9 +337,9 @@ function estimateArrowHeadingDeg(
     let maxF = -Infinity;
     let minF = Infinity;
 
-    for (const [x, y] of pts) {
-      const dx = (x - cx) / rms;
-      const dy = (y - cy) / rms;
+    for (let i = 0; i < n; i += 1) {
+      const dx = normDx[i];
+      const dy = normDy[i];
       const f = dx * ux + dy * uy;
       const p = -dx * uy + dy * ux;
       m3 += f * f * f;
@@ -206,96 +348,136 @@ function estimateArrowHeadingDeg(
       if (f < minF) minF = f;
     }
 
+    const m3Norm = m3 / n;
+    const p3Norm = Math.abs(p3 / n);
     const asym = maxF - Math.abs(minF);
-    const score = m3 / n - 0.85 * Math.abs(p3 / n) + asym * 0.35;
+    const score = m3Norm - 0.85 * p3Norm + asym * 0.35;
     if (score > bestScore) {
       bestScore = score;
       bestDeg = deg;
+      bestM3Norm = m3Norm;
+      bestP3Norm = p3Norm;
+      bestMaxF = maxF;
+      bestMinF = minF;
+      bestUx = ux;
+      bestUy = uy;
     }
   }
 
-  return bestDeg;
+  const reachRatio = bestMaxF / Math.max(0.01, Math.abs(bestMinF));
+
+  let frontP = 0;
+  let frontCnt = 0;
+  let backP = 0;
+  let backCnt = 0;
+  let maxFrontP = 0;
+  let maxBackP = 0;
+
+  for (let i = 0; i < n; i += 1) {
+    const dx = normDx[i];
+    const dy = normDy[i];
+    const f = dx * bestUx + dy * bestUy;
+    const ap = Math.abs(-dx * bestUy + dy * bestUx);
+    if (f > 0.25 * bestMaxF) {
+      frontP += ap;
+      frontCnt += 1;
+      if (ap > maxFrontP) maxFrontP = ap;
+    }
+    if (f < -0.25 * Math.abs(bestMinF)) {
+      backP += ap;
+      backCnt += 1;
+      if (ap > maxBackP) maxBackP = ap;
+    }
+  }
+
+  const meanFrontP = frontCnt > 0 ? frontP / frontCnt : 0;
+  const meanBackP = backCnt > 0 ? backP / backCnt : 0;
+  const taperRatio = meanBackP / Math.max(0.01, meanFrontP);
+  const maxSpanTaper = maxBackP / Math.max(0.01, maxFrontP);
+
+  // Strict directional chevron invariants:
+  // Real GZW arrows across 720p–1440p score: m3Norm ~0.17–0.22, p3Norm ~0–0.02,
+  // reachRatio ~1.53–1.60, taperRatio ~2.14–2.56, maxSpanTaper ~1.79–2.28.
+  // Squares/diamonds/circles (even clipped or with inner digits) stay near m3<=0.05, taper<=1.31.
+  const isArrow =
+    bestM3Norm >= 0.11 &&
+    bestP3Norm <= 0.12 &&
+    reachRatio >= 1.32 &&
+    taperRatio >= 1.55 &&
+    maxSpanTaper >= 1.35;
+
+  if (!isArrow) return null;
+
+  const shapeScore =
+    bestM3Norm * 2.5 +
+    Math.min(1.5, taperRatio - 1) * 0.8 +
+    (1 - reflectionOverlap) * 2.0 -
+    bestP3Norm * 1.5;
+
+  return {
+    headingDeg: bestDeg,
+    m3Norm: bestM3Norm,
+    p3Norm: bestP3Norm,
+    reachRatio,
+    taperRatio,
+    maxSpanTaper,
+    reflectionOverlap,
+    isArrow,
+    shapeScore,
+  };
 }
 
-export function detectGreenPlayerArrow(
-  imgData: ImageData,
+function extractBestArrowFromMask(
+  data: Uint8ClampedArray,
+  mask: Uint8Array,
+  greenIndices: number[],
   vw: number,
-  vh: number
+  vh: number,
+  xMin: number,
+  xMax: number,
+  yMin: number,
+  yMax: number,
+  minPixels: number,
+  maxSpan: number
 ): GreenArrowDetection | null {
-  const data = imgData.data;
-  const xMin = Math.floor(vw * 0.025);
-  const xMax = Math.floor(vw * 0.985);
-  const yMin = Math.floor(vh * 0.11);
-  const yMax = Math.floor(vh * 0.945);
+  let best: GreenArrowDetection | null = null;
+  let bestScore = -1;
+  const queue: number[] = [];
 
-  const cellSize = Math.max(18, Math.round(vw * 0.01));
-  const bins = new Map<
-    string,
-    { bx: number; by: number; pts: [number, number][] }
-  >();
+  for (let s = 0; s < greenIndices.length; s += 1) {
+    const seedIdx = greenIndices[s];
+    if (mask[seedIdx] !== 1) continue;
 
-  for (let y = yMin; y < yMax; y += 1) {
-    const rowOffset = y * vw;
-    for (let x = xMin; x < xMax; x += 1) {
-      const idx = (rowOffset + x) * 4;
-      const r = data[idx];
-      const g = data[idx + 1];
-      const b = data[idx + 2];
+    mask[seedIdx] = 2;
+    queue.length = 0;
+    queue.push(seedIdx);
+    let head = 0;
+    const pts: [number, number][] = [];
 
-      // Player arrow is vivid lime green (e.g. rgb(14, 202, 64)), whereas COP markers are teal (b ~ 125-140)
-      if (g >= 138 && g - r >= 62 && g - b >= 85) {
-        const bx = Math.floor(x / cellSize);
-        const by = Math.floor(y / cellSize);
-        const key = `${bx},${by}`;
-        let entry = bins.get(key);
-        if (!entry) {
-          entry = { bx, by, pts: [] };
-          bins.set(key, entry);
-        }
-        entry.pts.push([x, y]);
-      }
-    }
-  }
+    while (head < queue.length) {
+      const curIdx = queue[head];
+      head += 1;
+      const cx = curIdx % vw;
+      const cy = (curIdx - cx) / vw;
+      pts.push([cx, cy]);
 
-  if (bins.size === 0) return null;
-
-  // Merge neighboring 3x3 cells so arrows straddling cell boundaries stay intact
-  const visited = new Set<string>();
-  const blobs: [number, number][][] = [];
-
-  for (const key of bins.keys()) {
-    if (visited.has(key)) continue;
-    const queue = [key];
-    visited.add(key);
-    const merged: [number, number][] = [];
-
-    while (queue.length > 0) {
-      const curKey = queue.pop()!;
-      const cur = bins.get(curKey);
-      if (!cur) continue;
-      merged.push(...cur.pts);
-
-      for (let dx = -1; dx <= 1; dx += 1) {
-        for (let dy = -1; dy <= 1; dy += 1) {
+      for (let dy = -1; dy <= 1; dy += 1) {
+        const ny = cy + dy;
+        if (ny < yMin || ny >= yMax) continue;
+        const nRow = ny * vw;
+        for (let dx = -1; dx <= 1; dx += 1) {
           if (dx === 0 && dy === 0) continue;
-          const nbKey = `${cur.bx + dx},${cur.by + dy}`;
-          if (bins.has(nbKey) && !visited.has(nbKey)) {
-            visited.add(nbKey);
-            queue.push(nbKey);
+          const nx = cx + dx;
+          if (nx < xMin || nx >= xMax) continue;
+          const nIdx = nRow + nx;
+          if (mask[nIdx] === 1) {
+            mask[nIdx] = 2;
+            queue.push(nIdx);
           }
         }
       }
     }
-    blobs.push(merged);
-  }
 
-  const minPixels = Math.max(14, Math.round((vw * vh) / 150000));
-  const maxSpan = Math.max(48, Math.round(vw * 0.045));
-
-  let best: GreenArrowDetection | null = null;
-  let bestScore = -1;
-
-  for (const pts of blobs) {
     if (pts.length < minPixels) continue;
 
     let x0 = Infinity;
@@ -306,7 +488,9 @@ export function detectGreenPlayerArrow(
     let sumY = 0;
     let sumGMinusB = 0;
 
-    for (const [x, y] of pts) {
+    for (let i = 0; i < pts.length; i += 1) {
+      const x = pts[i][0];
+      const y = pts[i][1];
       if (x < x0) x0 = x;
       if (x > x1) x1 = x;
       if (y < y0) y0 = y;
@@ -321,17 +505,23 @@ export function detectGreenPlayerArrow(
     const bh = y1 - y0 + 1;
     if (bw > maxSpan || bh > maxSpan) continue;
 
-    const fill = pts.length / Math.max(1, bw * bh);
-    if (fill < 0.16) continue;
+    const aspect = Math.max(bw, bh) / Math.max(1, Math.min(bw, bh));
+    if (aspect > 1.85) continue;
 
+    const fill = pts.length / Math.max(1, bw * bh);
     const avgGMinusB = sumGMinusB / pts.length;
     if (avgGMinusB < 92) continue;
 
     const cx = sumX / pts.length;
     const cy = sumY / pts.length;
 
-    // Score prefers vivid lime-green solid chevron blobs
-    const score = pts.length * (avgGMinusB / 100);
+    const geom = analyzeGreenArrowGeometry(pts, cx, cy, fill, mask, vw, vh);
+    if (!geom) continue;
+
+    const score =
+      geom.shapeScore *
+      (avgGMinusB / 100) *
+      Math.min(2.2, Math.sqrt(pts.length / minPixels));
     if (score > bestScore) {
       bestScore = score;
       best = {
@@ -339,12 +529,169 @@ export function detectGreenPlayerArrow(
         cy,
         pixelCount: pts.length,
         bbox: { x0, y0, x1, y1 },
-        headingDeg: estimateArrowHeadingDeg(pts, cx, cy),
+        headingDeg: geom.headingDeg,
       };
     }
   }
 
   return best;
+}
+
+export function detectGreenPlayerArrow(
+  imgData: ImageData,
+  vw: number,
+  vh: number,
+  hintCenter?: { x: number; y: number } | null
+): GreenArrowDetection | null {
+  const data = imgData.data;
+  const xMin = Math.floor(vw * 0.025);
+  const xMax = Math.floor(vw * 0.985);
+  const yMin = Math.floor(vh * 0.11);
+  const yMax = Math.floor(vh * 0.945);
+
+  const mask = getGreenMaskBuffer(vw * vh);
+  const minPixels = Math.max(14, Math.round((vw * vh) / 150000));
+  const maxSpan = Math.max(48, Math.round(vw * 0.045));
+
+  // Stage 1: Fast local ROI scan around last locked arrow (~0.15ms)
+  if (hintCenter) {
+    const halfRoi = Math.max(56, Math.round(vw * 0.032));
+    const rx0 = Math.max(xMin, Math.round(hintCenter.x) - halfRoi);
+    const rx1 = Math.min(xMax, Math.round(hintCenter.x) + halfRoi);
+    const ry0 = Math.max(yMin, Math.round(hintCenter.y) - halfRoi);
+    const ry1 = Math.min(yMax, Math.round(hintCenter.y) + halfRoi);
+    const roiIndices: number[] = [];
+
+    for (let y = ry0; y < ry1; y += 1) {
+      const rowOffset = y * vw;
+      for (let x = rx0; x < rx1; x += 1) {
+        const pixelIdx = rowOffset + x;
+        const idx = pixelIdx * 4;
+        const r = data[idx];
+        const g = data[idx + 1];
+        const b = data[idx + 2];
+        if (g >= 138 && g - r >= 62 && g - b >= 85) {
+          mask[pixelIdx] = 1;
+          roiIndices.push(pixelIdx);
+        }
+      }
+    }
+
+    let roiHit: GreenArrowDetection | null = null;
+    try {
+      if (roiIndices.length >= minPixels) {
+        const candidate = extractBestArrowFromMask(
+          data,
+          mask,
+          roiIndices,
+          vw,
+          vh,
+          rx0,
+          rx1,
+          ry0,
+          ry1,
+          minPixels,
+          maxSpan
+        );
+        // Accept only if clearly inside ROI interior (not clipped at ROI edge)
+        const margin = 12;
+        if (
+          candidate &&
+          candidate.bbox.x0 > rx0 + margin &&
+          candidate.bbox.x1 < rx1 - margin &&
+          candidate.bbox.y0 > ry0 + margin &&
+          candidate.bbox.y1 < ry1 - margin
+        ) {
+          roiHit = candidate;
+        }
+      }
+    } finally {
+      for (let i = 0; i < roiIndices.length; i += 1) {
+        mask[roiIndices[i]] = 0;
+      }
+    }
+    if (roiHit) return roiHit;
+  }
+
+  // Stage 2: Fast 2x2 coarse probe across full frame, expanding exact 1x1 pixels only near green hits
+  const greenIndices: number[] = [];
+  const tileSize = 16;
+  const tilesW = Math.ceil(vw / tileSize);
+  const tilesH = Math.ceil(vh / tileSize);
+  const scannedTiles = new Uint8Array(tilesW * tilesH);
+  const expandPad = Math.max(32, Math.round(maxSpan * 0.75));
+
+  try {
+    for (let y = yMin; y < yMax; y += 2) {
+      const rowOffset = y * vw;
+      for (let x = xMin; x < xMax; x += 2) {
+        const idx = (rowOffset + x) * 4;
+        const r = data[idx];
+        const g = data[idx + 1];
+        const b = data[idx + 2];
+
+        if (g >= 138 && g - r >= 62 && g - b >= 85) {
+          const ex0 = Math.max(xMin, x - expandPad);
+          const ex1 = Math.min(xMax, x + expandPad);
+          const ey0 = Math.max(yMin, y - expandPad);
+          const ey1 = Math.min(yMax, y + expandPad);
+
+          const tx0 = Math.floor(ex0 / tileSize);
+          const tx1 = Math.floor((ex1 - 1) / tileSize);
+          const ty0 = Math.floor(ey0 / tileSize);
+          const ty1 = Math.floor((ey1 - 1) / tileSize);
+
+          for (let ty = ty0; ty <= ty1; ty += 1) {
+            const py0 = Math.max(yMin, ty * tileSize);
+            const py1 = Math.min(yMax, (ty + 1) * tileSize);
+            for (let tx = tx0; tx <= tx1; tx += 1) {
+              const tIdx = ty * tilesW + tx;
+              if (scannedTiles[tIdx]) continue;
+              scannedTiles[tIdx] = 1;
+
+              const px0 = Math.max(xMin, tx * tileSize);
+              const px1 = Math.min(xMax, (tx + 1) * tileSize);
+              for (let py = py0; py < py1; py += 1) {
+                const pRow = py * vw;
+                for (let px = px0; px < px1; px += 1) {
+                  const pIdx = pRow + px;
+                  if (mask[pIdx]) continue;
+                  const cIdx = pIdx * 4;
+                  const cr = data[cIdx];
+                  const cg = data[cIdx + 1];
+                  const cb = data[cIdx + 2];
+                  if (cg >= 138 && cg - cr >= 62 && cg - cb >= 85) {
+                    mask[pIdx] = 1;
+                    greenIndices.push(pIdx);
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+
+    if (greenIndices.length < minPixels) return null;
+
+    return extractBestArrowFromMask(
+      data,
+      mask,
+      greenIndices,
+      vw,
+      vh,
+      xMin,
+      xMax,
+      yMin,
+      yMax,
+      minPixels,
+      maxSpan
+    );
+  } finally {
+    for (let i = 0; i < greenIndices.length; i += 1) {
+      mask[greenIndices[i]] = 0;
+    }
+  }
 }
 
 interface WordBox {
@@ -553,11 +900,14 @@ function renderNeutralRulerCanvas(
   sy: number,
   sw: number,
   sh: number,
-  scale: number
+  scale: number,
+  targetCanvas?: HTMLCanvasElement | null
 ): HTMLCanvasElement {
-  const c = document.createElement("canvas");
-  c.width = Math.max(8, Math.round(sw * scale));
-  c.height = Math.max(8, Math.round(sh * scale));
+  const c = targetCanvas ?? document.createElement("canvas");
+  const w = Math.max(8, Math.round(sw * scale));
+  const h = Math.max(8, Math.round(sh * scale));
+  if (c.width !== w) c.width = w;
+  if (c.height !== h) c.height = h;
   const ctx = c.getContext("2d", { willReadFrequently: true });
   if (!ctx) return c;
 
@@ -601,9 +951,12 @@ function renderCompassGlyphLineCanvas(
   const sy0 = Math.round(vh * 0.04);
   const sh0 = Math.max(36, Math.round(vh * 0.08));
 
-  const probe = document.createElement("canvas");
-  probe.width = sw;
-  probe.height = sh0;
+  if (!reusableCompassProbeCanvas) {
+    reusableCompassProbeCanvas = document.createElement("canvas");
+  }
+  const probe = reusableCompassProbeCanvas;
+  if (probe.width !== sw) probe.width = sw;
+  if (probe.height !== sh0) probe.height = sh0;
   const pCtx = probe.getContext("2d", { willReadFrequently: true });
   if (!pCtx) return null;
   pCtx.drawImage(source, sx, sy0, sw, sh0, 0, 0, sw, sh0);
@@ -708,9 +1061,12 @@ function renderCompassGlyphLineCanvas(
 
   const cropY0 = Math.max(0, ly0 - 2);
   const cropH = Math.max(8, ly1 - ly0 + 5);
-  const clean = document.createElement("canvas");
-  clean.width = sw;
-  clean.height = cropH;
+  if (!reusableCompassCleanCanvas) {
+    reusableCompassCleanCanvas = document.createElement("canvas");
+  }
+  const clean = reusableCompassCleanCanvas;
+  if (clean.width !== sw) clean.width = sw;
+  if (clean.height !== cropH) clean.height = cropH;
   const cCtx = clean.getContext("2d");
   if (!cCtx) return null;
   const cImg = cCtx.createImageData(sw, cropH);
@@ -738,9 +1094,14 @@ function renderCompassGlyphLineCanvas(
 
   const scale = vw >= 2000 ? 3.0 : 3.4;
   const pad = 24;
-  const out = document.createElement("canvas");
-  out.width = Math.round(sw * scale) + pad * 2;
-  out.height = Math.round(cropH * scale) + pad * 2;
+  if (!reusableCompassOutCanvas) {
+    reusableCompassOutCanvas = document.createElement("canvas");
+  }
+  const out = reusableCompassOutCanvas;
+  const outW = Math.round(sw * scale) + pad * 2;
+  const outH = Math.round(cropH * scale) + pad * 2;
+  if (out.width !== outW) out.width = outW;
+  if (out.height !== outH) out.height = outH;
   const oCtx = out.getContext("2d");
   if (!oCtx) return null;
   oCtx.fillStyle = "#ffffff";
@@ -904,22 +1265,108 @@ function fitCompassHeadingFromTokens(
   return null;
 }
 
+function sampleRectLumSignature(
+  imgData: ImageData,
+  vw: number,
+  rect: { x: number; y: number; w: number; h: number },
+  cols = 16,
+  rows = 4
+): Uint8Array {
+  const sig = new Uint8Array(cols * rows);
+  const d = imgData.data;
+  let k = 0;
+  for (let r = 0; r < rows; r += 1) {
+    const py = Math.min(
+      imgData.height - 1,
+      rect.y + Math.floor(((r + 0.5) * rect.h) / rows)
+    );
+    const rowOff = py * vw;
+    for (let c = 0; c < cols; c += 1) {
+      const px = Math.min(
+        vw - 1,
+        rect.x + Math.floor(((c + 0.5) * rect.w) / cols)
+      );
+      const idx = (rowOff + px) * 4;
+      sig[k] = Math.round(
+        0.299 * d[idx] + 0.587 * d[idx + 1] + 0.114 * d[idx + 2]
+      );
+      k += 1;
+    }
+  }
+  return sig;
+}
+
+function sampleRulerPairSignature(
+  imgData: ImageData,
+  vw: number,
+  bRect: { x: number; y: number; w: number; h: number },
+  lRect: { x: number; y: number; w: number; h: number }
+): Uint8Array {
+  const bSig = sampleRectLumSignature(imgData, vw, bRect, 24, 2);
+  const lSig = sampleRectLumSignature(imgData, vw, lRect, 2, 24);
+  const merged = new Uint8Array(bSig.length + lSig.length);
+  merged.set(bSig, 0);
+  merged.set(lSig, bSig.length);
+  return merged;
+}
+
+function signaturesMatch(
+  a: Uint8Array,
+  b: Uint8Array,
+  maxMeanDiff: number,
+  maxSingleDiff: number
+): boolean {
+  if (a.length !== b.length) return false;
+  let sum = 0;
+  for (let i = 0; i < a.length; i += 1) {
+    const diff = Math.abs(a[i] - b[i]);
+    if (diff > maxSingleDiff) return false;
+    sum += diff;
+  }
+  return sum / a.length <= maxMeanDiff;
+}
+
 export async function scanTopCompassHeading(
   source: CanvasImageSource,
   vw: number,
-  vh: number
+  vh: number,
+  fullImg?: ImageData
 ): Promise<{
   headingDeg: number;
   compassLabel: string;
   rawText: string;
   cropRect?: { sx: number; sy: number; sw: number; sh: number };
 } | null> {
-  const worker = await getCoordOcrWorker(
-    "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 ",
-    "7"
-  );
+  const now = Date.now();
+  let compSig: Uint8Array | null = null;
+  if (fullImg) {
+    compSig = sampleRectLumSignature(
+      fullImg,
+      vw,
+      {
+        x: Math.round(vw * 0.34),
+        y: Math.round(vh * 0.045),
+        w: Math.max(80, Math.round(vw * 0.32)),
+        h: Math.max(24, Math.round(vh * 0.055)),
+      },
+      24,
+      3
+    );
+    if (
+      cachedCompass &&
+      cachedCompass.vw === vw &&
+      cachedCompass.vh === vh &&
+      now - cachedCompass.ts < 1500 &&
+      signaturesMatch(compSig, cachedCompass.sig, 2.2, 16)
+    ) {
+      return cachedCompass.result;
+    }
+  }
 
-  for (const lumMin of [196, 168]) {
+  const worker = await getCompassOcrWorker();
+  const lumOrder = lastGoodCompassLumMin === 168 ? [168, 196] : [196, 168];
+
+  for (const lumMin of lumOrder) {
     const prep = renderCompassGlyphLineCanvas(source, vw, vh, lumMin);
     if (!prep) continue;
     const res = await worker.recognize(prep.canvas, {}, { blocks: true });
@@ -962,16 +1409,22 @@ export async function scanTopCompassHeading(
         rawText
       )
     ) {
+      cachedCompass = null;
       return null;
     }
 
     const fit = fitCompassHeadingFromTokens(words, vw);
     if (fit) {
-      return {
+      lastGoodCompassLumMin = lumMin;
+      const out = {
         ...fit,
         rawText,
         cropRect: { sx: prep.sx, sy: prep.sy, sw: prep.sw, sh: prep.sh },
       };
+      if (compSig) {
+        cachedCompass = { vw, vh, sig: compSig, result: out, ts: now };
+      }
+      return out;
     }
   }
 
@@ -984,6 +1437,13 @@ async function scanRulerAxesPair(
   bRect: { x: number; y: number; w: number; h: number },
   lRect: { x: number; y: number; w: number; h: number }
 ): Promise<{ fitX: AxisFit | null; fitY: AxisFit | null }> {
+  if (!reusableRulerBottomCanvas) {
+    reusableRulerBottomCanvas = document.createElement("canvas");
+  }
+  if (!reusableRulerLeftCanvas) {
+    reusableRulerLeftCanvas = document.createElement("canvas");
+  }
+
   const rulerScale = vw >= 3000 ? 1.8 : vw < 1600 ? 3.0 : 2.5;
   const bottomCanvas = renderNeutralRulerCanvas(
     fullCanvas,
@@ -991,7 +1451,8 @@ async function scanRulerAxesPair(
     bRect.y,
     bRect.w,
     bRect.h,
-    rulerScale
+    rulerScale,
+    reusableRulerBottomCanvas
   );
   const leftCanvas = renderNeutralRulerCanvas(
     fullCanvas,
@@ -999,10 +1460,11 @@ async function scanRulerAxesPair(
     lRect.y,
     lRect.w,
     lRect.h,
-    rulerScale
+    rulerScale,
+    reusableRulerLeftCanvas
   );
 
-  const worker = await getCoordOcrWorker("0123456789 ", "11");
+  const worker = await getRulerOcrWorker();
   const bRes = await worker.recognize(bottomCanvas, {}, { blocks: true });
   const lRes = await worker.recognize(leftCanvas, {}, { blocks: true });
 
@@ -1046,8 +1508,8 @@ async function scanRulerAxesPair(
 
 /**
  * Full-Screen GZW 0.5 Map Tracker:
- * 1) Scans the whole map (or Hold-M quick minimap) for the bright green player arrow (never the cursor).
- * 2) Reads Left (Y) & Bottom (X) grid ruler strips across all zoom levels (2-digit overview or 3-digit).
+ * 1) Scans the frame (Hint-ROI first, then 2x2 coarse-to-fine) for ONLY the bright green directional player arrow.
+ * 2) Reads Left (Y) & Bottom (X) grid ruler strips across all zoom levels with strip-signature caching.
  * 3) Calibrates exact facing direction from the top HUD compass (when visible) or map arrow geometry.
  */
 export async function scanFullMapFrame(
@@ -1063,9 +1525,12 @@ export async function scanFullMapFrame(
   mapOpenDetected: boolean;
   compassOnly?: { headingDeg: number; compassLabel: string };
 }> {
-  const fullCanvas = document.createElement("canvas");
-  fullCanvas.width = vw;
-  fullCanvas.height = vh;
+  if (!reusableFullCanvas) {
+    reusableFullCanvas = document.createElement("canvas");
+  }
+  const fullCanvas = reusableFullCanvas;
+  if (fullCanvas.width !== vw) fullCanvas.width = vw;
+  if (fullCanvas.height !== vh) fullCanvas.height = vh;
   const fullCtx = fullCanvas.getContext("2d", { willReadFrequently: true });
   if (!fullCtx) {
     return { match: null, rawText: "", arrow: null, mapOpenDetected: false };
@@ -1073,10 +1538,21 @@ export async function scanFullMapFrame(
   fullCtx.drawImage(source, 0, 0, vw, vh);
   const fullImg = fullCtx.getImageData(0, 0, vw, vh);
 
-  // 1. Scan full frame for player's lime-green chevron arrow
-  const arrow = detectGreenPlayerArrow(fullImg, vw, vh);
+  const now = Date.now();
+  const activeHint =
+    lastArrowCenterHint &&
+    lastArrowCenterHint.vw === vw &&
+    lastArrowCenterHint.vh === vh &&
+    now - lastArrowCenterHint.ts < 2500
+      ? { x: lastArrowCenterHint.x, y: lastArrowCenterHint.y }
+      : null;
 
-  // 2. Try Full-Screen Map Rulers first (M tab)
+  // 1. Scan for player's lime-green chevron arrow (square-proof & fast)
+  const arrow = detectGreenPlayerArrow(fullImg, vw, vh, activeHint);
+  if (arrow) {
+    lastArrowCenterHint = { x: arrow.cx, y: arrow.cy, vw, vh, ts: now };
+  }
+
   const fullBRect = {
     x: Math.round(vw * 0.028),
     y: Math.round(vh * 0.946),
@@ -1089,61 +1565,124 @@ export async function scanFullMapFrame(
     w: Math.max(32, Math.round(vw * 0.026)),
     h: Math.max(80, Math.round(vh * 0.835)),
   };
+  const holdBRect = {
+    x: Math.round(vw * 0.612),
+    y: Math.round(vh * 0.882),
+    w: Math.max(80, Math.round(vw * 0.372)),
+    h: Math.max(22, Math.round(vh * 0.036)),
+  };
+  const holdLRect = {
+    x: Math.round(vw * 0.59),
+    y: Math.round(vh * 0.108),
+    w: Math.max(28, Math.round(vw * 0.028)),
+    h: Math.max(80, Math.round(vh * 0.794)),
+  };
 
   let activeBRect = fullBRect;
   let activeLRect = fullLRect;
-  let { fitX, fitY } = await scanRulerAxesPair(
-    fullCanvas,
-    vw,
-    fullBRect,
-    fullLRect
-  );
-
-  const fullScreenRulersLocked = Boolean(
-    fitX && fitY && fitX.inliers >= 2 && fitY.inliers >= 2
-  );
+  let fitX: AxisFit | null = null;
+  let fitY: AxisFit | null = null;
   let holdMapMode = false;
+  let fullScreenRulersLocked = false;
 
-  // 3. Fallback: Hold-M quick floating minimap on the right side of the HUD
-  if (
-    !fullScreenRulersLocked &&
-    arrow &&
-    arrow.cx >= vw * 0.56 &&
-    arrow.cy >= vh * 0.1 &&
-    arrow.cy <= vh * 0.92
-  ) {
-    const holdBRect = {
-      x: Math.round(vw * 0.612),
-      y: Math.round(vh * 0.882),
-      w: Math.max(80, Math.round(vw * 0.372)),
-      h: Math.max(22, Math.round(vh * 0.036)),
-    };
-    const holdLRect = {
-      x: Math.round(vw * 0.59),
-      y: Math.round(vh * 0.108),
-      w: Math.max(28, Math.round(vw * 0.028)),
-      h: Math.max(80, Math.round(vh * 0.794)),
-    };
-    const holdFits = await scanRulerAxesPair(
-      fullCanvas,
-      vw,
-      holdBRect,
-      holdLRect
-    );
-    if (holdFits.fitX && holdFits.fitY) {
-      fitX = holdFits.fitX;
-      fitY = holdFits.fitY;
+  const tryFullMapRulers = async (): Promise<boolean> => {
+    const sig = sampleRulerPairSignature(fullImg, vw, fullBRect, fullLRect);
+    if (
+      cachedFullRuler &&
+      cachedFullRuler.vw === vw &&
+      cachedFullRuler.vh === vh &&
+      now - cachedFullRuler.ts < 2500 &&
+      signaturesMatch(sig, cachedFullRuler.sig, 2.2, 18)
+    ) {
+      fitX = cachedFullRuler.fitX;
+      fitY = cachedFullRuler.fitY;
+      activeBRect = fullBRect;
+      activeLRect = fullLRect;
+      return true;
+    }
+    const res = await scanRulerAxesPair(fullCanvas, vw, fullBRect, fullLRect);
+    if (res.fitX && res.fitY && res.fitX.inliers >= 2 && res.fitY.inliers >= 2) {
+      fitX = res.fitX;
+      fitY = res.fitY;
+      activeBRect = fullBRect;
+      activeLRect = fullLRect;
+      cachedFullRuler = { vw, vh, sig, fitX: res.fitX, fitY: res.fitY, ts: now };
+      lastLockedMapMode = "full";
+      return true;
+    }
+    return false;
+  };
+
+  const tryHoldMapRulers = async (): Promise<boolean> => {
+    const sig = sampleRulerPairSignature(fullImg, vw, holdBRect, holdLRect);
+    if (
+      cachedHoldRuler &&
+      cachedHoldRuler.vw === vw &&
+      cachedHoldRuler.vh === vh &&
+      now - cachedHoldRuler.ts < 2500 &&
+      signaturesMatch(sig, cachedHoldRuler.sig, 2.2, 18)
+    ) {
+      fitX = cachedHoldRuler.fitX;
+      fitY = cachedHoldRuler.fitY;
       activeBRect = holdBRect;
       activeLRect = holdLRect;
       holdMapMode = true;
+      return true;
     }
+    const res = await scanRulerAxesPair(fullCanvas, vw, holdBRect, holdLRect);
+    if (res.fitX && res.fitY) {
+      fitX = res.fitX;
+      fitY = res.fitY;
+      activeBRect = holdBRect;
+      activeLRect = holdLRect;
+      holdMapMode = true;
+      cachedHoldRuler = { vw, vh, sig, fitX: res.fitX, fitY: res.fitY, ts: now };
+      lastLockedMapMode = "hold";
+      return true;
+    }
+    return false;
+  };
+
+  // 2. Only calibrate map rulers when green arrow is visible (or check cached full ruler if arrow scrolled off-screen)
+  if (arrow) {
+    const canBeHoldMap =
+      arrow.cx >= vw * 0.56 && arrow.cy >= vh * 0.1 && arrow.cy <= vh * 0.92;
+    const preferHoldFirst = canBeHoldMap && lastLockedMapMode === "hold";
+
+    if (preferHoldFirst) {
+      const holdOk = await tryHoldMapRulers();
+      if (!holdOk) {
+        fullScreenRulersLocked = await tryFullMapRulers();
+      }
+    } else {
+      fullScreenRulersLocked = await tryFullMapRulers();
+      if (!fullScreenRulersLocked && canBeHoldMap) {
+        await tryHoldMapRulers();
+      }
+    }
+  } else if (
+    cachedFullRuler &&
+    cachedFullRuler.vw === vw &&
+    cachedFullRuler.vh === vh &&
+    now - cachedFullRuler.ts < 2500 &&
+    signaturesMatch(
+      sampleRulerPairSignature(fullImg, vw, fullBRect, fullLRect),
+      cachedFullRuler.sig,
+      2.2,
+      18
+    )
+  ) {
+    // Instant 0ms recognition that full map is still open while arrow panned out of view
+    fitX = cachedFullRuler.fitX;
+    fitY = cachedFullRuler.fitY;
+    fullScreenRulersLocked = true;
   }
 
   const mapOpenDetected = Boolean(
     (fitX && fitX.inliers >= 2) || (fitY && fitY.inliers >= 2)
   );
 
-  // 4. Read Top HUD Compass whenever full-screen Map menu is NOT covering it (in-field OR Hold-M!)
+  // 3. Read Top HUD Compass whenever full-screen Map menu is NOT covering it (in-field OR Hold-M)
   let compassHeading: {
     headingDeg: number;
     compassLabel: string;
@@ -1151,7 +1690,12 @@ export async function scanFullMapFrame(
     cropRect?: { sx: number; sy: number; sw: number; sh: number };
   } | null = null;
   if (options?.trackCompass && !fullScreenRulersLocked) {
-    compassHeading = await scanTopCompassHeading(fullCanvas, vw, vh);
+    if (now - lastCompassOcrRunAt >= 260 || (arrow && holdMapMode)) {
+      lastCompassOcrRunAt = now;
+      compassHeading = await scanTopCompassHeading(fullCanvas, vw, vh, fullImg);
+    } else if (cachedCompass && now - cachedCompass.ts < 1500) {
+      compassHeading = cachedCompass.result;
+    }
   }
 
   let match: OcrCoordinateMatch | null = null;

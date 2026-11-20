@@ -28,12 +28,14 @@ import {
   BLUE_CRATES_05,
   CHEMICAL_AREAS_05,
   DISASSEMBLY_SPAWNS_05,
+  ELECTRONIC_AREAS_05,
   FACTIONS,
   formatGridSquare,
   LAMANG_DIRECT_TILE_URL,
   LAMANG_POIS,
   LAMANG_TILE_URL,
   MAP_EXTENT,
+  MEDICAL_AREAS_05,
   parseGridInputToMeters,
   type CustomMapPin,
   type FactionId,
@@ -301,9 +303,9 @@ export function TacticalMapPanel({
   );
   const [trackCompass, setTrackCompass] = useState(true);
   const [autoFollowLive, setAutoFollowLive] = useState(true);
-  const [scanIntervalMs, setScanIntervalMs] = useState(1200);
+  const [scanIntervalMs, setScanIntervalMs] = useState(0);
   const [ocrStatusText, setOcrStatusText] = useState(
-    "Ready — locks onto your green arrow (M or Hold-M) & top HUD compass"
+    "Ready — locks strictly onto your green arrow (ignores squadmate squares)"
   );
   const [lastOcrRawText, setLastOcrRawText] = useState("");
   const [screenSyncError, setScreenSyncError] = useState<string | null>(null);
@@ -358,9 +360,14 @@ export function TacticalMapPanel({
     };
   }, [stopScreenSync]);
 
-  const runSingleOcrScan = useCallback(async () => {
+  const runSingleOcrScan = useCallback(async (): Promise<{
+    mapOpenDetected: boolean;
+    matched: boolean;
+  }> => {
     const video = videoRef.current;
-    if (!video || video.readyState < 2 || isScanningRef.current) return;
+    if (!video || video.readyState < 2 || isScanningRef.current) {
+      return { mapOpenDetected: false, matched: false };
+    }
     isScanningRef.current = true;
     try {
       const activeRect =
@@ -375,24 +382,36 @@ export function TacticalMapPanel({
       if (rawText) setLastOcrRawText(rawText);
       if (match) {
         const prev = livePlayerPosRef.current;
-        const moved =
-          !prev ||
-          prev.grid !== match.grid ||
-          Math.hypot(prev.x - match.x, prev.y - match.y) > 25;
+        const distMoved = prev
+          ? Math.hypot(prev.x - match.x, prev.y - match.y)
+          : Infinity;
+        const moved = !prev || prev.grid !== match.grid || distMoved > 10;
         const nextHeading = match.headingDeg ?? prev?.headingDeg;
         const nextCompass = match.compassLabel ?? prev?.compassLabel;
+        const headingChanged =
+          nextHeading !== undefined &&
+          (prev?.headingDeg === undefined ||
+            Math.abs(nextHeading - prev.headingDeg) >= 2);
         if (nextHeading !== undefined && nextCompass) {
-          setLiveCompass({ headingDeg: nextHeading, compassLabel: nextCompass });
+          setLiveCompass((curr) =>
+            curr &&
+            curr.headingDeg === nextHeading &&
+            curr.compassLabel === nextCompass
+              ? curr
+              : { headingDeg: nextHeading, compassLabel: nextCompass }
+          );
         }
-        setLivePlayerPos({
-          x: match.x,
-          y: match.y,
-          grid: match.grid,
-          headingDeg: nextHeading,
-          compassLabel: nextCompass,
-          source: "ocr",
-          updatedAt: Date.now(),
-        });
+        if (!prev || prev.grid !== match.grid || distMoved >= 2 || headingChanged) {
+          setLivePlayerPos({
+            x: match.x,
+            y: match.y,
+            grid: match.grid,
+            headingDeg: nextHeading,
+            compassLabel: nextCompass,
+            source: "ocr",
+            updatedAt: Date.now(),
+          });
+        }
         setOcrStatusText(
           `Synced Grid ${match.grid}${
             match.compassLabel
@@ -401,12 +420,27 @@ export function TacticalMapPanel({
           }`
         );
         if (moved && autoFollowLiveRef.current && mapRef.current) {
-          mapRef.current.panTo(toLatLng(match.x, match.y), { animate: true });
+          mapRef.current.panTo(toLatLng(match.x, match.y), {
+            animate: true,
+            duration: 0.25,
+          });
         }
+        return { mapOpenDetected: true, matched: true };
       } else if (compassOnly) {
-        setLiveCompass(compassOnly);
+        setLiveCompass((curr) =>
+          curr &&
+          curr.headingDeg === compassOnly.headingDeg &&
+          curr.compassLabel === compassOnly.compassLabel
+            ? curr
+            : compassOnly
+        );
         const prev = livePlayerPosRef.current;
-        if (prev) {
+        if (
+          prev &&
+          (prev.headingDeg === undefined ||
+            Math.abs(compassOnly.headingDeg - prev.headingDeg) >= 2 ||
+            prev.compassLabel !== compassOnly.compassLabel)
+        ) {
           setLivePlayerPos({
             ...prev,
             headingDeg: compassOnly.headingDeg,
@@ -417,17 +451,21 @@ export function TacticalMapPanel({
         setOcrStatusText(
           `Facing ${compassOnly.compassLabel} (${compassOnly.headingDeg}°) · Tap/Hold M to sync pos`
         );
+        return { mapOpenDetected: Boolean(mapOpenDetected), matched: false };
       } else if (mapOpenDetected) {
         setOcrStatusText(
           "Map open — pan/zoom map to bring your green arrow into view"
         );
+        return { mapOpenDetected: true, matched: false };
       } else {
         setOcrStatusText(
           "Watching full screen — tap or hold M in-game to sync grid"
         );
+        return { mapOpenDetected: false, matched: false };
       }
     } catch {
       setOcrStatusText("Scanner busy — retrying next tick");
+      return { mapOpenDetected: false, matched: false };
     } finally {
       isScanningRef.current = false;
     }
@@ -435,15 +473,29 @@ export function TacticalMapPanel({
 
   useEffect(() => {
     if (!screenSyncActive) return;
-    const t0 = setTimeout(() => {
-      void runSingleOcrScan();
-    }, 300);
-    const id = setInterval(() => {
-      void runSingleOcrScan();
-    }, scanIntervalMs);
+    let cancelled = false;
+    let timer: ReturnType<typeof setTimeout> | null = null;
+
+    const scheduleNext = (delayMs: number) => {
+      if (cancelled) return;
+      timer = setTimeout(async () => {
+        if (cancelled) return;
+        const res = await runSingleOcrScan();
+        if (cancelled) return;
+        const nextDelay =
+          scanIntervalMs === 0
+            ? res.matched || res.mapOpenDetected
+              ? 120
+              : 180
+            : scanIntervalMs;
+        scheduleNext(nextDelay);
+      }, delayMs);
+    };
+
+    scheduleNext(150);
     return () => {
-      clearTimeout(t0);
-      clearInterval(id);
+      cancelled = true;
+      if (timer) clearTimeout(timer);
     };
   }, [screenSyncActive, scanIntervalMs, runSingleOcrScan]);
 
@@ -463,7 +515,7 @@ export function TacticalMapPanel({
     try {
       stopScreenSync();
       const stream = await navigator.mediaDevices.getDisplayMedia({
-        video: { frameRate: { ideal: 4, max: 6 } },
+        video: { frameRate: { ideal: 8, max: 12 } },
         audio: false,
       });
       mediaStreamRef.current = stream;
@@ -1271,11 +1323,22 @@ export function TacticalMapPanel({
 
     const hasFocusedMaterial =
       !!inspectedMaterial || Object.values(tickedMapMaterials).some(Boolean);
+    let paddedBounds: L.LatLngBounds | null = null;
+    try {
+      if (mapRef.current) {
+        paddedBounds = mapRef.current.getBounds().pad(0.35);
+      }
+    } catch {
+      paddedBounds = null;
+    }
 
     // 1. Primary POIs, Tier 4 Regions, Bases, Sub-Locations, COPs, LZs
     LAMANG_POIS.forEach((poi) => {
       if (zoomLevel < poi.minZoom) return;
       const ll = toLatLng(poi.x, poi.y);
+      if (poi.kind === "sublocation" && paddedBounds && !paddedBounds.contains(ll)) {
+        return;
+      }
       const grid = formatGridSquare(poi.x, poi.y);
 
       if (poi.kind === "base" || poi.kind === "tier4" || poi.kind === "major") {
@@ -1554,17 +1617,22 @@ export function TacticalMapPanel({
       }
     });
 
-    // 2. Blue-Planked Building Material Crates (95 exact spawns — shown cleanly on zoom >= 15)
+    // 2. Blue-Planked Building Material Crates (96 Tier 2-3 spawns — shown cleanly on zoom >= 15)
     if (zoomLevel >= 15) {
       BLUE_CRATES_05.forEach((crate) => {
+        const crateTier = crate.tier ?? 2;
         const marker = L.marker(toLatLng(crate.x, crate.y), {
-          icon: createDotIcon("#3b82f6", zoomLevel >= 16.5 ? 10 : 7),
+          icon: createDotIcon(crateTier >= 3 ? "#2563eb" : "#3b82f6", zoomLevel >= 16.5 ? 10 : 7),
         });
         marker.bindPopup(
-          `<div style="min-width:185px;">
-            <div style="font-size:10px;font-family:monospace;color:#60a5fa;font-weight:700;">BLUE-PLANKED MATERIAL CRATE</div>
+          `<div style="min-width:195px;">
+            <div style="font-size:10px;font-family:monospace;color:#60a5fa;font-weight:700;">BUILDING MATERIAL CRATE (TIER ${crateTier})</div>
             <div style="font-size:13px;font-weight:600;margin-top:2px;">${escapeHtml(crate.poi)}</div>
-            <div style="font-size:11px;color:#cbd5e1;margin-top:2px;">Plastics · Steel · Wood · Plumbing · Construction</div>
+            <div style="font-size:11px;color:#cbd5e1;margin-top:2px;">${
+              crateTier >= 3
+                ? "Stainless Steel Sheet · Plastics · Steel · Construction · Plumbing"
+                : "Plastics · Steel · Wood · Plumbing · Construction"
+            }</div>
             <div style="font-family:monospace;font-size:10px;color:#94a3b8;margin-top:4px;">Grid ${formatGridSquare(crate.x, crate.y)} · ${crate.x}, ${crate.y}</div>
           </div>`
         );
@@ -1572,7 +1640,7 @@ export function TacticalMapPanel({
       });
     }
 
-    // 3. Chemicals Supplies Areas (19 exact spawns)
+    // 3. Chemicals & Medical Supplies Areas (20 Chemical + 6 Tier 3-4 Medical)
     CHEMICAL_AREAS_05.forEach((chem) => {
       const marker = L.marker(toLatLng(chem.x, chem.y), {
         icon: createTargetPinIcon("#a855f7", "C"),
@@ -1580,8 +1648,24 @@ export function TacticalMapPanel({
       marker.bindPopup(
         `<div style="min-width:185px;">
           <div style="font-size:10px;font-family:monospace;color:#c084fc;font-weight:700;">CHEMICALS SUPPLIES AREA</div>
-          <div style="font-size:13px;font-weight:600;margin-top:2px;">${escapeHtml(chem.poi)}</div>
+          <div style="font-size:13px;font-weight:600;margin-top:2px;">${escapeHtml(chem.name)}</div>
+          <div style="font-size:11px;color:#cbd5e1;margin-top:2px;">Region: ${escapeHtml(chem.poi)}</div>
           <div style="font-family:monospace;font-size:10px;color:#94a3b8;margin-top:4px;">Grid ${formatGridSquare(chem.x, chem.y)} · ${chem.x}, ${chem.y}</div>
+        </div>`
+      );
+      marker.addTo(groups.chemicalAreas);
+    });
+
+    MEDICAL_AREAS_05.forEach((med) => {
+      const marker = L.marker(toLatLng(med.x, med.y), {
+        icon: createTargetPinIcon("#ec4899", "M"),
+      });
+      marker.bindPopup(
+        `<div style="min-width:195px;">
+          <div style="font-size:10px;font-family:monospace;color:#f472b6;font-weight:700;">MEDICAL SUPPLIES AREA</div>
+          <div style="font-size:13px;font-weight:600;margin-top:2px;">${escapeHtml(med.name)}</div>
+          <div style="font-size:11px;color:#cbd5e1;margin-top:2px;">Region: ${escapeHtml(med.poi)} · Glassware, HEPA, Pipette, Microscope</div>
+          <div style="font-family:monospace;font-size:10px;color:#94a3b8;margin-top:4px;">Grid ${formatGridSquare(med.x, med.y)} · ${med.x}, ${med.y}</div>
         </div>`
       );
       marker.addTo(groups.chemicalAreas);
@@ -1602,6 +1686,24 @@ export function TacticalMapPanel({
       );
       marker.addTo(groups.disassemblySpawns);
     });
+
+    // 4b. Electronic Supplies Areas (26 exact Update 0.5 spawns — Trashed Campsites, HQ, Radio Stations)
+    if (zoomLevel >= 14.5 || hasFocusedMaterial) {
+      ELECTRONIC_AREAS_05.forEach((elec) => {
+        const marker = L.marker(toLatLng(elec.x, elec.y), {
+          icon: createTargetPinIcon("#06b6d4", "E"),
+        });
+        marker.bindPopup(
+          `<div style="min-width:195px;">
+            <div style="font-size:10px;font-family:monospace;color:#22d3ee;font-weight:700;">ELECTRONIC SUPPLIES AREA</div>
+            <div style="font-size:13px;font-weight:600;margin-top:2px;">${escapeHtml(elec.name)}</div>
+            <div style="font-size:11px;color:#cbd5e1;margin-top:2px;">Region: ${escapeHtml(elec.poi)} · CPU, Motherboard, RAM, PSU, Circuit Board</div>
+            <div style="font-family:monospace;font-size:10px;color:#94a3b8;margin-top:4px;">Grid ${formatGridSquare(elec.x, elec.y)} · ${elec.x}, ${elec.y}</div>
+          </div>`
+        );
+        marker.addTo(groups.pcSpawns);
+      });
+    }
 
     // 5. PC Part Spawns & Custom Pins
     markerByPinIdRef.current.clear();
@@ -1793,7 +1895,7 @@ export function TacticalMapPanel({
       `);
       marker.addTo(groups.apiLoot);
     });
-  }, [catalog, customPins, tickedMapMaterials, inspectedMaterial, apiRecords, keysList, onRemovePin, zoomLevel, selectedFaction]);
+  }, [catalog, customPins, tickedMapMaterials, inspectedMaterial, apiRecords, keysList, onRemovePin, zoomLevel, viewportVersion, selectedFaction]);
 
   const activeFactionInfo =
     selectedFaction !== "ALL" ? FACTIONS[selectedFaction] : null;
@@ -1833,7 +1935,13 @@ export function TacticalMapPanel({
         (p.name.toLowerCase().includes(q) ||
           p.lz.toLowerCase().includes(q) ||
           (p.parentRegion || "").toLowerCase().includes(q))
-    ).slice(0, 7);
+    )
+      .sort((a, b) => {
+        const aExact = a.name.toLowerCase().startsWith(q) ? 0 : 1;
+        const bExact = b.name.toLowerCase().startsWith(q) ? 0 : 1;
+        return aExact - bExact || a.name.localeCompare(b.name);
+      })
+      .slice(0, 15);
     const keys = keysList
       .filter(
         (k) =>
@@ -1909,14 +2017,8 @@ export function TacticalMapPanel({
     ).length;
 
     const matchingMaterials = catalog
-      .filter((m) =>
-        inspectedPoi.tags.some(
-          (tag) =>
-            m.name.toLowerCase().includes(tag) ||
-            tag.includes(m.name.toLowerCase())
-        )
-      )
-      .slice(0, 8);
+      .filter((m) => inspectedPoi.tags.includes(m.name.trim().toLowerCase()))
+      .slice(0, 10);
 
     const flightFromFob =
       activeFactionInfo && inspectedPoi.id !== activeFactionInfo.baseId
@@ -2353,9 +2455,9 @@ export function TacticalMapPanel({
                     { key: "copsAndLzs", label: "Outposts & Landing Zones", dot: "bg-yellow-400" },
                     { key: "lockedDoors", label: "Locked Doors & Keys", dot: "bg-amber-400" },
                     { key: "tickedSpawns", label: "Material Spawns", dot: "bg-[#e5a93c]" },
-                    { key: "blueCrates", label: "Blue Material Crates (95)", dot: "bg-blue-500" },
-                    { key: "pcSpawns", label: "PC & Tech Spawns", dot: "bg-cyan-400" },
-                    { key: "chemicalAreas", label: "Chemicals Areas (19)", dot: "bg-purple-400" },
+                    { key: "blueCrates", label: "Blue Material Crates (96)", dot: "bg-blue-500" },
+                    { key: "pcSpawns", label: "PC & Electronic Areas (26+)", dot: "bg-cyan-400" },
+                    { key: "chemicalAreas", label: "Chem & Medical Areas (20+6)", dot: "bg-purple-400" },
                     { key: "disassemblySpawns", label: "Disassembly Items (54)", dot: "bg-orange-400" },
                     { key: "customPins", label: "Custom Pins", dot: "bg-emerald-500" },
                   ] as { key: MapLayerKey; label: string; dot: string }[]
@@ -3770,7 +3872,7 @@ export function TacticalMapPanel({
                 </h3>
               </div>
               <p className="text-[11px] text-[#9fb0c4] mt-0.5 leading-relaxed">
-                Locks onto your green player arrow on full Map (<strong className="text-[#e2e8f0]">M</strong>) or quick minimap (<strong className="text-[#e2e8f0]">Hold M</strong>), calibrates grid rulers at any zoom, and smoothly tracks N/NE/E/SE/S/SW/W/NW from your top HUD compass.
+                Locks strictly onto your directional green chevron arrow on full Map (<strong className="text-[#e2e8f0]">M</strong>) or quick minimap (<strong className="text-[#e2e8f0]">Hold M</strong>) while ignoring squadmate green squares, calibrates grid rulers at any zoom, and smoothly tracks N/NE/E/SE/S/SW/W/NW from your top HUD compass.
               </p>
             </div>
             <button
@@ -3976,6 +4078,7 @@ export function TacticalMapPanel({
                 onChange={(e) => setScanIntervalMs(Number(e.target.value))}
                 className="bg-[#06090d] border border-white/[0.1] rounded px-1.5 py-0.5 font-mono-tabular text-[10px] text-[#cbd5e1]"
               >
+                <option value={0}>Auto Fast (~150ms)</option>
                 <option value={500}>0.5s</option>
                 <option value={900}>0.9s</option>
                 <option value={1200}>1.2s</option>

@@ -21,6 +21,7 @@ export interface ResourceSpawn05 {
   y: number;
   poi: string;
   floor?: number;
+  tier?: number;
 }
 
 export const BASES_05: RawPoi05[] = [
@@ -1393,6 +1394,18 @@ export const LZS_05: RawPoi05[] = [
 
 export const SUB_POIS_05: RawPoi05[] = [
   {
+    "id": "sub-6299",
+    "name": "Secluded Shelter",
+    "x": 4637,
+    "y": 6592,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Kiu Vongsa",
+    "lz": "Charlie 2",
+    "parentRegion": "Kiu Vongsa",
+    "minZoom": 16.5
+  },
+  {
     "id": "sub-405",
     "name": "Employee housing",
     "x": 6819,
@@ -1402,7 +1415,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Midnight Sapphire",
     "lz": "Hotel 3",
     "parentRegion": "Midnight Sapphire",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-317",
@@ -1450,7 +1463,19 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Ban Pa",
     "lz": "India 1",
     "parentRegion": "Ban Pa",
-    "minZoom": 17
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-7301",
+    "name": "Campsite",
+    "x": 6841,
+    "y": 2473,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Nam Thaven",
+    "lz": "Bravo 3",
+    "parentRegion": "Nam Thaven",
+    "minZoom": 16.5
   },
   {
     "id": "sub-5749",
@@ -1465,6 +1490,42 @@ export const SUB_POIS_05: RawPoi05[] = [
     "minZoom": 16
   },
   {
+    "id": "sub-5751",
+    "name": "Field Shelter",
+    "x": 9936,
+    "y": 4887,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Ban Pa",
+    "lz": "Oscar 2",
+    "parentRegion": "Ban Pa",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-7302",
+    "name": "Field Shelter",
+    "x": 7639,
+    "y": 2446,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Nam Thaven",
+    "lz": "Bravo 1",
+    "parentRegion": "Nam Thaven",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-5842",
+    "name": "Riverside Shack",
+    "x": 9218,
+    "y": 5407,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Pha Lang Airfield",
+    "lz": "Oscar 2",
+    "parentRegion": "Pha Lang Airfield",
+    "minZoom": 16.5
+  },
+  {
     "id": "sub-5846",
     "name": "Logging Area",
     "x": 8463,
@@ -1474,7 +1535,19 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Pha Lang Airfield",
     "lz": "Golf 2",
     "parentRegion": "Pha Lang Airfield",
-    "minZoom": 17
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-5847",
+    "name": "Rest Point",
+    "x": 8520,
+    "y": 5376,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Pha Lang Airfield",
+    "lz": "Golf 2",
+    "parentRegion": "Pha Lang Airfield",
+    "minZoom": 16.5
   },
   {
     "id": "sub-5635",
@@ -1487,6 +1560,30 @@ export const SUB_POIS_05: RawPoi05[] = [
     "lz": "November 2",
     "parentRegion": "Blue Lagoon",
     "minZoom": 16
+  },
+  {
+    "id": "sub-6711",
+    "name": "Ruined Shack",
+    "x": 4837,
+    "y": 1379,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "YBL-1",
+    "lz": "Lima 2",
+    "parentRegion": "YBL-1",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-6713",
+    "name": "Riverside Shack",
+    "x": 4842,
+    "y": 1550,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "YBL-1",
+    "lz": "Lima 2",
+    "parentRegion": "YBL-1",
+    "minZoom": 16.5
   },
   {
     "id": "sub-6719",
@@ -1522,7 +1619,31 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "YBL-1",
     "lz": "Lima 2",
     "parentRegion": "YBL-1",
-    "minZoom": 17
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-6720",
+    "name": "Trashed Campsite",
+    "x": 4651,
+    "y": 1452,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "YBL-1",
+    "lz": "Lima 2",
+    "parentRegion": "YBL-1",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-6722",
+    "name": "Fishing Hut",
+    "x": 6776,
+    "y": 2537,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "YBL-1",
+    "lz": "Bravo 3",
+    "parentRegion": "YBL-1",
+    "minZoom": 16.5
   },
   {
     "id": "sub-6712",
@@ -1537,6 +1658,66 @@ export const SUB_POIS_05: RawPoi05[] = [
     "minZoom": 16
   },
   {
+    "id": "sub-6715",
+    "name": "Small Pier",
+    "x": 5278,
+    "y": 1682,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "YBL-1",
+    "lz": "Mike 3",
+    "parentRegion": "YBL-1",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-6718",
+    "name": "Secluded Shelter",
+    "x": 5196,
+    "y": 1576,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "YBL-1",
+    "lz": "Mike 3",
+    "parentRegion": "YBL-1",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-6721",
+    "name": "Remote Outpost",
+    "x": 5326,
+    "y": 2170,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "YBL-1",
+    "lz": "Mike 3",
+    "parentRegion": "YBL-1",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-6541",
+    "name": "Field Shelter",
+    "x": 7215,
+    "y": 1537,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Nam Thaven",
+    "lz": "Bravo 2",
+    "parentRegion": "Nam Thaven",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-6725",
+    "name": "Old Shack",
+    "x": 5099,
+    "y": 7334,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Hunter's Paradise",
+    "lz": "Foxtrot 2",
+    "parentRegion": "Hunter's Paradise",
+    "minZoom": 16.5
+  },
+  {
     "id": "sub-333",
     "name": "Motel",
     "x": 3577,
@@ -1547,6 +1728,42 @@ export const SUB_POIS_05: RawPoi05[] = [
     "lz": "Charlie 2",
     "parentRegion": "Kiu Vongsa",
     "minZoom": 16
+  },
+  {
+    "id": "sub-5323",
+    "name": "Trashed Campsite",
+    "x": 4741,
+    "y": 5326,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Hunter's Paradise",
+    "lz": "Romeo 1",
+    "parentRegion": "Hunter's Paradise",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-391",
+    "name": "Makeshift Shack",
+    "x": 10313,
+    "y": 1710,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Blue Lagoon",
+    "lz": "Kilo 1",
+    "parentRegion": "Blue Lagoon",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-5621",
+    "name": "Riverside Shack",
+    "x": 7935,
+    "y": 3041,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Blue Lagoon",
+    "lz": "November 1",
+    "parentRegion": "Blue Lagoon",
+    "minZoom": 16.5
   },
   {
     "id": "sub-5623",
@@ -1561,6 +1778,42 @@ export const SUB_POIS_05: RawPoi05[] = [
     "minZoom": 16
   },
   {
+    "id": "sub-6714",
+    "name": "Temple Ruins",
+    "x": 5086,
+    "y": 1617,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "YBL-1",
+    "lz": "Lima 2",
+    "parentRegion": "YBL-1",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-6542",
+    "name": "Ruined Shack",
+    "x": 9391,
+    "y": 1577,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Blue Lagoon",
+    "lz": "November 3",
+    "parentRegion": "Blue Lagoon",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-6547",
+    "name": "Remote Shelter",
+    "x": 10899,
+    "y": 1904,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Blue Lagoon",
+    "lz": "Kilo 2",
+    "parentRegion": "Blue Lagoon",
+    "minZoom": 16.5
+  },
+  {
     "id": "sub-6551",
     "name": "Abandoned Village",
     "x": 11393,
@@ -1570,7 +1823,43 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Blue Lagoon",
     "lz": "Kilo 2",
     "parentRegion": "Blue Lagoon",
-    "minZoom": 17
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-6562",
+    "name": "Field Shelter",
+    "x": 7691,
+    "y": 3023,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Blue Lagoon",
+    "lz": "November 1",
+    "parentRegion": "Blue Lagoon",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-6564",
+    "name": "Ruined Shack",
+    "x": 8296,
+    "y": 3049,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Blue Lagoon",
+    "lz": "November 1",
+    "parentRegion": "Blue Lagoon",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-6566",
+    "name": "Field Shelter",
+    "x": 8822,
+    "y": 2252,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Blue Lagoon",
+    "lz": "November 2",
+    "parentRegion": "Blue Lagoon",
+    "minZoom": 16.5
   },
   {
     "id": "sub-1254",
@@ -1585,6 +1874,18 @@ export const SUB_POIS_05: RawPoi05[] = [
     "minZoom": 16
   },
   {
+    "id": "sub-5638",
+    "name": "Farm Shed",
+    "x": 9166,
+    "y": 1902,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Blue Lagoon",
+    "lz": "November 3",
+    "parentRegion": "Blue Lagoon",
+    "minZoom": 16.5
+  },
+  {
     "id": "sub-2224",
     "name": "Khamsao Lake",
     "x": 9663,
@@ -1597,6 +1898,30 @@ export const SUB_POIS_05: RawPoi05[] = [
     "minZoom": 16
   },
   {
+    "id": "sub-6716",
+    "name": "Crumbling Shelter",
+    "x": 5327,
+    "y": 1550,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "YBL-1",
+    "lz": "Mike 3",
+    "parentRegion": "YBL-1",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-6723",
+    "name": "Campsite",
+    "x": 5962,
+    "y": 2352,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "YBL-1",
+    "lz": "Mike 2",
+    "parentRegion": "YBL-1",
+    "minZoom": 16.5
+  },
+  {
     "id": "sub-6726",
     "name": "LAF Checkpoint",
     "x": 7132,
@@ -1606,7 +1931,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Pha Lang Airfield",
     "lz": "Hotel 2",
     "parentRegion": "Pha Lang Airfield",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-6543",
@@ -1618,7 +1943,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Blue Lagoon",
     "lz": "November 3",
     "parentRegion": "Blue Lagoon",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-6544",
@@ -1630,7 +1955,55 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Blue Lagoon",
     "lz": "November 3",
     "parentRegion": "Blue Lagoon",
-    "minZoom": 17
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-6549",
+    "name": "Roadside Shed",
+    "x": 11212,
+    "y": 2134,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Blue Lagoon",
+    "lz": "Kilo 2",
+    "parentRegion": "Blue Lagoon",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-6550",
+    "name": "Crumbling Shelter",
+    "x": 11479,
+    "y": 2175,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Blue Lagoon",
+    "lz": "Kilo 2",
+    "parentRegion": "Blue Lagoon",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-6554",
+    "name": "Derelict Shelter",
+    "x": 11284,
+    "y": 1887,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Blue Lagoon",
+    "lz": "Kilo 2",
+    "parentRegion": "Blue Lagoon",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-6545",
+    "name": "Remote House",
+    "x": 10723,
+    "y": 1949,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Blue Lagoon",
+    "lz": "Kilo 2",
+    "parentRegion": "Blue Lagoon",
+    "minZoom": 16.5
   },
   {
     "id": "sub-6555",
@@ -1642,7 +2015,43 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Blue Lagoon",
     "lz": "Kilo 2",
     "parentRegion": "Blue Lagoon",
-    "minZoom": 17
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-6565",
+    "name": "Old House",
+    "x": 8199,
+    "y": 2992,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Blue Lagoon",
+    "lz": "November 1",
+    "parentRegion": "Blue Lagoon",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-5637",
+    "name": "Roadside Shed",
+    "x": 9218,
+    "y": 2255,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Blue Lagoon",
+    "lz": "Juliett 2",
+    "parentRegion": "Blue Lagoon",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-5644",
+    "name": "Campsite",
+    "x": 10043,
+    "y": 2258,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Blue Lagoon",
+    "lz": "Juliett 3",
+    "parentRegion": "Blue Lagoon",
+    "minZoom": 16.5
   },
   {
     "id": "sub-5747",
@@ -1654,7 +2063,43 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Ban Pa",
     "lz": "India 3",
     "parentRegion": "Ban Pa",
-    "minZoom": 17
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-6558",
+    "name": "Remote Homestead",
+    "x": 10622,
+    "y": 2053,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Blue Lagoon",
+    "lz": "Kilo 2",
+    "parentRegion": "Blue Lagoon",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-6559",
+    "name": "Field Shelter",
+    "x": 9123,
+    "y": 2508,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Blue Lagoon",
+    "lz": "Juliett 2",
+    "parentRegion": "Blue Lagoon",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-6561",
+    "name": "Field Shelter",
+    "x": 7865,
+    "y": 2726,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Blue Lagoon",
+    "lz": "November 1",
+    "parentRegion": "Blue Lagoon",
+    "minZoom": 16.5
   },
   {
     "id": "sub-6563",
@@ -1669,6 +2114,18 @@ export const SUB_POIS_05: RawPoi05[] = [
     "minZoom": 16
   },
   {
+    "id": "sub-6567",
+    "name": "Rest Point",
+    "x": 8913,
+    "y": 3230,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Blue Lagoon",
+    "lz": "Juliett 4",
+    "parentRegion": "Blue Lagoon",
+    "minZoom": 16.5
+  },
+  {
     "id": "sub-5308",
     "name": "Riverside Shelter",
     "x": 5893,
@@ -1678,7 +2135,55 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Hunter's Paradise",
     "lz": "Foxtrot 3",
     "parentRegion": "Hunter's Paradise",
-    "minZoom": 17
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-5307",
+    "name": "Remote Shelter",
+    "x": 6096,
+    "y": 6055,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Hunter's Paradise",
+    "lz": "Quebec 3",
+    "parentRegion": "Hunter's Paradise",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-5639",
+    "name": "Remote Farms",
+    "x": 9316,
+    "y": 1741,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Blue Lagoon",
+    "lz": "November 3",
+    "parentRegion": "Blue Lagoon",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-6546",
+    "name": "Remote Homestead",
+    "x": 10808,
+    "y": 1857,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Blue Lagoon",
+    "lz": "Kilo 2",
+    "parentRegion": "Blue Lagoon",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-5325",
+    "name": "Remote Homestead",
+    "x": 5116,
+    "y": 5337,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Hunter's Paradise",
+    "lz": "Quebec 2",
+    "parentRegion": "Hunter's Paradise",
+    "minZoom": 16.5
   },
   {
     "id": "sub-1701",
@@ -1690,7 +2195,19 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Kiu Vongsa",
     "lz": "Charlie 2",
     "parentRegion": "Kiu Vongsa",
-    "minZoom": 17
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-5318",
+    "name": "Field Shelter",
+    "x": 5179,
+    "y": 6123,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Hunter's Paradise",
+    "lz": "Quebec 1",
+    "parentRegion": "Hunter's Paradise",
+    "minZoom": 16.5
   },
   {
     "id": "sub-2443",
@@ -1705,6 +2222,66 @@ export const SUB_POIS_05: RawPoi05[] = [
     "minZoom": 16
   },
   {
+    "id": "sub-5328",
+    "name": "Field Shelter",
+    "x": 5706,
+    "y": 5224,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Hunter's Paradise",
+    "lz": "Quebec 2",
+    "parentRegion": "Hunter's Paradise",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-5640",
+    "name": "Roadside Shelter",
+    "x": 9789,
+    "y": 1970,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Blue Lagoon",
+    "lz": "November 3",
+    "parentRegion": "Blue Lagoon",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-6548",
+    "name": "Lakeside Shack",
+    "x": 11261,
+    "y": 2231,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Blue Lagoon",
+    "lz": "Kilo 2",
+    "parentRegion": "Blue Lagoon",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-6552",
+    "name": "Ruined Shack",
+    "x": 11573,
+    "y": 2090,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Blue Lagoon",
+    "lz": "Kilo 2",
+    "parentRegion": "Blue Lagoon",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-6556",
+    "name": "Abandoned Shelter",
+    "x": 11353,
+    "y": 1960,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Blue Lagoon",
+    "lz": "Kilo 2",
+    "parentRegion": "Blue Lagoon",
+    "minZoom": 16.5
+  },
+  {
     "id": "sub-5976",
     "name": "Hidden Outpost",
     "x": 4094,
@@ -1714,7 +2291,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Sawmill",
     "lz": "Echo 3",
     "parentRegion": "Sawmill",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-3159",
@@ -1729,6 +2306,18 @@ export const SUB_POIS_05: RawPoi05[] = [
     "minZoom": 16
   },
   {
+    "id": "sub-6553",
+    "name": "Remote Shelter",
+    "x": 11218,
+    "y": 1923,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Blue Lagoon",
+    "lz": "Kilo 2",
+    "parentRegion": "Blue Lagoon",
+    "minZoom": 16.5
+  },
+  {
     "id": "sub-6557",
     "name": "Logging Area",
     "x": 11475,
@@ -1738,7 +2327,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Blue Lagoon",
     "lz": "Kilo 2",
     "parentRegion": "Blue Lagoon",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-6560",
@@ -1750,7 +2339,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Blue Lagoon",
     "lz": "November 1",
     "parentRegion": "Blue Lagoon",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-3665",
@@ -1762,7 +2351,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Sawmill",
     "lz": "Echo 4",
     "parentRegion": "Sawmill",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-2293",
@@ -1777,6 +2366,54 @@ export const SUB_POIS_05: RawPoi05[] = [
     "minZoom": 16
   },
   {
+    "id": "sub-6597",
+    "name": "Trashed Campsite",
+    "x": 3561,
+    "y": 4232,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Sawmill",
+    "lz": "Echo 2",
+    "parentRegion": "Sawmill",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-6602",
+    "name": "Abandoned Shed",
+    "x": 2834,
+    "y": 4200,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Sawmill",
+    "lz": "Echo 4",
+    "parentRegion": "Sawmill",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-6568",
+    "name": "Field Shelter",
+    "x": 10124,
+    "y": 2577,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Tiger Bay",
+    "lz": "Juliett 3",
+    "parentRegion": "Tiger Bay",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-6589",
+    "name": "Field Shelter",
+    "x": 6194,
+    "y": 2130,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "YBL-1",
+    "lz": "Mike 1",
+    "parentRegion": "YBL-1",
+    "minZoom": 16.5
+  },
+  {
     "id": "sub-5327",
     "name": "Abandoned Toolshed",
     "x": 5464,
@@ -1786,7 +2423,19 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Hunter's Paradise",
     "lz": "Quebec 2",
     "parentRegion": "Hunter's Paradise",
-    "minZoom": 17
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-6625",
+    "name": "Field Shelter",
+    "x": 3604,
+    "y": 5662,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Sawmill",
+    "lz": "Charlie 1",
+    "parentRegion": "Sawmill",
+    "minZoom": 16.5
   },
   {
     "id": "sub-6631",
@@ -1798,7 +2447,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "RLSL-1 Radio Observatory",
     "lz": "Tango 2",
     "parentRegion": "RLSL-1 Radio Observatory",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-6632",
@@ -1810,7 +2459,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "RLSL-1 Radio Observatory",
     "lz": "Tango 1",
     "parentRegion": "RLSL-1 Radio Observatory",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-6641",
@@ -1822,7 +2471,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Lakevale Sanctuary",
     "lz": "Sierra 2",
     "parentRegion": "Lakevale Sanctuary",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-2732",
@@ -1849,6 +2498,30 @@ export const SUB_POIS_05: RawPoi05[] = [
     "minZoom": 16
   },
   {
+    "id": "sub-6569",
+    "name": "Field Shelter",
+    "x": 10003,
+    "y": 2466,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Tiger Bay",
+    "lz": "Juliett 3",
+    "parentRegion": "Tiger Bay",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-6570",
+    "name": "Field Shelter",
+    "x": 9896,
+    "y": 2470,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Tiger Bay",
+    "lz": "Juliett 3",
+    "parentRegion": "Tiger Bay",
+    "minZoom": 16.5
+  },
+  {
     "id": "sub-6571",
     "name": "Military Warehouse",
     "x": 9772,
@@ -1861,6 +2534,42 @@ export const SUB_POIS_05: RawPoi05[] = [
     "minZoom": 16
   },
   {
+    "id": "sub-6573",
+    "name": "Farm House",
+    "x": 9438,
+    "y": 2782,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Tiger Bay",
+    "lz": "Juliett 2",
+    "parentRegion": "Tiger Bay",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-6586",
+    "name": "Riverside Shack",
+    "x": 6221,
+    "y": 2601,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "YBL-1",
+    "lz": "Mike 2",
+    "parentRegion": "YBL-1",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-6588",
+    "name": "Field Shelter",
+    "x": 6317,
+    "y": 2173,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "YBL-1",
+    "lz": "Mike 1",
+    "parentRegion": "YBL-1",
+    "minZoom": 16.5
+  },
+  {
     "id": "sub-6591",
     "name": "Riverside Shelter",
     "x": 5350,
@@ -1870,7 +2579,79 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "YBL-1",
     "lz": "Mike 4",
     "parentRegion": "YBL-1",
-    "minZoom": 17
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-6593",
+    "name": "Secluded Shelter",
+    "x": 5558,
+    "y": 3443,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "YBL-1",
+    "lz": "Mike 4",
+    "parentRegion": "YBL-1",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-5647",
+    "name": "Fishing Hut",
+    "x": 9195,
+    "y": 1788,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Blue Lagoon",
+    "lz": "November 3",
+    "parentRegion": "Blue Lagoon",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-6572",
+    "name": "Field Shelter",
+    "x": 9625,
+    "y": 2715,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Tiger Bay",
+    "lz": "Juliett 2",
+    "parentRegion": "Tiger Bay",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-6574",
+    "name": "Old Shelter",
+    "x": 9383,
+    "y": 2750,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Tiger Bay",
+    "lz": "Juliett 2",
+    "parentRegion": "Tiger Bay",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-6575",
+    "name": "Field Shelter",
+    "x": 9286,
+    "y": 3012,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Tiger Bay",
+    "lz": "Juliett 4",
+    "parentRegion": "Tiger Bay",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-6576",
+    "name": "Field Shelter",
+    "x": 9446,
+    "y": 3005,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Tiger Bay",
+    "lz": "Juliett 2",
+    "parentRegion": "Tiger Bay",
+    "minZoom": 16.5
   },
   {
     "id": "sub-6578",
@@ -1882,7 +2663,19 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Tiger Bay",
     "lz": "Juliett 3",
     "parentRegion": "Tiger Bay",
-    "minZoom": 17
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-6579",
+    "name": "Field Shelter",
+    "x": 9784,
+    "y": 3353,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Tiger Bay",
+    "lz": "Juliett 1",
+    "parentRegion": "Tiger Bay",
+    "minZoom": 16.5
   },
   {
     "id": "sub-6584",
@@ -1894,7 +2687,19 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "YBL-1",
     "lz": "Mike 2",
     "parentRegion": "YBL-1",
-    "minZoom": 17
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-6587",
+    "name": "Crumbling Shelter",
+    "x": 6123,
+    "y": 2605,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "YBL-1",
+    "lz": "Mike 2",
+    "parentRegion": "YBL-1",
+    "minZoom": 16.5
   },
   {
     "id": "sub-6590",
@@ -1909,6 +2714,30 @@ export const SUB_POIS_05: RawPoi05[] = [
     "minZoom": 16
   },
   {
+    "id": "sub-6596",
+    "name": "Trashed Campsite",
+    "x": 4824,
+    "y": 3024,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Fort Narith",
+    "lz": "Delta 1",
+    "parentRegion": "Fort Narith",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-6598",
+    "name": "Old Shack",
+    "x": 3083,
+    "y": 3631,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Sawmill",
+    "lz": "Delta 4",
+    "parentRegion": "Sawmill",
+    "minZoom": 16.5
+  },
+  {
     "id": "sub-6601",
     "name": "Riverside Shelter",
     "x": 2772,
@@ -1918,7 +2747,79 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Sawmill",
     "lz": "Echo 4",
     "parentRegion": "Sawmill",
-    "minZoom": 17
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-6577",
+    "name": "Field Shelter",
+    "x": 10229,
+    "y": 2729,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Tiger Bay",
+    "lz": "Juliett 3",
+    "parentRegion": "Tiger Bay",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-6580",
+    "name": "Field Shelter",
+    "x": 9753,
+    "y": 3575,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Tiger Bay",
+    "lz": "Juliett 1",
+    "parentRegion": "Tiger Bay",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-6581",
+    "name": "Field Shelter",
+    "x": 9458,
+    "y": 3462,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Tiger Bay",
+    "lz": "Juliett 1",
+    "parentRegion": "Tiger Bay",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-6582",
+    "name": "Roadside Shed",
+    "x": 6313,
+    "y": 2821,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "YBL-1",
+    "lz": "Mike 2",
+    "parentRegion": "YBL-1",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-6583",
+    "name": "Makeshift Shack",
+    "x": 6394,
+    "y": 2743,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "YBL-1",
+    "lz": "Mike 2",
+    "parentRegion": "YBL-1",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-6595",
+    "name": "Remote Shelter",
+    "x": 4940,
+    "y": 2969,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Fort Narith",
+    "lz": "Delta 1",
+    "parentRegion": "Fort Narith",
+    "minZoom": 16.5
   },
   {
     "id": "sub-6585",
@@ -1930,7 +2831,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "YBL-1",
     "lz": "Mike 1",
     "parentRegion": "YBL-1",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-6592",
@@ -1942,7 +2843,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "YBL-1",
     "lz": "Mike 4",
     "parentRegion": "YBL-1",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-6594",
@@ -1966,7 +2867,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Sawmill",
     "lz": "Echo 1",
     "parentRegion": "Sawmill",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-6600",
@@ -1978,7 +2879,19 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Sawmill",
     "lz": "Echo 4",
     "parentRegion": "Sawmill",
-    "minZoom": 17
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-6604",
+    "name": "Trashed Campsite",
+    "x": 3348,
+    "y": 4348,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Sawmill",
+    "lz": "Echo 1",
+    "parentRegion": "Sawmill",
+    "minZoom": 16.5
   },
   {
     "id": "sub-6616",
@@ -1990,7 +2903,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Sawmill",
     "lz": "Echo 3",
     "parentRegion": "Sawmill",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-6623",
@@ -2002,7 +2915,31 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Sawmill",
     "lz": "Echo 4",
     "parentRegion": "Sawmill",
-    "minZoom": 17
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-4920",
+    "name": "Rest Point",
+    "x": 6356,
+    "y": 1550,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Nam Thaven",
+    "lz": "Bravo 2",
+    "parentRegion": "Nam Thaven",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-5579",
+    "name": "Campsite",
+    "x": 5556,
+    "y": 1981,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "YBL-1",
+    "lz": "Mike 3",
+    "parentRegion": "YBL-1",
+    "minZoom": 16.5
   },
   {
     "id": "sub-6599",
@@ -2017,6 +2954,42 @@ export const SUB_POIS_05: RawPoi05[] = [
     "minZoom": 16
   },
   {
+    "id": "sub-6608",
+    "name": "Rest Point",
+    "x": 3026,
+    "y": 4423,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Sawmill",
+    "lz": "Echo 1",
+    "parentRegion": "Sawmill",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-6615",
+    "name": "Derelict Shelter",
+    "x": 2899,
+    "y": 4480,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Sawmill",
+    "lz": "Echo 4",
+    "parentRegion": "Sawmill",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-6618",
+    "name": "Trashed Campsite",
+    "x": 3535,
+    "y": 5105,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Sawmill",
+    "lz": "Echo 1",
+    "parentRegion": "Sawmill",
+    "minZoom": 16.5
+  },
+  {
     "id": "sub-6619",
     "name": "Logging Area",
     "x": 2944,
@@ -2026,7 +2999,31 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Sawmill",
     "lz": "Echo 4",
     "parentRegion": "Sawmill",
-    "minZoom": 17
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-6620",
+    "name": "Derelict Shelter",
+    "x": 3007,
+    "y": 5210,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Sawmill",
+    "lz": "Echo 4",
+    "parentRegion": "Sawmill",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-6624",
+    "name": "Abandoned Shelter",
+    "x": 3364,
+    "y": 5712,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Sawmill",
+    "lz": "Charlie 1",
+    "parentRegion": "Sawmill",
+    "minZoom": 16.5
   },
   {
     "id": "sub-6603",
@@ -2038,7 +3035,55 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Sawmill",
     "lz": "Echo 1",
     "parentRegion": "Sawmill",
-    "minZoom": 17
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-6607",
+    "name": "Old Shelter",
+    "x": 3112,
+    "y": 4387,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Sawmill",
+    "lz": "Echo 1",
+    "parentRegion": "Sawmill",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-6621",
+    "name": "Ruined Shack",
+    "x": 2969,
+    "y": 5445,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Sawmill",
+    "lz": "Echo 4",
+    "parentRegion": "Sawmill",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-6629",
+    "name": "Trashed Campsite",
+    "x": 4375,
+    "y": 4892,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Sawmill",
+    "lz": "Echo 3",
+    "parentRegion": "Sawmill",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-6630",
+    "name": "Old Toolshed",
+    "x": 4510,
+    "y": 4875,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Sawmill",
+    "lz": "Echo 3",
+    "parentRegion": "Sawmill",
+    "minZoom": 16.5
   },
   {
     "id": "sub-6637",
@@ -2050,7 +3095,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Lakevale Sanctuary",
     "lz": "Sierra 2",
     "parentRegion": "Lakevale Sanctuary",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-6638",
@@ -2062,7 +3107,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Lakevale Sanctuary",
     "lz": "Sierra 1",
     "parentRegion": "Lakevale Sanctuary",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-6639",
@@ -2074,7 +3119,79 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Lakevale Sanctuary",
     "lz": "Sierra 1",
     "parentRegion": "Lakevale Sanctuary",
-    "minZoom": 17
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-6645",
+    "name": "Field Shelter",
+    "x": 9428,
+    "y": 3223,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Tiger Bay",
+    "lz": "Juliett 4",
+    "parentRegion": "Tiger Bay",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-6647",
+    "name": "Remote House",
+    "x": 10457,
+    "y": 4264,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Ban Pa",
+    "lz": "India 1",
+    "parentRegion": "Ban Pa",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-6648",
+    "name": "Riverside Shack",
+    "x": 10396,
+    "y": 4554,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Ban Pa",
+    "lz": "India 3",
+    "parentRegion": "Ban Pa",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-6652",
+    "name": "Ruined Shack",
+    "x": 11272,
+    "y": 4561,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Ban Pa",
+    "lz": "India 1",
+    "parentRegion": "Ban Pa",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-6656",
+    "name": "Ruined Shack",
+    "x": 11194,
+    "y": 4935,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Ban Pa",
+    "lz": "Oscar 1",
+    "parentRegion": "Ban Pa",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-5666",
+    "name": "Farm Shed",
+    "x": 10600,
+    "y": 5901,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Pha Lang",
+    "lz": "Alpha 1",
+    "parentRegion": "Pha Lang",
+    "minZoom": 16.5
   },
   {
     "id": "sub-2212",
@@ -2086,7 +3203,19 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Tiger Bay",
     "lz": "Juliett 3",
     "parentRegion": "Tiger Bay",
-    "minZoom": 17
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-6605",
+    "name": "Makeshift Shack",
+    "x": 3306,
+    "y": 4374,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Sawmill",
+    "lz": "Echo 1",
+    "parentRegion": "Sawmill",
+    "minZoom": 16.5
   },
   {
     "id": "sub-6606",
@@ -2110,7 +3239,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "RLSL-1 Radio Observatory",
     "lz": "Tango 2",
     "parentRegion": "RLSL-1 Radio Observatory",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-6609",
@@ -2122,7 +3251,19 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Sawmill",
     "lz": "Delta 4",
     "parentRegion": "Sawmill",
-    "minZoom": 17
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-6614",
+    "name": "Makeshift Shack",
+    "x": 3000,
+    "y": 4537,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Sawmill",
+    "lz": "Echo 4",
+    "parentRegion": "Sawmill",
+    "minZoom": 16.5
   },
   {
     "id": "sub-6633",
@@ -2161,6 +3302,42 @@ export const SUB_POIS_05: RawPoi05[] = [
     "minZoom": 16
   },
   {
+    "id": "sub-6610",
+    "name": "Secluded Shelter",
+    "x": 2963,
+    "y": 4147,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Sawmill",
+    "lz": "Echo 1",
+    "parentRegion": "Sawmill",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-6611",
+    "name": "Campsite",
+    "x": 2922,
+    "y": 4041,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Sawmill",
+    "lz": "Delta 4",
+    "parentRegion": "Sawmill",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-6612",
+    "name": "Campsite",
+    "x": 3537,
+    "y": 4505,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Sawmill",
+    "lz": "Echo 1",
+    "parentRegion": "Sawmill",
+    "minZoom": 16.5
+  },
+  {
     "id": "sub-6643",
     "name": "Electrical Substation",
     "x": 8283,
@@ -2173,6 +3350,18 @@ export const SUB_POIS_05: RawPoi05[] = [
     "minZoom": 16
   },
   {
+    "id": "sub-6646",
+    "name": "Field Shelter",
+    "x": 9664,
+    "y": 4210,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Ban Pa",
+    "lz": "Oscar 3",
+    "parentRegion": "Ban Pa",
+    "minZoom": 16.5
+  },
+  {
     "id": "sub-2471",
     "name": "Car Repair Shop",
     "x": 7051,
@@ -2182,7 +3371,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Nam Thaven",
     "lz": "Bravo 2",
     "parentRegion": "Nam Thaven",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-6613",
@@ -2194,7 +3383,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Sawmill",
     "lz": "Echo 1",
     "parentRegion": "Sawmill",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-6617",
@@ -2209,6 +3398,18 @@ export const SUB_POIS_05: RawPoi05[] = [
     "minZoom": 16
   },
   {
+    "id": "sub-6622",
+    "name": "Remote House",
+    "x": 3050,
+    "y": 5416,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Sawmill",
+    "lz": "Echo 4",
+    "parentRegion": "Sawmill",
+    "minZoom": 16.5
+  },
+  {
     "id": "sub-6626",
     "name": "Country House",
     "x": 4423,
@@ -2218,7 +3419,31 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Sawmill",
     "lz": "Romeo 1",
     "parentRegion": "Sawmill",
-    "minZoom": 17
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-6627",
+    "name": "Remote Dwelling",
+    "x": 4546,
+    "y": 5172,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Sawmill",
+    "lz": "Romeo 1",
+    "parentRegion": "Sawmill",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-6628",
+    "name": "Remote House",
+    "x": 4340,
+    "y": 5068,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Sawmill",
+    "lz": "Romeo 1",
+    "parentRegion": "Sawmill",
+    "minZoom": 16.5
   },
   {
     "id": "sub-6644",
@@ -2230,7 +3455,31 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Lakevale Sanctuary",
     "lz": "Sierra 1",
     "parentRegion": "Lakevale Sanctuary",
-    "minZoom": 17
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-6650",
+    "name": "Campsite",
+    "x": 10337,
+    "y": 4669,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Ban Pa",
+    "lz": "India 3",
+    "parentRegion": "Ban Pa",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-6649",
+    "name": "Secluded Shelter",
+    "x": 10466,
+    "y": 4487,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Ban Pa",
+    "lz": "India 1",
+    "parentRegion": "Ban Pa",
+    "minZoom": 16.5
   },
   {
     "id": "sub-6655",
@@ -2245,6 +3494,30 @@ export const SUB_POIS_05: RawPoi05[] = [
     "minZoom": 16
   },
   {
+    "id": "sub-6657",
+    "name": "Abandoned Shelter",
+    "x": 11044,
+    "y": 5012,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Ban Pa",
+    "lz": "Oscar 1",
+    "parentRegion": "Ban Pa",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-5667",
+    "name": "Roadside Shed",
+    "x": 10422,
+    "y": 5597,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Ban Pa",
+    "lz": "Oscar 1",
+    "parentRegion": "Ban Pa",
+    "minZoom": 16.5
+  },
+  {
     "id": "sub-3813",
     "name": "Warehouse",
     "x": 3694,
@@ -2257,6 +3530,18 @@ export const SUB_POIS_05: RawPoi05[] = [
     "minZoom": 16
   },
   {
+    "id": "sub-4927",
+    "name": "Farm House",
+    "x": 7146,
+    "y": 1462,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Nam Thaven",
+    "lz": "Bravo 2",
+    "parentRegion": "Nam Thaven",
+    "minZoom": 16.5
+  },
+  {
     "id": "sub-4936",
     "name": "Construction Site",
     "x": 7368,
@@ -2266,7 +3551,19 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Nam Thaven",
     "lz": "Bravo 2",
     "parentRegion": "Nam Thaven",
-    "minZoom": 17
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-4937",
+    "name": "Secluded Farm",
+    "x": 7629,
+    "y": 1542,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Nam Thaven",
+    "lz": "Bravo 1",
+    "parentRegion": "Nam Thaven",
+    "minZoom": 16.5
   },
   {
     "id": "sub-6634",
@@ -2278,7 +3575,19 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "RLSL-1 Radio Observatory",
     "lz": "Tango 1",
     "parentRegion": "RLSL-1 Radio Observatory",
-    "minZoom": 17
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-6664",
+    "name": "Campsite",
+    "x": 9504,
+    "y": 4669,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Ban Pa",
+    "lz": "Oscar 3",
+    "parentRegion": "Ban Pa",
+    "minZoom": 16.5
   },
   {
     "id": "sub-6640",
@@ -2290,7 +3599,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Lakevale Sanctuary",
     "lz": "Sierra 2",
     "parentRegion": "Lakevale Sanctuary",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-6642",
@@ -2302,7 +3611,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Lakevale Sanctuary",
     "lz": "Sierra 2",
     "parentRegion": "Lakevale Sanctuary",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-6651",
@@ -2314,7 +3623,55 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Ban Pa",
     "lz": "India 1",
     "parentRegion": "Ban Pa",
-    "minZoom": 17
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-6653",
+    "name": "Campsite",
+    "x": 11015,
+    "y": 4507,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Ban Pa",
+    "lz": "India 1",
+    "parentRegion": "Ban Pa",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-6654",
+    "name": "Derelict Shelter",
+    "x": 11072,
+    "y": 4698,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Ban Pa",
+    "lz": "India 1",
+    "parentRegion": "Ban Pa",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-6658",
+    "name": "Makeshift Shack",
+    "x": 10912,
+    "y": 5133,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Ban Pa",
+    "lz": "Oscar 1",
+    "parentRegion": "Ban Pa",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-6662",
+    "name": "Campsite",
+    "x": 9300,
+    "y": 5063,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Ban Pa",
+    "lz": "Oscar 2",
+    "parentRegion": "Ban Pa",
+    "minZoom": 16.5
   },
   {
     "id": "sub-2329",
@@ -2326,7 +3683,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Nam Thaven",
     "lz": "Bravo 2",
     "parentRegion": "Nam Thaven",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-315",
@@ -2338,7 +3695,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Nam Thaven",
     "lz": "Bravo 1",
     "parentRegion": "Nam Thaven",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-1621",
@@ -2350,7 +3707,43 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Sawmill",
     "lz": "Charlie 1",
     "parentRegion": "Sawmill",
-    "minZoom": 17
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-6663",
+    "name": "Trashed Campsite",
+    "x": 8944,
+    "y": 4935,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Ban Pa",
+    "lz": "Sierra 1",
+    "parentRegion": "Ban Pa",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-6665",
+    "name": "Field Shelter",
+    "x": 9865,
+    "y": 4543,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Ban Pa",
+    "lz": "Oscar 3",
+    "parentRegion": "Ban Pa",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-4276",
+    "name": "Crumbling Shelter",
+    "x": 9803,
+    "y": 4440,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Ban Pa",
+    "lz": "Oscar 3",
+    "parentRegion": "Ban Pa",
+    "minZoom": 16.5
   },
   {
     "id": "sub-407",
@@ -2389,6 +3782,18 @@ export const SUB_POIS_05: RawPoi05[] = [
     "minZoom": 16
   },
   {
+    "id": "sub-6659",
+    "name": "Rest Point",
+    "x": 10828,
+    "y": 5150,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Ban Pa",
+    "lz": "Oscar 1",
+    "parentRegion": "Ban Pa",
+    "minZoom": 16.5
+  },
+  {
     "id": "sub-6666",
     "name": "Drug Lab",
     "x": 9727,
@@ -2413,6 +3818,54 @@ export const SUB_POIS_05: RawPoi05[] = [
     "minZoom": 16
   },
   {
+    "id": "sub-6660",
+    "name": "Campsite",
+    "x": 10974,
+    "y": 5220,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Ban Pa",
+    "lz": "Oscar 1",
+    "parentRegion": "Ban Pa",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-6661",
+    "name": "Campsite",
+    "x": 10870,
+    "y": 5542,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Ban Pa",
+    "lz": "Oscar 1",
+    "parentRegion": "Ban Pa",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-4933",
+    "name": "Empty Villa",
+    "x": 7358,
+    "y": 1035,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Nam Thaven",
+    "lz": "Bravo 2",
+    "parentRegion": "Nam Thaven",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-4938",
+    "name": "Trashed Campsite",
+    "x": 7538,
+    "y": 1908,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Nam Thaven",
+    "lz": "Bravo 1",
+    "parentRegion": "Nam Thaven",
+    "minZoom": 16.5
+  },
+  {
     "id": "sub-2355",
     "name": "Lamput Gas Station",
     "x": 3805,
@@ -2434,7 +3887,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "YBL-1",
     "lz": "Lima 1",
     "parentRegion": "YBL-1",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-361",
@@ -2446,7 +3899,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Sawmill",
     "lz": "Echo 2",
     "parentRegion": "Sawmill",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-402",
@@ -2482,7 +3935,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Nam Thaven",
     "lz": "Bravo 1",
     "parentRegion": "Nam Thaven",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-404",
@@ -2530,7 +3983,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Tiger Bay",
     "lz": "India 2",
     "parentRegion": "Tiger Bay",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-327",
@@ -2545,6 +3998,30 @@ export const SUB_POIS_05: RawPoi05[] = [
     "minZoom": 16
   },
   {
+    "id": "sub-6679",
+    "name": "Trashed Campsite",
+    "x": 7184,
+    "y": 7274,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Midnight Sapphire",
+    "lz": "Hotel 1",
+    "parentRegion": "Midnight Sapphire",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-6685",
+    "name": "Roadside House",
+    "x": 6639,
+    "y": 6732,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Midnight Sapphire",
+    "lz": "Foxtrot 1",
+    "parentRegion": "Midnight Sapphire",
+    "minZoom": 16.5
+  },
+  {
     "id": "sub-326",
     "name": "Construction Site",
     "x": 4132,
@@ -2554,7 +4031,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Kiu Vongsa",
     "lz": "Charlie 2",
     "parentRegion": "Kiu Vongsa",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-323",
@@ -2569,6 +4046,42 @@ export const SUB_POIS_05: RawPoi05[] = [
     "minZoom": 16
   },
   {
+    "id": "sub-1247",
+    "name": "Checkpoint",
+    "x": 4139,
+    "y": 4093,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Sawmill",
+    "lz": "Echo 2",
+    "parentRegion": "Sawmill",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-6672",
+    "name": "Remote Outpost",
+    "x": 8882,
+    "y": 5532,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Pha Lang Airfield",
+    "lz": "Golf 2",
+    "parentRegion": "Pha Lang Airfield",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-6681",
+    "name": "Campsite",
+    "x": 6891,
+    "y": 7242,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Midnight Sapphire",
+    "lz": "Foxtrot 1",
+    "parentRegion": "Midnight Sapphire",
+    "minZoom": 16.5
+  },
+  {
     "id": "sub-6682",
     "name": "Logging Area",
     "x": 6527,
@@ -2578,7 +4091,19 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Midnight Sapphire",
     "lz": "Foxtrot 1",
     "parentRegion": "Midnight Sapphire",
-    "minZoom": 17
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-6683",
+    "name": "Makeshift Shack",
+    "x": 6632,
+    "y": 7062,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Midnight Sapphire",
+    "lz": "Foxtrot 1",
+    "parentRegion": "Midnight Sapphire",
+    "minZoom": 16.5
   },
   {
     "id": "sub-4946",
@@ -2590,7 +4115,19 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Nam Thaven",
     "lz": "Bravo 3",
     "parentRegion": "Nam Thaven",
-    "minZoom": 17
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-1246",
+    "name": "Checkpoint",
+    "x": 3880,
+    "y": 4702,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Sawmill",
+    "lz": "Echo 1",
+    "parentRegion": "Sawmill",
+    "minZoom": 16.5
   },
   {
     "id": "sub-2547",
@@ -2617,6 +4154,66 @@ export const SUB_POIS_05: RawPoi05[] = [
     "minZoom": 16
   },
   {
+    "id": "sub-6673",
+    "name": "Remote Farms",
+    "x": 7851,
+    "y": 5657,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Pha Lang Airfield",
+    "lz": "Golf 3",
+    "parentRegion": "Pha Lang Airfield",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-6676",
+    "name": "Lakeside Shack",
+    "x": 7500,
+    "y": 7138,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Midnight Sapphire",
+    "lz": "Hotel 1",
+    "parentRegion": "Midnight Sapphire",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-6677",
+    "name": "Old Shack",
+    "x": 7129,
+    "y": 7201,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Midnight Sapphire",
+    "lz": "Hotel 1",
+    "parentRegion": "Midnight Sapphire",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-6680",
+    "name": "Crumbling Shelter",
+    "x": 7061,
+    "y": 7301,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Midnight Sapphire",
+    "lz": "Hotel 1",
+    "parentRegion": "Midnight Sapphire",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-6684",
+    "name": "Secluded Shelter",
+    "x": 6610,
+    "y": 7136,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Midnight Sapphire",
+    "lz": "Foxtrot 1",
+    "parentRegion": "Midnight Sapphire",
+    "minZoom": 16.5
+  },
+  {
     "id": "sub-6686",
     "name": "Temple Ruins",
     "x": 7024,
@@ -2638,7 +4235,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Midnight Sapphire",
     "lz": "Hotel 3",
     "parentRegion": "Midnight Sapphire",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-359",
@@ -2698,7 +4295,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Nam Thaven",
     "lz": "Bravo 2",
     "parentRegion": "Nam Thaven",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-6687",
@@ -2725,6 +4322,18 @@ export const SUB_POIS_05: RawPoi05[] = [
     "minZoom": 16
   },
   {
+    "id": "sub-4939",
+    "name": "Roadside House",
+    "x": 7408,
+    "y": 2021,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Nam Thaven",
+    "lz": "Bravo 1",
+    "parentRegion": "Nam Thaven",
+    "minZoom": 16.5
+  },
+  {
     "id": "sub-2510",
     "name": "Tiger Bay Viewpoint",
     "x": 9195,
@@ -2734,7 +4343,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Ban Pa",
     "lz": "Juliett 1",
     "parentRegion": "Ban Pa",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-1260",
@@ -2746,7 +4355,31 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Hunter's Paradise",
     "lz": "Foxtrot 2",
     "parentRegion": "Hunter's Paradise",
-    "minZoom": 17
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-6675",
+    "name": "Rest Point",
+    "x": 7399,
+    "y": 7099,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Midnight Sapphire",
+    "lz": "Hotel 1",
+    "parentRegion": "Midnight Sapphire",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-6678",
+    "name": "Remote Outpost",
+    "x": 7216,
+    "y": 7182,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Midnight Sapphire",
+    "lz": "Hotel 1",
+    "parentRegion": "Midnight Sapphire",
+    "minZoom": 16.5
   },
   {
     "id": "sub-2296",
@@ -2758,7 +4391,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Nam Thaven",
     "lz": "Bravo 3",
     "parentRegion": "Nam Thaven",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-332",
@@ -2770,7 +4403,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Kiu Vongsa",
     "lz": "Charlie 2",
     "parentRegion": "Kiu Vongsa",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-2299",
@@ -2782,7 +4415,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Fort Narith",
     "lz": "Delta 2",
     "parentRegion": "Fort Narith",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-356",
@@ -2830,7 +4463,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Northern Reach",
     "lz": "Hotel 4",
     "parentRegion": "Northern Reach",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-6691",
@@ -2854,7 +4487,19 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Northern Reach",
     "lz": "Hotel 4",
     "parentRegion": "Northern Reach",
-    "minZoom": 17
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-6699",
+    "name": "Field Shelter",
+    "x": 5366,
+    "y": 5646,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Hunter's Paradise",
+    "lz": "Quebec 2",
+    "parentRegion": "Hunter's Paradise",
+    "minZoom": 16.5
   },
   {
     "id": "sub-6701",
@@ -2866,7 +4511,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Hunter's Paradise",
     "lz": "Quebec 1",
     "parentRegion": "Hunter's Paradise",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-409",
@@ -2914,7 +4559,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Northern Reach",
     "lz": "Hotel 2",
     "parentRegion": "Northern Reach",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-2822",
@@ -2929,6 +4574,18 @@ export const SUB_POIS_05: RawPoi05[] = [
     "minZoom": 16
   },
   {
+    "id": "sub-5984",
+    "name": "Remote Shelter",
+    "x": 4016,
+    "y": 5490,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Sawmill",
+    "lz": "Romeo 1",
+    "parentRegion": "Sawmill",
+    "minZoom": 16.5
+  },
+  {
     "id": "sub-6695",
     "name": "Canteen",
     "x": 7138,
@@ -2938,7 +4595,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Northern Reach",
     "lz": "Hotel 4",
     "parentRegion": "Northern Reach",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-6697",
@@ -2950,7 +4607,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Northern Reach",
     "lz": "Hotel 2",
     "parentRegion": "Northern Reach",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-6698",
@@ -2962,7 +4619,31 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Northern Reach",
     "lz": "Hotel 2",
     "parentRegion": "Northern Reach",
-    "minZoom": 17
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-6702",
+    "name": "Remote Outpost",
+    "x": 5502,
+    "y": 6059,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Hunter's Paradise",
+    "lz": "Foxtrot 3",
+    "parentRegion": "Hunter's Paradise",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-6704",
+    "name": "Derelict Shelter",
+    "x": 5035,
+    "y": 5187,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Hunter's Paradise",
+    "lz": "Quebec 2",
+    "parentRegion": "Hunter's Paradise",
+    "minZoom": 16.5
   },
   {
     "id": "sub-413",
@@ -2974,7 +4655,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Hunter's Paradise",
     "lz": "Foxtrot 1",
     "parentRegion": "Hunter's Paradise",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-1443",
@@ -2986,7 +4667,43 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Sawmill",
     "lz": "Charlie 1",
     "parentRegion": "Sawmill",
-    "minZoom": 17
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-5171",
+    "name": "Campsite",
+    "x": 7656,
+    "y": 6426,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Midnight Sapphire",
+    "lz": "Hotel 1",
+    "parentRegion": "Midnight Sapphire",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-6700",
+    "name": "Field Shelter",
+    "x": 4971,
+    "y": 5774,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Hunter's Paradise",
+    "lz": "Quebec 1",
+    "parentRegion": "Hunter's Paradise",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-6703",
+    "name": "Abandoned Shelter",
+    "x": 5116,
+    "y": 5151,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Hunter's Paradise",
+    "lz": "Quebec 2",
+    "parentRegion": "Hunter's Paradise",
+    "minZoom": 16.5
   },
   {
     "id": "sub-414",
@@ -3010,7 +4727,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "YBL-1",
     "lz": "Lima 1",
     "parentRegion": "YBL-1",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-1264",
@@ -3022,7 +4739,67 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "YBL-1",
     "lz": "Lima 1",
     "parentRegion": "YBL-1",
-    "minZoom": 17
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-5992",
+    "name": "Field Shelter",
+    "x": 3700,
+    "y": 2986,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Sawmill",
+    "lz": "Delta 3",
+    "parentRegion": "Sawmill",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-5993",
+    "name": "Trashed Campsite",
+    "x": 3705,
+    "y": 2852,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Sawmill",
+    "lz": "Delta 3",
+    "parentRegion": "Sawmill",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-4997",
+    "name": "Campsite",
+    "x": 8616,
+    "y": 6382,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Pha Lang Airfield",
+    "lz": "Papa 2",
+    "parentRegion": "Pha Lang Airfield",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-5322",
+    "name": "Rest Point",
+    "x": 5155,
+    "y": 5527,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Hunter's Paradise",
+    "lz": "Quebec 2",
+    "parentRegion": "Hunter's Paradise",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-5674",
+    "name": "Secluded Farm",
+    "x": 10850,
+    "y": 5836,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Ban Pa",
+    "lz": "Alpha 1",
+    "parentRegion": "Ban Pa",
+    "minZoom": 16.5
   },
   {
     "id": "sub-1250",
@@ -3034,19 +4811,19 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Tiger Bay",
     "lz": "Juliett 1",
     "parentRegion": "Tiger Bay",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
-    "id": "sub-2509",
-    "name": "Na Sok Farm",
-    "x": 6300,
-    "y": 6183,
+    "id": "sub-6038",
+    "name": "Remote Farms",
+    "x": 10005,
+    "y": 2603,
     "kind": "sublocation",
     "tier": "Compound",
-    "faction": "Hunter's Paradise",
-    "lz": "Hotel 3",
-    "parentRegion": "Hunter's Paradise",
-    "minZoom": 17
+    "faction": "Tiger Bay",
+    "lz": "Juliett 3",
+    "parentRegion": "Tiger Bay",
+    "minZoom": 16.5
   },
   {
     "id": "sub-5141",
@@ -3058,7 +4835,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Hunter's Paradise",
     "lz": "Hotel 3",
     "parentRegion": "Hunter's Paradise",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-388",
@@ -3070,7 +4847,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Blue Lagoon",
     "lz": "November 2",
     "parentRegion": "Blue Lagoon",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-5874",
@@ -3082,7 +4859,55 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Hunter's Paradise",
     "lz": "Charlie 3",
     "parentRegion": "Hunter's Paradise",
-    "minZoom": 17
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-2509",
+    "name": "Stash House",
+    "x": 6258,
+    "y": 6144,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Hunter's Paradise",
+    "lz": "Hotel 3",
+    "parentRegion": "Hunter's Paradise",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-5081",
+    "name": "Roadside House",
+    "x": 4280,
+    "y": 3350,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Fort Narith",
+    "lz": "Delta 2",
+    "parentRegion": "Fort Narith",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-5695",
+    "name": "Woodshed",
+    "x": 10513,
+    "y": 5321,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Ban Pa",
+    "lz": "Oscar 1",
+    "parentRegion": "Ban Pa",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-5143",
+    "name": "Remote Dwelling",
+    "x": 6401,
+    "y": 6576,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Hunter's Paradise",
+    "lz": "Foxtrot 1",
+    "parentRegion": "Hunter's Paradise",
+    "minZoom": 16.5
   },
   {
     "id": "sub-1265",
@@ -3106,7 +4931,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Sawmill",
     "lz": "Echo 4",
     "parentRegion": "Sawmill",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-564",
@@ -3118,7 +4943,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "YBL-1",
     "lz": "Lima 2",
     "parentRegion": "YBL-1",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-380",
@@ -3130,7 +4955,19 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "YBL-1",
     "lz": "Lima 1",
     "parentRegion": "YBL-1",
-    "minZoom": 17
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-6279",
+    "name": "Old Hut",
+    "x": 3624,
+    "y": 6743,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Kiu Vongsa",
+    "lz": "Charlie 2",
+    "parentRegion": "Kiu Vongsa",
+    "minZoom": 16.5
   },
   {
     "id": "sub-5560",
@@ -3142,7 +4979,79 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "YBL-1",
     "lz": "Mike 3",
     "parentRegion": "YBL-1",
-    "minZoom": 17
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-6282",
+    "name": "Rest Point",
+    "x": 3843,
+    "y": 6645,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Kiu Vongsa",
+    "lz": "Charlie 2",
+    "parentRegion": "Kiu Vongsa",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-6284",
+    "name": "Abandoned Shed",
+    "x": 4014,
+    "y": 6612,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Kiu Vongsa",
+    "lz": "Charlie 2",
+    "parentRegion": "Kiu Vongsa",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-6288",
+    "name": "Old Shelter",
+    "x": 4662,
+    "y": 6183,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Kiu Vongsa",
+    "lz": "Charlie 3",
+    "parentRegion": "Kiu Vongsa",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-6290",
+    "name": "Remote Dwelling",
+    "x": 4565,
+    "y": 6081,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Kiu Vongsa",
+    "lz": "Charlie 3",
+    "parentRegion": "Kiu Vongsa",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-6291",
+    "name": "Rest Point",
+    "x": 4229,
+    "y": 5742,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Kiu Vongsa",
+    "lz": "Charlie 1",
+    "parentRegion": "Kiu Vongsa",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-6274",
+    "name": "Empty Villa",
+    "x": 3625,
+    "y": 6925,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Kiu Vongsa",
+    "lz": "Charlie 2",
+    "parentRegion": "Kiu Vongsa",
+    "minZoom": 16.5
   },
   {
     "id": "sub-6281",
@@ -3154,7 +5063,31 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Kiu Vongsa",
     "lz": "Charlie 2",
     "parentRegion": "Kiu Vongsa",
-    "minZoom": 17
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-6283",
+    "name": "Farm House",
+    "x": 3897,
+    "y": 6586,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Kiu Vongsa",
+    "lz": "Charlie 2",
+    "parentRegion": "Kiu Vongsa",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-5584",
+    "name": "Remote House",
+    "x": 5355,
+    "y": 1771,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "YBL-1",
+    "lz": "Mike 3",
+    "parentRegion": "YBL-1",
+    "minZoom": 16.5
   },
   {
     "id": "sub-6273",
@@ -3166,7 +5099,19 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Kiu Vongsa",
     "lz": "Charlie 2",
     "parentRegion": "Kiu Vongsa",
-    "minZoom": 17
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-6278",
+    "name": "Empty Villa",
+    "x": 3474,
+    "y": 6777,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Kiu Vongsa",
+    "lz": "Charlie 2",
+    "parentRegion": "Kiu Vongsa",
+    "minZoom": 16.5
   },
   {
     "id": "sub-6280",
@@ -3178,7 +5123,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Kiu Vongsa",
     "lz": "Charlie 2",
     "parentRegion": "Kiu Vongsa",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-5762",
@@ -3190,7 +5135,19 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Ban Pa",
     "lz": "Juliett 4",
     "parentRegion": "Ban Pa",
-    "minZoom": 17
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-6295",
+    "name": "Remote House",
+    "x": 3633,
+    "y": 6150,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Kiu Vongsa",
+    "lz": "Charlie 1",
+    "parentRegion": "Kiu Vongsa",
+    "minZoom": 16.5
   },
   {
     "id": "sub-5067",
@@ -3214,7 +5171,31 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Blue Lagoon",
     "lz": "November 2",
     "parentRegion": "Blue Lagoon",
-    "minZoom": 17
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-5850",
+    "name": "Campsite",
+    "x": 8488,
+    "y": 5804,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Pha Lang Airfield",
+    "lz": "Golf 2",
+    "parentRegion": "Pha Lang Airfield",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-3817",
+    "name": "Lakeside Shack",
+    "x": 3285,
+    "y": 3435,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Sawmill",
+    "lz": "Delta 4",
+    "parentRegion": "Sawmill",
+    "minZoom": 16.5
   },
   {
     "id": "sub-2328",
@@ -3226,7 +5207,91 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Hunter's Paradise",
     "lz": "Quebec 3",
     "parentRegion": "Hunter's Paradise",
-    "minZoom": 17
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-5826",
+    "name": "Secluded Farm",
+    "x": 7015,
+    "y": 5621,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Pha Lang Airfield",
+    "lz": "Hotel 2",
+    "parentRegion": "Pha Lang Airfield",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-5833",
+    "name": "Field Shelter",
+    "x": 8299,
+    "y": 6574,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Pha Lang Airfield",
+    "lz": "Papa 3",
+    "parentRegion": "Pha Lang Airfield",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-5841",
+    "name": "Remote House",
+    "x": 9066,
+    "y": 5857,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Pha Lang Airfield",
+    "lz": "Papa 1",
+    "parentRegion": "Pha Lang Airfield",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-5843",
+    "name": "Campsite",
+    "x": 9007,
+    "y": 5332,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Pha Lang Airfield",
+    "lz": "Golf 2",
+    "parentRegion": "Pha Lang Airfield",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-5852",
+    "name": "Secluded Shelter",
+    "x": 8779,
+    "y": 6060,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Pha Lang Airfield",
+    "lz": "Papa 1",
+    "parentRegion": "Pha Lang Airfield",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-5857",
+    "name": "Field Shelter",
+    "x": 8300,
+    "y": 5340,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Pha Lang Airfield",
+    "lz": "Golf 2",
+    "parentRegion": "Pha Lang Airfield",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-5859",
+    "name": "Riverside Shack ",
+    "x": 8681,
+    "y": 5937,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Pha Lang Airfield",
+    "lz": "Papa 1",
+    "parentRegion": "Pha Lang Airfield",
+    "minZoom": 16.5
   },
   {
     "id": "sub-2298",
@@ -3241,6 +5306,18 @@ export const SUB_POIS_05: RawPoi05[] = [
     "minZoom": 16
   },
   {
+    "id": "sub-5559",
+    "name": "Rest Point",
+    "x": 4759,
+    "y": 2405,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "YBL-1",
+    "lz": "Delta 1",
+    "parentRegion": "YBL-1",
+    "minZoom": 16.5
+  },
+  {
     "id": "sub-4952",
     "name": "Farm",
     "x": 6814,
@@ -3250,7 +5327,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Nam Thaven",
     "lz": "Bravo 3",
     "parentRegion": "Nam Thaven",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-584",
@@ -3286,7 +5363,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Tiger Bay",
     "lz": "Juliett 3",
     "parentRegion": "Tiger Bay",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-2222",
@@ -3310,7 +5387,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Hunter's Paradise",
     "lz": "Foxtrot 2",
     "parentRegion": "Hunter's Paradise",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-582",
@@ -3370,7 +5447,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Kiu Vongsa",
     "lz": "Charlie 1",
     "parentRegion": "Kiu Vongsa",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-2876",
@@ -3382,7 +5459,19 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Kiu Vongsa",
     "lz": "Charlie 2",
     "parentRegion": "Kiu Vongsa",
-    "minZoom": 17
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-6497",
+    "name": "Rest Point",
+    "x": 10495,
+    "y": 6664,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Pha Lang",
+    "lz": "Alpha 1",
+    "parentRegion": "Pha Lang",
+    "minZoom": 16.5
   },
   {
     "id": "sub-2470",
@@ -3394,7 +5483,19 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Nam Thaven",
     "lz": "Bravo 3",
     "parentRegion": "Nam Thaven",
-    "minZoom": 17
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-5037",
+    "name": "Rest Point",
+    "x": 8017,
+    "y": 6492,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Pha Lang Airfield",
+    "lz": "Papa 3",
+    "parentRegion": "Pha Lang Airfield",
+    "minZoom": 16.5
   },
   {
     "id": "sub-2223",
@@ -3418,7 +5519,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Tiger Bay",
     "lz": "Juliett 2",
     "parentRegion": "Tiger Bay",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-2472",
@@ -3430,7 +5531,31 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Kiu Vongsa",
     "lz": "Charlie 3",
     "parentRegion": "Kiu Vongsa",
-    "minZoom": 17
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-2244",
+    "name": "Rest Point",
+    "x": 6131,
+    "y": 6901,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Hunter's Paradise",
+    "lz": "Foxtrot 1",
+    "parentRegion": "Hunter's Paradise",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-4910",
+    "name": "Campsite",
+    "x": 7736,
+    "y": 2371,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Nam Thaven",
+    "lz": "Bravo 1",
+    "parentRegion": "Nam Thaven",
+    "minZoom": 16.5
   },
   {
     "id": "sub-381",
@@ -3442,7 +5567,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "YBL-1",
     "lz": "Lima 1",
     "parentRegion": "YBL-1",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-410",
@@ -3469,6 +5594,18 @@ export const SUB_POIS_05: RawPoi05[] = [
     "minZoom": 16
   },
   {
+    "id": "sub-5849",
+    "name": "Abandoned Shelter",
+    "x": 8725,
+    "y": 5653,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Pha Lang Airfield",
+    "lz": "Golf 2",
+    "parentRegion": "Pha Lang Airfield",
+    "minZoom": 16.5
+  },
+  {
     "id": "sub-5750",
     "name": "Vacant Farm",
     "x": 9778,
@@ -3478,7 +5615,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Ban Pa",
     "lz": "Oscar 2",
     "parentRegion": "Ban Pa",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-5540",
@@ -3490,7 +5627,43 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "YBL-1",
     "lz": "Mike 1",
     "parentRegion": "YBL-1",
-    "minZoom": 17
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-5541",
+    "name": "Rest Point",
+    "x": 5942,
+    "y": 2261,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "YBL-1",
+    "lz": "Mike 1",
+    "parentRegion": "YBL-1",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-5546",
+    "name": "Roadside Shelter",
+    "x": 5759,
+    "y": 2826,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "YBL-1",
+    "lz": "Mike 2",
+    "parentRegion": "YBL-1",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-5550",
+    "name": "Remote Farms",
+    "x": 5531,
+    "y": 3100,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "YBL-1",
+    "lz": "Mike 4",
+    "parentRegion": "YBL-1",
+    "minZoom": 16.5
   },
   {
     "id": "sub-5563",
@@ -3502,7 +5675,43 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "YBL-1",
     "lz": "Lima 2",
     "parentRegion": "YBL-1",
-    "minZoom": 17
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-5565",
+    "name": "Roadside Shelter",
+    "x": 4372,
+    "y": 2486,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "YBL-1",
+    "lz": "Lima 1",
+    "parentRegion": "YBL-1",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-5556",
+    "name": "Secluded Farm",
+    "x": 4909,
+    "y": 2532,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "YBL-1",
+    "lz": "Delta 1",
+    "parentRegion": "YBL-1",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-5316",
+    "name": "Remote Shelter",
+    "x": 5132,
+    "y": 6550,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Hunter's Paradise",
+    "lz": "Quebec 1",
+    "parentRegion": "Hunter's Paradise",
+    "minZoom": 16.5
   },
   {
     "id": "sub-4280",
@@ -3529,6 +5738,18 @@ export const SUB_POIS_05: RawPoi05[] = [
     "minZoom": 16
   },
   {
+    "id": "sub-3174",
+    "name": "Secluded Farm",
+    "x": 6954,
+    "y": 2993,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "YBL-1",
+    "lz": "Bravo 3",
+    "parentRegion": "YBL-1",
+    "minZoom": 16.5
+  },
+  {
     "id": "sub-5694",
     "name": "Small Marketplace",
     "x": 10363,
@@ -3541,6 +5762,42 @@ export const SUB_POIS_05: RawPoi05[] = [
     "minZoom": 16
   },
   {
+    "id": "sub-5785",
+    "name": "Secluded Shelter",
+    "x": 9594,
+    "y": 6733,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Pha Lang Airfield",
+    "lz": "Alpha 2",
+    "parentRegion": "Pha Lang Airfield",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-5792",
+    "name": "Field Shelter",
+    "x": 9549,
+    "y": 6540,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Pha Lang Airfield",
+    "lz": "Alpha 2",
+    "parentRegion": "Pha Lang Airfield",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-3172",
+    "name": "Fishing Hut",
+    "x": 6538,
+    "y": 2655,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "YBL-1",
+    "lz": "Bravo 3",
+    "parentRegion": "YBL-1",
+    "minZoom": 16.5
+  },
+  {
     "id": "sub-387",
     "name": "Khonwan Village Checkpoint",
     "x": 8220,
@@ -3550,7 +5807,31 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Blue Lagoon",
     "lz": "November 1",
     "parentRegion": "Blue Lagoon",
-    "minZoom": 17
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-5571",
+    "name": "Secluded Shelter",
+    "x": 5604,
+    "y": 1908,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "YBL-1",
+    "lz": "Mike 3",
+    "parentRegion": "YBL-1",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-3173",
+    "name": "Woodshed",
+    "x": 6781,
+    "y": 2930,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "YBL-1",
+    "lz": "Bravo 3",
+    "parentRegion": "YBL-1",
+    "minZoom": 16.5
   },
   {
     "id": "sub-5577",
@@ -3562,7 +5843,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "YBL-1",
     "lz": "Mike 2",
     "parentRegion": "YBL-1",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-1249",
@@ -3574,7 +5855,19 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Ban Pa",
     "lz": "Oscar 2",
     "parentRegion": "Ban Pa",
-    "minZoom": 17
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-3177",
+    "name": "Field Shelter",
+    "x": 5748,
+    "y": 2606,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "YBL-1",
+    "lz": "Mike 2",
+    "parentRegion": "YBL-1",
+    "minZoom": 16.5
   },
   {
     "id": "sub-477",
@@ -3586,7 +5879,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Ban Pa",
     "lz": "Sierra 1",
     "parentRegion": "Ban Pa",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-5880",
@@ -3598,7 +5891,79 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Hunter's Paradise",
     "lz": "Quebec 2",
     "parentRegion": "Hunter's Paradise",
-    "minZoom": 17
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-5881",
+    "name": "Abandoned Shed",
+    "x": 5666,
+    "y": 5494,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Hunter's Paradise",
+    "lz": "Quebec 2",
+    "parentRegion": "Hunter's Paradise",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-5882",
+    "name": "Fishing Hut",
+    "x": 4943,
+    "y": 5474,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Hunter's Paradise",
+    "lz": "Quebec 1",
+    "parentRegion": "Hunter's Paradise",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-5321",
+    "name": "Rest Point",
+    "x": 4657,
+    "y": 5781,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Hunter's Paradise",
+    "lz": "Charlie 3",
+    "parentRegion": "Hunter's Paradise",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-5646",
+    "name": "Remote House",
+    "x": 7970,
+    "y": 1630,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Blue Lagoon",
+    "lz": "Bravo 1",
+    "parentRegion": "Blue Lagoon",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-5883",
+    "name": "Secluded Shelter",
+    "x": 5556,
+    "y": 5945,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Hunter's Paradise",
+    "lz": "Foxtrot 3",
+    "parentRegion": "Hunter's Paradise",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-5885",
+    "name": "Remote Shelter",
+    "x": 5769,
+    "y": 5645,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Hunter's Paradise",
+    "lz": "Quebec 3",
+    "parentRegion": "Hunter's Paradise",
+    "minZoom": 16.5
   },
   {
     "id": "sub-4099",
@@ -3610,7 +5975,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "YBL-1",
     "lz": "Mike 4",
     "parentRegion": "YBL-1",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-1362",
@@ -3622,7 +5987,19 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "YBL-1",
     "lz": "Lima 3",
     "parentRegion": "YBL-1",
-    "minZoom": 17
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-6287",
+    "name": "Remote Homestead",
+    "x": 4595,
+    "y": 6283,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Kiu Vongsa",
+    "lz": "Charlie 3",
+    "parentRegion": "Kiu Vongsa",
+    "minZoom": 16.5
   },
   {
     "id": "sub-6277",
@@ -3634,7 +6011,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Kiu Vongsa",
     "lz": "Charlie 2",
     "parentRegion": "Kiu Vongsa",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-5155",
@@ -3646,7 +6023,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Midnight Sapphire",
     "lz": "Hotel 3",
     "parentRegion": "Midnight Sapphire",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-6285",
@@ -3658,7 +6035,55 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Kiu Vongsa",
     "lz": "Charlie 2",
     "parentRegion": "Kiu Vongsa",
-    "minZoom": 17
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-6289",
+    "name": "Campsite",
+    "x": 4826,
+    "y": 6182,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Kiu Vongsa",
+    "lz": "Quebec 1",
+    "parentRegion": "Kiu Vongsa",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-6293",
+    "name": "Secluded Shelter",
+    "x": 3837,
+    "y": 6145,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Kiu Vongsa",
+    "lz": "Charlie 1",
+    "parentRegion": "Kiu Vongsa",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-4789",
+    "name": "Empty Villa",
+    "x": 7143,
+    "y": 1029,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Nam Thaven",
+    "lz": "Bravo 2",
+    "parentRegion": "Nam Thaven",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-6296",
+    "name": "Remote Dwelling",
+    "x": 3425,
+    "y": 6048,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Kiu Vongsa",
+    "lz": "Charlie 1",
+    "parentRegion": "Kiu Vongsa",
+    "minZoom": 16.5
   },
   {
     "id": "sub-3179",
@@ -3670,7 +6095,67 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Ban Pa",
     "lz": "India 3",
     "parentRegion": "Ban Pa",
-    "minZoom": 17
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-3176",
+    "name": "Old Hut",
+    "x": 5794,
+    "y": 2560,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "YBL-1",
+    "lz": "Mike 2",
+    "parentRegion": "YBL-1",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-6297",
+    "name": "Campsite",
+    "x": 3399,
+    "y": 6240,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Kiu Vongsa",
+    "lz": "Charlie 1",
+    "parentRegion": "Kiu Vongsa",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-5854",
+    "name": "Field Shelter",
+    "x": 8900,
+    "y": 6160,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Pha Lang Airfield",
+    "lz": "Papa 1",
+    "parentRegion": "Pha Lang Airfield",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-5834",
+    "name": "Remote House",
+    "x": 9461,
+    "y": 6688,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Pha Lang Airfield",
+    "lz": "Alpha 2",
+    "parentRegion": "Pha Lang Airfield",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-5848",
+    "name": "Farm Shed",
+    "x": 8849,
+    "y": 5670,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Pha Lang Airfield",
+    "lz": "Golf 2",
+    "parentRegion": "Pha Lang Airfield",
+    "minZoom": 16.5
   },
   {
     "id": "sub-2400",
@@ -3682,7 +6167,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Nam Thaven",
     "lz": "Bravo 2",
     "parentRegion": "Nam Thaven",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-311",
@@ -3707,6 +6192,126 @@ export const SUB_POIS_05: RawPoi05[] = [
     "lz": "Oscar 2",
     "parentRegion": "Ban Pa",
     "minZoom": 16
+  },
+  {
+    "id": "sub-5855",
+    "name": "Field Shelter",
+    "x": 8133,
+    "y": 5515,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Pha Lang Airfield",
+    "lz": "Golf 3",
+    "parentRegion": "Pha Lang Airfield",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-7268",
+    "name": "Trashed Campsite",
+    "x": 8505,
+    "y": 6247,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Pha Lang Airfield",
+    "lz": "Papa 3",
+    "parentRegion": "Pha Lang Airfield",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-5827",
+    "name": "Old Toolshed",
+    "x": 7104,
+    "y": 5833,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Pha Lang Airfield",
+    "lz": "Hotel 2",
+    "parentRegion": "Pha Lang Airfield",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-5828",
+    "name": "Field Shelter",
+    "x": 7249,
+    "y": 5814,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Pha Lang Airfield",
+    "lz": "Hotel 2",
+    "parentRegion": "Pha Lang Airfield",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-5837",
+    "name": "Abandoned Shelter",
+    "x": 9410,
+    "y": 6249,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Pha Lang Airfield",
+    "lz": "Alpha 2",
+    "parentRegion": "Pha Lang Airfield",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-5839",
+    "name": "Old Shack",
+    "x": 9507,
+    "y": 5794,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Pha Lang Airfield",
+    "lz": "Alpha 3",
+    "parentRegion": "Pha Lang Airfield",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-5856",
+    "name": "Old Shelter",
+    "x": 7952,
+    "y": 5442,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Pha Lang Airfield",
+    "lz": "Golf 3",
+    "parentRegion": "Pha Lang Airfield",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-5858",
+    "name": "Roadside Toolshed",
+    "x": 9151,
+    "y": 6155,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Pha Lang Airfield",
+    "lz": "Papa 1",
+    "parentRegion": "Pha Lang Airfield",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-5745",
+    "name": "Roadside House",
+    "x": 9815,
+    "y": 4122,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Ban Pa",
+    "lz": "Oscar 3",
+    "parentRegion": "Ban Pa",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-5752",
+    "name": "Rest Point",
+    "x": 10124,
+    "y": 4953,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Ban Pa",
+    "lz": "Oscar 1",
+    "parentRegion": "Ban Pa",
+    "minZoom": 16.5
   },
   {
     "id": "sub-5830",
@@ -3742,7 +6347,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Pha Lang Airfield",
     "lz": "Papa 2",
     "parentRegion": "Pha Lang Airfield",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-4935",
@@ -3754,7 +6359,31 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Nam Thaven",
     "lz": "Bravo 2",
     "parentRegion": "Nam Thaven",
-    "minZoom": 17
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-5832",
+    "name": "Roadside Shelter",
+    "x": 8018,
+    "y": 6291,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Pha Lang Airfield",
+    "lz": "Papa 3",
+    "parentRegion": "Pha Lang Airfield",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-5835",
+    "name": "Rest Point",
+    "x": 9316,
+    "y": 6571,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Pha Lang Airfield",
+    "lz": "Alpha 2",
+    "parentRegion": "Pha Lang Airfield",
+    "minZoom": 16.5
   },
   {
     "id": "sub-5838",
@@ -3766,7 +6395,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Pha Lang Airfield",
     "lz": "Papa 1",
     "parentRegion": "Pha Lang Airfield",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-5853",
@@ -3781,6 +6410,78 @@ export const SUB_POIS_05: RawPoi05[] = [
     "minZoom": 16
   },
   {
+    "id": "sub-5738",
+    "name": "Woodshed",
+    "x": 9645,
+    "y": 5585,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Ban Pa",
+    "lz": "Alpha 3",
+    "parentRegion": "Ban Pa",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-5743",
+    "name": "Crumbling Shelter",
+    "x": 9162,
+    "y": 4150,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Ban Pa",
+    "lz": "Oscar 3",
+    "parentRegion": "Ban Pa",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-5744",
+    "name": "Campsite",
+    "x": 9502,
+    "y": 4017,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Ban Pa",
+    "lz": "Oscar 3",
+    "parentRegion": "Ban Pa",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-5860",
+    "name": "Abandoned Shelter",
+    "x": 8029,
+    "y": 5640,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Pha Lang Airfield",
+    "lz": "Golf 3",
+    "parentRegion": "Pha Lang Airfield",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-5754",
+    "name": "Small Pier",
+    "x": 9997,
+    "y": 4859,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Ban Pa",
+    "lz": "Oscar 2",
+    "parentRegion": "Ban Pa",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-5542",
+    "name": "Abandoned Shack",
+    "x": 6244,
+    "y": 2382,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "YBL-1",
+    "lz": "Mike 1",
+    "parentRegion": "YBL-1",
+    "minZoom": 16.5
+  },
+  {
     "id": "sub-5554",
     "name": "Roadside Shack",
     "x": 5080,
@@ -3790,7 +6491,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "YBL-1",
     "lz": "Mike 4",
     "parentRegion": "YBL-1",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-5027",
@@ -3802,7 +6503,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Pha Lang Airfield",
     "lz": "Papa 3",
     "parentRegion": "Pha Lang Airfield",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-5626",
@@ -3814,7 +6515,19 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Blue Lagoon",
     "lz": "Bravo 1",
     "parentRegion": "Blue Lagoon",
-    "minZoom": 17
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-5641",
+    "name": "Remote Homestead",
+    "x": 9996,
+    "y": 1984,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Blue Lagoon",
+    "lz": "Kilo 1",
+    "parentRegion": "Blue Lagoon",
+    "minZoom": 16.5
   },
   {
     "id": "sub-5642",
@@ -3826,7 +6539,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Blue Lagoon",
     "lz": "Kilo 1",
     "parentRegion": "Blue Lagoon",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-3153",
@@ -3838,7 +6551,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Hunter's Paradise",
     "lz": "Foxtrot 3",
     "parentRegion": "Hunter's Paradise",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-2309",
@@ -3850,7 +6563,19 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Hunter's Paradise",
     "lz": "Quebec 1",
     "parentRegion": "Hunter's Paradise",
-    "minZoom": 17
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-5324",
+    "name": "Abandoned Shack",
+    "x": 4881,
+    "y": 5236,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Hunter's Paradise",
+    "lz": "Quebec 2",
+    "parentRegion": "Hunter's Paradise",
+    "minZoom": 16.5
   },
   {
     "id": "sub-5326",
@@ -3862,7 +6587,19 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Hunter's Paradise",
     "lz": "Quebec 2",
     "parentRegion": "Hunter's Paradise",
-    "minZoom": 17
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-5330",
+    "name": "Field Shelter",
+    "x": 5460,
+    "y": 5475,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Hunter's Paradise",
+    "lz": "Quebec 2",
+    "parentRegion": "Hunter's Paradise",
+    "minZoom": 16.5
   },
   {
     "id": "sub-5617",
@@ -3874,7 +6611,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Blue Lagoon",
     "lz": "Bravo 3",
     "parentRegion": "Blue Lagoon",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-5625",
@@ -3886,7 +6623,139 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Blue Lagoon",
     "lz": "Bravo 1",
     "parentRegion": "Blue Lagoon",
-    "minZoom": 17
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-5632",
+    "name": "Riverside Shack",
+    "x": 8146,
+    "y": 2652,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Blue Lagoon",
+    "lz": "November 1",
+    "parentRegion": "Blue Lagoon",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-5627",
+    "name": "Old Shelter",
+    "x": 8105,
+    "y": 1791,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Blue Lagoon",
+    "lz": "Bravo 1",
+    "parentRegion": "Blue Lagoon",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-5304",
+    "name": "Abandoned Shack",
+    "x": 6309,
+    "y": 5865,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Hunter's Paradise",
+    "lz": "Quebec 3",
+    "parentRegion": "Hunter's Paradise",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-5305",
+    "name": "Secluded Shelter",
+    "x": 6195,
+    "y": 5906,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Hunter's Paradise",
+    "lz": "Quebec 3",
+    "parentRegion": "Hunter's Paradise",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-5547",
+    "name": "Makeshift Shack",
+    "x": 5812,
+    "y": 2793,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "YBL-1",
+    "lz": "Mike 2",
+    "parentRegion": "YBL-1",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-5548",
+    "name": "Trashed Campsite",
+    "x": 5410,
+    "y": 2482,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "YBL-1",
+    "lz": "Mike 2",
+    "parentRegion": "YBL-1",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-5555",
+    "name": "Field Shelter",
+    "x": 5144,
+    "y": 2876,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "YBL-1",
+    "lz": "Delta 1",
+    "parentRegion": "YBL-1",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-2971",
+    "name": "Campsite",
+    "x": 4988,
+    "y": 6967,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Hunter's Paradise",
+    "lz": "Foxtrot 2",
+    "parentRegion": "Hunter's Paradise",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-5634",
+    "name": "Remote Shelter",
+    "x": 8777,
+    "y": 2937,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Blue Lagoon",
+    "lz": "Juliett 4",
+    "parentRegion": "Blue Lagoon",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-5551",
+    "name": "Woodshed",
+    "x": 5761,
+    "y": 3312,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "YBL-1",
+    "lz": "Mike 4",
+    "parentRegion": "YBL-1",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-5026",
+    "name": "Old Toolshed",
+    "x": 8367,
+    "y": 6085,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Pha Lang Airfield",
+    "lz": "Papa 3",
+    "parentRegion": "Pha Lang Airfield",
+    "minZoom": 16.5
   },
   {
     "id": "sub-5030",
@@ -3898,7 +6767,31 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Pha Lang Airfield",
     "lz": "Golf 1",
     "parentRegion": "Pha Lang Airfield",
-    "minZoom": 17
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-5029",
+    "name": "Roadside Shed",
+    "x": 8031,
+    "y": 6052,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Pha Lang Airfield",
+    "lz": "Papa 3",
+    "parentRegion": "Pha Lang Airfield",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-5552",
+    "name": "Campsite",
+    "x": 5398,
+    "y": 3421,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "YBL-1",
+    "lz": "Mike 4",
+    "parentRegion": "YBL-1",
+    "minZoom": 16.5
   },
   {
     "id": "sub-2236",
@@ -3910,7 +6803,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Pha Lang Airfield",
     "lz": "Golf 3",
     "parentRegion": "Pha Lang Airfield",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-2240",
@@ -3922,7 +6815,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Midnight Sapphire",
     "lz": "Hotel 1",
     "parentRegion": "Midnight Sapphire",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-1245",
@@ -3934,7 +6827,19 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Midnight Sapphire",
     "lz": "Hotel 3",
     "parentRegion": "Midnight Sapphire",
-    "minZoom": 17
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-5033",
+    "name": "Abandoned Shelter",
+    "x": 8140,
+    "y": 6443,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Pha Lang Airfield",
+    "lz": "Papa 3",
+    "parentRegion": "Pha Lang Airfield",
+    "minZoom": 16.5
   },
   {
     "id": "sub-501",
@@ -3946,7 +6851,151 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Ban Pa",
     "lz": "Oscar 1",
     "parentRegion": "Ban Pa",
-    "minZoom": 17
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-5696",
+    "name": "Remote Homestead",
+    "x": 10783,
+    "y": 5407,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Ban Pa",
+    "lz": "Oscar 1",
+    "parentRegion": "Ban Pa",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-1248",
+    "name": "Campsite",
+    "x": 8624,
+    "y": 3219,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Blue Lagoon",
+    "lz": "Juliett 4",
+    "parentRegion": "Blue Lagoon",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-5557",
+    "name": "Rest Point",
+    "x": 4641,
+    "y": 2441,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "YBL-1",
+    "lz": "Delta 1",
+    "parentRegion": "YBL-1",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-5618",
+    "name": "Remote Shelter",
+    "x": 7537,
+    "y": 3062,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Blue Lagoon",
+    "lz": "November 1",
+    "parentRegion": "Blue Lagoon",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-3384",
+    "name": "Secluded Farm",
+    "x": 4888,
+    "y": 1778,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "YBL-1",
+    "lz": "Lima 2",
+    "parentRegion": "YBL-1",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-5619",
+    "name": "Secluded Farm",
+    "x": 7284,
+    "y": 2961,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Blue Lagoon",
+    "lz": "Bravo 3",
+    "parentRegion": "Blue Lagoon",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-5622",
+    "name": "Campsite",
+    "x": 7938,
+    "y": 2510,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Blue Lagoon",
+    "lz": "November 1",
+    "parentRegion": "Blue Lagoon",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-5624",
+    "name": "Field Shelter",
+    "x": 7993,
+    "y": 2213,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Blue Lagoon",
+    "lz": "November 1",
+    "parentRegion": "Blue Lagoon",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-5319",
+    "name": "Remote House",
+    "x": 5069,
+    "y": 6118,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Hunter's Paradise",
+    "lz": "Quebec 1",
+    "parentRegion": "Hunter's Paradise",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-5044",
+    "name": "Campsite",
+    "x": 8422,
+    "y": 2055,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Blue Lagoon",
+    "lz": "November 2",
+    "parentRegion": "Blue Lagoon",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-5306",
+    "name": "Field Shelter",
+    "x": 6048,
+    "y": 5852,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Hunter's Paradise",
+    "lz": "Quebec 3",
+    "parentRegion": "Hunter's Paradise",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-5628",
+    "name": "Lakeside Shack",
+    "x": 8207,
+    "y": 1941,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Blue Lagoon",
+    "lz": "Bravo 1",
+    "parentRegion": "Blue Lagoon",
+    "minZoom": 16.5
   },
   {
     "id": "sub-5631",
@@ -3958,7 +7007,55 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Blue Lagoon",
     "lz": "November 1",
     "parentRegion": "Blue Lagoon",
-    "minZoom": 17
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-5314",
+    "name": "Old House",
+    "x": 4338,
+    "y": 6954,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Hunter's Paradise",
+    "lz": "Charlie 2",
+    "parentRegion": "Hunter's Paradise",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-5315",
+    "name": "Roadside Shelter",
+    "x": 4831,
+    "y": 6455,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Hunter's Paradise",
+    "lz": "Quebec 1",
+    "parentRegion": "Hunter's Paradise",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-5320",
+    "name": "Campsite",
+    "x": 5067,
+    "y": 5800,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Hunter's Paradise",
+    "lz": "Quebec 1",
+    "parentRegion": "Hunter's Paradise",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-5331",
+    "name": "Ruined Shack",
+    "x": 5847,
+    "y": 5307,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Hunter's Paradise",
+    "lz": "Quebec 2",
+    "parentRegion": "Hunter's Paradise",
+    "minZoom": 16.5
   },
   {
     "id": "sub-5332",
@@ -3970,7 +7067,43 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Hunter's Paradise",
     "lz": "Quebec 2",
     "parentRegion": "Hunter's Paradise",
-    "minZoom": 17
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-5741",
+    "name": "Old Toolshed",
+    "x": 9410,
+    "y": 4198,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Ban Pa",
+    "lz": "Oscar 3",
+    "parentRegion": "Ban Pa",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-5329",
+    "name": "Old Shelter",
+    "x": 5678,
+    "y": 5143,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Hunter's Paradise",
+    "lz": "Quebec 2",
+    "parentRegion": "Hunter's Paradise",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-5310",
+    "name": "Abandoned Shack",
+    "x": 6135,
+    "y": 6650,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Hunter's Paradise",
+    "lz": "Foxtrot 1",
+    "parentRegion": "Hunter's Paradise",
+    "minZoom": 16.5
   },
   {
     "id": "sub-5317",
@@ -3982,7 +7115,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Hunter's Paradise",
     "lz": "Quebec 1",
     "parentRegion": "Hunter's Paradise",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-2215",
@@ -3994,7 +7127,43 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Ban Pa",
     "lz": "India 1",
     "parentRegion": "Ban Pa",
-    "minZoom": 17
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-4957",
+    "name": "Old Shack",
+    "x": 6481,
+    "y": 1757,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Nam Thaven",
+    "lz": "Bravo 2",
+    "parentRegion": "Nam Thaven",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-3815",
+    "name": "Old Hut",
+    "x": 3437,
+    "y": 3651,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Sawmill",
+    "lz": "Delta 4",
+    "parentRegion": "Sawmill",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-4929",
+    "name": "Makeshift Shack",
+    "x": 6710,
+    "y": 1455,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Nam Thaven",
+    "lz": "Bravo 2",
+    "parentRegion": "Nam Thaven",
+    "minZoom": 16.5
   },
   {
     "id": "sub-2228",
@@ -4006,7 +7175,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Ban Pa",
     "lz": "Oscar 1",
     "parentRegion": "Ban Pa",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-2234",
@@ -4018,7 +7187,31 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Pha Lang Airfield",
     "lz": "Papa 1",
     "parentRegion": "Pha Lang Airfield",
-    "minZoom": 17
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-4916",
+    "name": "Remote Homestead",
+    "x": 6496,
+    "y": 1347,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Nam Thaven",
+    "lz": "Bravo 2",
+    "parentRegion": "Nam Thaven",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-4928",
+    "name": "Farm Shed",
+    "x": 7044,
+    "y": 1515,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Nam Thaven",
+    "lz": "Bravo 2",
+    "parentRegion": "Nam Thaven",
+    "minZoom": 16.5
   },
   {
     "id": "sub-2267",
@@ -4030,7 +7223,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Pha Lang Airfield",
     "lz": "Oscar 2",
     "parentRegion": "Pha Lang Airfield",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-3119",
@@ -4042,7 +7235,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Pha Lang Airfield",
     "lz": "Golf 3",
     "parentRegion": "Pha Lang Airfield",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-2688",
@@ -4066,7 +7259,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Sawmill",
     "lz": "Echo 3",
     "parentRegion": "Sawmill",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-2318",
@@ -4078,7 +7271,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Sawmill",
     "lz": "Echo 4",
     "parentRegion": "Sawmill",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-5183",
@@ -4090,7 +7283,43 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Midnight Sapphire",
     "lz": "Hotel 1",
     "parentRegion": "Midnight Sapphire",
-    "minZoom": 17
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-4930",
+    "name": "Makeshift Shack",
+    "x": 6737,
+    "y": 1272,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Nam Thaven",
+    "lz": "Bravo 2",
+    "parentRegion": "Nam Thaven",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-4931",
+    "name": "Old Shack",
+    "x": 6899,
+    "y": 1281,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Nam Thaven",
+    "lz": "Bravo 2",
+    "parentRegion": "Nam Thaven",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-5668",
+    "name": "Remote Shelter",
+    "x": 10544,
+    "y": 5515,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Ban Pa",
+    "lz": "Oscar 1",
+    "parentRegion": "Ban Pa",
+    "minZoom": 16.5
   },
   {
     "id": "sub-3558",
@@ -4102,7 +7331,31 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Blue Lagoon",
     "lz": "Kilo 3",
     "parentRegion": "Blue Lagoon",
-    "minZoom": 17
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-5673",
+    "name": "Field Shelter",
+    "x": 10856,
+    "y": 6161,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Pha Lang",
+    "lz": "Alpha 1",
+    "parentRegion": "Pha Lang",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-4932",
+    "name": "Empty Villa",
+    "x": 7355,
+    "y": 950,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Nam Thaven",
+    "lz": "Bravo 2",
+    "parentRegion": "Nam Thaven",
+    "minZoom": 16.5
   },
   {
     "id": "sub-5977",
@@ -4114,7 +7367,43 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Sawmill",
     "lz": "Romeo 1",
     "parentRegion": "Sawmill",
-    "minZoom": 17
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-5980",
+    "name": "Roadside Shed",
+    "x": 4196,
+    "y": 5163,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Sawmill",
+    "lz": "Romeo 1",
+    "parentRegion": "Sawmill",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-5988",
+    "name": "Campsite",
+    "x": 2799,
+    "y": 5688,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Sawmill",
+    "lz": "Echo 4",
+    "parentRegion": "Sawmill",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-5989",
+    "name": "Fishing Hut",
+    "x": 2563,
+    "y": 5313,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Sawmill",
+    "lz": "Echo 4",
+    "parentRegion": "Sawmill",
+    "minZoom": 16.5
   },
   {
     "id": "sub-329",
@@ -4126,7 +7415,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Kiu Vongsa",
     "lz": "Charlie 1",
     "parentRegion": "Kiu Vongsa",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-393",
@@ -4138,7 +7427,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Tiger Bay",
     "lz": "Juliett 3",
     "parentRegion": "Tiger Bay",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-319",
@@ -4150,7 +7439,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Nam Thaven",
     "lz": "Bravo 1",
     "parentRegion": "Nam Thaven",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-2310",
@@ -4162,7 +7451,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Hunter's Paradise",
     "lz": "Quebec 1",
     "parentRegion": "Hunter's Paradise",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-321",
@@ -4186,7 +7475,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "YBL-1",
     "lz": "Lima 2",
     "parentRegion": "YBL-1",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-2294",
@@ -4198,7 +7487,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "YBL-1",
     "lz": "Mike 3",
     "parentRegion": "YBL-1",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-1307",
@@ -4210,7 +7499,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Tiger Bay",
     "lz": "Juliett 2",
     "parentRegion": "Tiger Bay",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-2311",
@@ -4222,7 +7511,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Kiu Vongsa",
     "lz": "Quebec 1",
     "parentRegion": "Kiu Vongsa",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-2738",
@@ -4234,7 +7523,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Kiu Vongsa",
     "lz": "Charlie 2",
     "parentRegion": "Kiu Vongsa",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-5045",
@@ -4246,7 +7535,31 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Hunter's Paradise",
     "lz": "Quebec 1",
     "parentRegion": "Hunter's Paradise",
-    "minZoom": 17
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-5046",
+    "name": "Woodshed",
+    "x": 4402,
+    "y": 3777,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Sawmill",
+    "lz": "Delta 2",
+    "parentRegion": "Sawmill",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-5572",
+    "name": "Roadside Shelter",
+    "x": 5901,
+    "y": 1926,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "YBL-1",
+    "lz": "Mike 1",
+    "parentRegion": "YBL-1",
+    "minZoom": 16.5
   },
   {
     "id": "sub-2867",
@@ -4258,7 +7571,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Tiger Bay",
     "lz": "Juliett 3",
     "parentRegion": "Tiger Bay",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-2866",
@@ -4270,7 +7583,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Tiger Bay",
     "lz": "Juliett 3",
     "parentRegion": "Tiger Bay",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-2868",
@@ -4294,7 +7607,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Blue Lagoon",
     "lz": "November 1",
     "parentRegion": "Blue Lagoon",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-358",
@@ -4309,6 +7622,18 @@ export const SUB_POIS_05: RawPoi05[] = [
     "minZoom": 16
   },
   {
+    "id": "sub-5047",
+    "name": "Rest Point",
+    "x": 9801,
+    "y": 5493,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Ban Pa",
+    "lz": "Alpha 3",
+    "parentRegion": "Ban Pa",
+    "minZoom": 16.5
+  },
+  {
     "id": "sub-1365",
     "name": "LLA Outpost",
     "x": 6590,
@@ -4318,7 +7643,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Midnight Sapphire",
     "lz": "Hotel 3",
     "parentRegion": "Midnight Sapphire",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-1363",
@@ -4330,7 +7655,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Ban Pa",
     "lz": "India 1",
     "parentRegion": "Ban Pa",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-2312",
@@ -4354,7 +7679,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Tiger Bay",
     "lz": "Juliett 4",
     "parentRegion": "Tiger Bay",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-1259",
@@ -4366,7 +7691,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Hunter's Paradise",
     "lz": "Foxtrot 2",
     "parentRegion": "Hunter's Paradise",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-5793",
@@ -4378,7 +7703,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Pha Lang Airfield",
     "lz": "Alpha 2",
     "parentRegion": "Pha Lang Airfield",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-5574",
@@ -4390,7 +7715,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "YBL-1",
     "lz": "Mike 1",
     "parentRegion": "YBL-1",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-2286",
@@ -4405,6 +7730,18 @@ export const SUB_POIS_05: RawPoi05[] = [
     "minZoom": 16
   },
   {
+    "id": "sub-1261",
+    "name": "Old Hut",
+    "x": 5609,
+    "y": 6470,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Hunter's Paradise",
+    "lz": "Foxtrot 3",
+    "parentRegion": "Hunter's Paradise",
+    "minZoom": 16.5
+  },
+  {
     "id": "sub-2303",
     "name": "Vista Ridge Stop",
     "x": 8380,
@@ -4414,7 +7751,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Blue Lagoon",
     "lz": "November 2",
     "parentRegion": "Blue Lagoon",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-1253",
@@ -4429,6 +7766,18 @@ export const SUB_POIS_05: RawPoi05[] = [
     "minZoom": 16
   },
   {
+    "id": "sub-5239",
+    "name": "Secluded Shelter",
+    "x": 4849,
+    "y": 6023,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Kiu Vongsa",
+    "lz": "Quebec 1",
+    "parentRegion": "Kiu Vongsa",
+    "minZoom": 16.5
+  },
+  {
     "id": "sub-2291",
     "name": "Donghieng Trail",
     "x": 3400,
@@ -4438,7 +7787,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "YBL-1",
     "lz": "Lima 3",
     "parentRegion": "YBL-1",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-392",
@@ -4450,7 +7799,19 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Tiger Bay",
     "lz": "Juliett 3",
     "parentRegion": "Tiger Bay",
-    "minZoom": 17
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-5578",
+    "name": "Riverside Shack",
+    "x": 6042,
+    "y": 3144,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "YBL-1",
+    "lz": "Mike 2",
+    "parentRegion": "YBL-1",
+    "minZoom": 16.5
   },
   {
     "id": "sub-1262",
@@ -4462,7 +7823,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Hunter's Paradise",
     "lz": "Foxtrot 1",
     "parentRegion": "Hunter's Paradise",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-2297",
@@ -4498,7 +7859,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "YBL-1",
     "lz": "Mike 3",
     "parentRegion": "YBL-1",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-310",
@@ -4513,6 +7874,18 @@ export const SUB_POIS_05: RawPoi05[] = [
     "minZoom": 16
   },
   {
+    "id": "sub-389",
+    "name": "Abandoned Shack",
+    "x": 10439,
+    "y": 1624,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Blue Lagoon",
+    "lz": "Kilo 1",
+    "parentRegion": "Blue Lagoon",
+    "minZoom": 16.5
+  },
+  {
     "id": "sub-2295",
     "name": "Tim Thaven Lake",
     "x": 6244,
@@ -4523,6 +7896,18 @@ export const SUB_POIS_05: RawPoi05[] = [
     "lz": "Mike 1",
     "parentRegion": "YBL-1",
     "minZoom": 16
+  },
+  {
+    "id": "sub-5876",
+    "name": "Field Shelter",
+    "x": 5192,
+    "y": 6792,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Hunter's Paradise",
+    "lz": "Foxtrot 2",
+    "parentRegion": "Hunter's Paradise",
+    "minZoom": 16.5
   },
   {
     "id": "sub-488",
@@ -4558,7 +7943,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Midnight Sapphire",
     "lz": "Hotel 1",
     "parentRegion": "Midnight Sapphire",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-406",
@@ -4570,7 +7955,19 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Midnight Sapphire",
     "lz": "Hotel 1",
     "parentRegion": "Midnight Sapphire",
-    "minZoom": 17
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-5979",
+    "name": "Campsite",
+    "x": 4726,
+    "y": 4329,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Sawmill",
+    "lz": "Tango 2",
+    "parentRegion": "Sawmill",
+    "minZoom": 16.5
   },
   {
     "id": "sub-415",
@@ -4582,7 +7979,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Hunter's Paradise",
     "lz": "Foxtrot 2",
     "parentRegion": "Hunter's Paradise",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-2213",
@@ -4594,7 +7991,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Tiger Bay",
     "lz": "Juliett 3",
     "parentRegion": "Tiger Bay",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-476",
@@ -4606,7 +8003,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Ground Zero",
     "lz": "Mike 4",
     "parentRegion": "Ground Zero",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-1698",
@@ -4618,7 +8015,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Nam Thaven",
     "lz": "Bravo 2",
     "parentRegion": "Nam Thaven",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-1699",
@@ -4630,7 +8027,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Nam Thaven",
     "lz": "Bravo 2",
     "parentRegion": "Nam Thaven",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-2316",
@@ -4645,6 +8042,18 @@ export const SUB_POIS_05: RawPoi05[] = [
     "minZoom": 16
   },
   {
+    "id": "sub-4951",
+    "name": "Lonely House",
+    "x": 6966,
+    "y": 2265,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Nam Thaven",
+    "lz": "Bravo 3",
+    "parentRegion": "Nam Thaven",
+    "minZoom": 16.5
+  },
+  {
     "id": "sub-478",
     "name": "LAF Checkpoint",
     "x": 7618,
@@ -4654,7 +8063,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Northern Reach",
     "lz": "Hotel 4",
     "parentRegion": "Northern Reach",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-884",
@@ -4666,7 +8075,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Sawmill",
     "lz": "Echo 4",
     "parentRegion": "Sawmill",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-1266",
@@ -4678,7 +8087,19 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Blue Lagoon",
     "lz": "Kilo 1",
     "parentRegion": "Blue Lagoon",
-    "minZoom": 17
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-5878",
+    "name": "Secluded Shelter",
+    "x": 4852,
+    "y": 7086,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Hunter's Paradise",
+    "lz": "Charlie 2",
+    "parentRegion": "Hunter's Paradise",
+    "minZoom": 16.5
   },
   {
     "id": "sub-489",
@@ -4690,7 +8111,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Ban Pa",
     "lz": "India 2",
     "parentRegion": "Ban Pa",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-490",
@@ -4702,7 +8123,31 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Ban Pa",
     "lz": "India 2",
     "parentRegion": "Ban Pa",
-    "minZoom": 17
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-5981",
+    "name": "Old Toolshed",
+    "x": 4205,
+    "y": 5394,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Sawmill",
+    "lz": "Romeo 1",
+    "parentRegion": "Sawmill",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-5985",
+    "name": "Roadside Shelter",
+    "x": 3374,
+    "y": 5522,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Sawmill",
+    "lz": "Charlie 1",
+    "parentRegion": "Sawmill",
+    "minZoom": 16.5
   },
   {
     "id": "sub-331",
@@ -4714,7 +8159,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Kiu Vongsa",
     "lz": "Charlie 1",
     "parentRegion": "Kiu Vongsa",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-581",
@@ -4750,7 +8195,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Tiger Bay",
     "lz": "Juliett 1",
     "parentRegion": "Tiger Bay",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-585",
@@ -4762,7 +8207,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Tiger Bay",
     "lz": "Juliett 2",
     "parentRegion": "Tiger Bay",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-590",
@@ -4774,7 +8219,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Tiger Bay",
     "lz": "India 2",
     "parentRegion": "Tiger Bay",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-1257",
@@ -4786,7 +8231,19 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Lakevale Sanctuary",
     "lz": "Sierra 2",
     "parentRegion": "Lakevale Sanctuary",
-    "minZoom": 17
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-4958",
+    "name": "Woodshed",
+    "x": 6646,
+    "y": 1763,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Nam Thaven",
+    "lz": "Bravo 2",
+    "parentRegion": "Nam Thaven",
+    "minZoom": 16.5
   },
   {
     "id": "sub-2354",
@@ -4798,7 +8255,19 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "YBL-1",
     "lz": "Lima 1",
     "parentRegion": "YBL-1",
-    "minZoom": 17
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-5175",
+    "name": "Secluded Shelter",
+    "x": 7277,
+    "y": 5952,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Midnight Sapphire",
+    "lz": "Golf 1",
+    "parentRegion": "Midnight Sapphire",
+    "minZoom": 16.5
   },
   {
     "id": "sub-1707",
@@ -4813,6 +8282,18 @@ export const SUB_POIS_05: RawPoi05[] = [
     "minZoom": 16
   },
   {
+    "id": "sub-4965",
+    "name": "Campsite",
+    "x": 7436,
+    "y": 2325,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Nam Thaven",
+    "lz": "Bravo 1",
+    "parentRegion": "Nam Thaven",
+    "minZoom": 16.5
+  },
+  {
     "id": "sub-3162",
     "name": "Ransacked Tourist Shelter",
     "x": 8840,
@@ -4822,7 +8303,19 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Blue Lagoon",
     "lz": "Juliett 4",
     "parentRegion": "Blue Lagoon",
-    "minZoom": 17
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-3732",
+    "name": "Woodshed",
+    "x": 10634,
+    "y": 4137,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Ban Pa",
+    "lz": "India 1",
+    "parentRegion": "Ban Pa",
+    "minZoom": 16.5
   },
   {
     "id": "sub-4969",
@@ -4834,7 +8327,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Nam Thaven",
     "lz": "Bravo 2",
     "parentRegion": "Nam Thaven",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-4970",
@@ -4846,7 +8339,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Nam Thaven",
     "lz": "Bravo 2",
     "parentRegion": "Nam Thaven",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-5177",
@@ -4870,7 +8363,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Kiu Vongsa",
     "lz": "Charlie 2",
     "parentRegion": "Kiu Vongsa",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-4967",
@@ -4894,7 +8387,19 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Midnight Sapphire",
     "lz": "Hotel 1",
     "parentRegion": "Midnight Sapphire",
-    "minZoom": 17
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-5582",
+    "name": "Field Shelter",
+    "x": 5429,
+    "y": 1868,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "YBL-1",
+    "lz": "Mike 3",
+    "parentRegion": "YBL-1",
+    "minZoom": 16.5
   },
   {
     "id": "sub-5182",
@@ -4906,7 +8411,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Midnight Sapphire",
     "lz": "Hotel 1",
     "parentRegion": "Midnight Sapphire",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-5184",
@@ -4918,7 +8423,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Midnight Sapphire",
     "lz": "Hotel 1",
     "parentRegion": "Midnight Sapphire",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-2305",
@@ -4930,7 +8435,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Nam Thaven",
     "lz": "Bravo 2",
     "parentRegion": "Nam Thaven",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-2315",
@@ -4942,7 +8447,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Pha Lang Airfield",
     "lz": "Golf 3",
     "parentRegion": "Pha Lang Airfield",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-2314",
@@ -4954,7 +8459,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Blue Lagoon",
     "lz": "Bravo 3",
     "parentRegion": "Blue Lagoon",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-2313",
@@ -4966,7 +8471,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Blue Lagoon",
     "lz": "Bravo 3",
     "parentRegion": "Blue Lagoon",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-2317",
@@ -4978,7 +8483,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "YBL-1",
     "lz": "Bravo 3",
     "parentRegion": "YBL-1",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-2290",
@@ -4990,7 +8495,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "YBL-1",
     "lz": "Mike 2",
     "parentRegion": "YBL-1",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-5978",
@@ -5002,7 +8507,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Sawmill",
     "lz": "Echo 3",
     "parentRegion": "Sawmill",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-4968",
@@ -5026,7 +8531,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Midnight Sapphire",
     "lz": "Hotel 1",
     "parentRegion": "Midnight Sapphire",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-5185",
@@ -5038,7 +8543,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Midnight Sapphire",
     "lz": "Hotel 1",
     "parentRegion": "Midnight Sapphire",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-5188",
@@ -5050,7 +8555,19 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Midnight Sapphire",
     "lz": "Hotel 1",
     "parentRegion": "Midnight Sapphire",
-    "minZoom": 17
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-5982",
+    "name": "Remote Dwelling",
+    "x": 4426,
+    "y": 5441,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Sawmill",
+    "lz": "Romeo 1",
+    "parentRegion": "Sawmill",
+    "minZoom": 16.5
   },
   {
     "id": "sub-2214",
@@ -5062,7 +8579,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Ban Pa",
     "lz": "India 2",
     "parentRegion": "Ban Pa",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-5180",
@@ -5074,7 +8591,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Midnight Sapphire",
     "lz": "Hotel 1",
     "parentRegion": "Midnight Sapphire",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-5181",
@@ -5086,7 +8603,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Midnight Sapphire",
     "lz": "Hotel 1",
     "parentRegion": "Midnight Sapphire",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-2376",
@@ -5098,7 +8615,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Hunter's Paradise",
     "lz": "Foxtrot 2",
     "parentRegion": "Hunter's Paradise",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-2216",
@@ -5110,7 +8627,43 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Tiger Bay",
     "lz": "Juliett 1",
     "parentRegion": "Tiger Bay",
-    "minZoom": 17
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-5580",
+    "name": "Field Shelter",
+    "x": 5704,
+    "y": 1967,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "YBL-1",
+    "lz": "Mike 3",
+    "parentRegion": "YBL-1",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-3132",
+    "name": "Rest Point",
+    "x": 5528,
+    "y": 6245,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Hunter's Paradise",
+    "lz": "Foxtrot 3",
+    "parentRegion": "Hunter's Paradise",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-3178",
+    "name": "Remote House",
+    "x": 5556,
+    "y": 2638,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "YBL-1",
+    "lz": "Mike 2",
+    "parentRegion": "YBL-1",
+    "minZoom": 16.5
   },
   {
     "id": "sub-2219",
@@ -5122,7 +8675,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Tiger Bay",
     "lz": "Juliett 2",
     "parentRegion": "Tiger Bay",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-2217",
@@ -5134,7 +8687,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Tiger Bay",
     "lz": "Juliett 1",
     "parentRegion": "Tiger Bay",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-6487",
@@ -5146,7 +8699,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Pha Lang",
     "lz": "Alpha 1",
     "parentRegion": "Pha Lang",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-5186",
@@ -5158,7 +8711,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Midnight Sapphire",
     "lz": "Hotel 1",
     "parentRegion": "Midnight Sapphire",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-2221",
@@ -5170,7 +8723,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Tiger Bay",
     "lz": "Juliett 3",
     "parentRegion": "Tiger Bay",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-2374",
@@ -5182,7 +8735,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Hunter's Paradise",
     "lz": "Charlie 2",
     "parentRegion": "Hunter's Paradise",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-5187",
@@ -5194,7 +8747,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Midnight Sapphire",
     "lz": "Hotel 1",
     "parentRegion": "Midnight Sapphire",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-5581",
@@ -5206,7 +8759,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "YBL-1",
     "lz": "Mike 3",
     "parentRegion": "YBL-1",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-6271",
@@ -5218,7 +8771,19 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Kiu Vongsa",
     "lz": "Charlie 2",
     "parentRegion": "Kiu Vongsa",
-    "minZoom": 17
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-6276",
+    "name": "Empty Villa",
+    "x": 3408,
+    "y": 6851,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Kiu Vongsa",
+    "lz": "Charlie 2",
+    "parentRegion": "Kiu Vongsa",
+    "minZoom": 16.5
   },
   {
     "id": "sub-2543",
@@ -5242,7 +8807,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Tiger Bay",
     "lz": "Juliett 1",
     "parentRegion": "Tiger Bay",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-4974",
@@ -5254,7 +8819,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Nam Thaven",
     "lz": "Bravo 2",
     "parentRegion": "Nam Thaven",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-2241",
@@ -5266,7 +8831,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Midnight Sapphire",
     "lz": "Hotel 1",
     "parentRegion": "Midnight Sapphire",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-2242",
@@ -5290,7 +8855,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Pha Lang",
     "lz": "Alpha 1",
     "parentRegion": "Pha Lang",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-2235",
@@ -5302,7 +8867,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Pha Lang Airfield",
     "lz": "Papa 2",
     "parentRegion": "Pha Lang Airfield",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-2225",
@@ -5338,7 +8903,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Ban Pa",
     "lz": "India 3",
     "parentRegion": "Ban Pa",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-2468",
@@ -5350,7 +8915,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Blue Lagoon",
     "lz": "Kilo 1",
     "parentRegion": "Blue Lagoon",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-2227",
@@ -5362,7 +8927,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Pha Lang Airfield",
     "lz": "Golf 2",
     "parentRegion": "Pha Lang Airfield",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-2237",
@@ -5374,7 +8939,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Pha Lang Airfield",
     "lz": "Golf 1",
     "parentRegion": "Pha Lang Airfield",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-2238",
@@ -5386,7 +8951,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Midnight Sapphire",
     "lz": "Golf 1",
     "parentRegion": "Midnight Sapphire",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-2243",
@@ -5398,7 +8963,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Hunter's Paradise",
     "lz": "Foxtrot 1",
     "parentRegion": "Hunter's Paradise",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-2239",
@@ -5422,7 +8987,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Sawmill",
     "lz": "Echo 4",
     "parentRegion": "Sawmill",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-5583",
@@ -5446,7 +9011,43 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Kiu Vongsa",
     "lz": "Charlie 2",
     "parentRegion": "Kiu Vongsa",
-    "minZoom": 17
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-5983",
+    "name": "Makeshift Shack",
+    "x": 4448,
+    "y": 5611,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Sawmill",
+    "lz": "Charlie 3",
+    "parentRegion": "Sawmill",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-5986",
+    "name": "Old Shelter",
+    "x": 3307,
+    "y": 5785,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Sawmill",
+    "lz": "Charlie 1",
+    "parentRegion": "Sawmill",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-5990",
+    "name": "Abandoned Shelter",
+    "x": 2774,
+    "y": 5084,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Sawmill",
+    "lz": "Echo 4",
+    "parentRegion": "Sawmill",
+    "minZoom": 16.5
   },
   {
     "id": "sub-885",
@@ -5458,7 +9059,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Hunter's Paradise",
     "lz": "Charlie 3",
     "parentRegion": "Hunter's Paradise",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-2854",
@@ -5470,7 +9071,43 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Midnight Sapphire",
     "lz": "Hotel 1",
     "parentRegion": "Midnight Sapphire",
-    "minZoom": 17
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-6292",
+    "name": "Trashed Campsite",
+    "x": 3896,
+    "y": 5996,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Kiu Vongsa",
+    "lz": "Charlie 1",
+    "parentRegion": "Kiu Vongsa",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-4992",
+    "name": "Abandoned Shelter",
+    "x": 9122,
+    "y": 6469,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Pha Lang Airfield",
+    "lz": "Papa 1",
+    "parentRegion": "Pha Lang Airfield",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-4990",
+    "name": "Trashed Campsite",
+    "x": 9100,
+    "y": 6537,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Pha Lang Airfield",
+    "lz": "Papa 2",
+    "parentRegion": "Pha Lang Airfield",
+    "minZoom": 16.5
   },
   {
     "id": "sub-313",
@@ -5542,7 +9179,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Sawmill",
     "lz": "Echo 1",
     "parentRegion": "Sawmill",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-2320",
@@ -5554,7 +9191,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Sawmill",
     "lz": "Romeo 1",
     "parentRegion": "Sawmill",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-2321",
@@ -5566,7 +9203,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Sawmill",
     "lz": "Echo 1",
     "parentRegion": "Sawmill",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-4779",
@@ -5578,7 +9215,31 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Nam Thaven",
     "lz": "Bravo 2",
     "parentRegion": "Nam Thaven",
-    "minZoom": 17
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-4788",
+    "name": "Luxury Villa",
+    "x": 7228,
+    "y": 1074,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Nam Thaven",
+    "lz": "Bravo 2",
+    "parentRegion": "Nam Thaven",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-6294",
+    "name": "Lonely House",
+    "x": 3744,
+    "y": 6160,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Kiu Vongsa",
+    "lz": "Charlie 1",
+    "parentRegion": "Kiu Vongsa",
+    "minZoom": 16.5
   },
   {
     "id": "sub-2856",
@@ -5602,7 +9263,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Fort Narith",
     "lz": "Delta 1",
     "parentRegion": "Fort Narith",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-348",
@@ -5626,7 +9287,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Fort Narith",
     "lz": "Delta 2",
     "parentRegion": "Fort Narith",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-1251",
@@ -5638,7 +9299,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Blue Lagoon",
     "lz": "November 2",
     "parentRegion": "Blue Lagoon",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-2308",
@@ -5650,7 +9311,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Hunter's Paradise",
     "lz": "Quebec 1",
     "parentRegion": "Hunter's Paradise",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-360",
@@ -5674,7 +9335,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Fort Narith",
     "lz": "Delta 3",
     "parentRegion": "Fort Narith",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-351",
@@ -5698,7 +9359,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Fort Narith",
     "lz": "Delta 1",
     "parentRegion": "Fort Narith",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-354",
@@ -5710,7 +9371,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Fort Narith",
     "lz": "Delta 3",
     "parentRegion": "Fort Narith",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-352",
@@ -5746,7 +9407,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "YBL-1",
     "lz": "Mike 4",
     "parentRegion": "YBL-1",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-2287",
@@ -5758,7 +9419,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Fort Narith",
     "lz": "Delta 1",
     "parentRegion": "Fort Narith",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-1242",
@@ -5770,7 +9431,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Fort Narith",
     "lz": "Delta 3",
     "parentRegion": "Fort Narith",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-2300",
@@ -5782,7 +9443,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Fort Narith",
     "lz": "Delta 2",
     "parentRegion": "Fort Narith",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-2302",
@@ -5794,7 +9455,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Fort Narith",
     "lz": "Delta 3",
     "parentRegion": "Fort Narith",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-349",
@@ -5806,7 +9467,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Fort Narith",
     "lz": "Delta 3",
     "parentRegion": "Fort Narith",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-1244",
@@ -5818,7 +9479,67 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Fort Narith",
     "lz": "Lima 1",
     "parentRegion": "Fort Narith",
-    "minZoom": 17
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-6301",
+    "name": "Farm Shed",
+    "x": 4341,
+    "y": 5995,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Kiu Vongsa",
+    "lz": "Charlie 3",
+    "parentRegion": "Kiu Vongsa",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-5189",
+    "name": "Farm House",
+    "x": 7432,
+    "y": 6119,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Midnight Sapphire",
+    "lz": "Golf 1",
+    "parentRegion": "Midnight Sapphire",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-5005",
+    "name": "Rest Point",
+    "x": 8729,
+    "y": 6184,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Pha Lang Airfield",
+    "lz": "Papa 1",
+    "parentRegion": "Pha Lang Airfield",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-5006",
+    "name": "Campsite",
+    "x": 8260,
+    "y": 6349,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Pha Lang Airfield",
+    "lz": "Papa 3",
+    "parentRegion": "Pha Lang Airfield",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-5534",
+    "name": "Remote Farms",
+    "x": 6032,
+    "y": 1845,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "YBL-1",
+    "lz": "Mike 1",
+    "parentRegion": "YBL-1",
+    "minZoom": 16.5
   },
   {
     "id": "sub-5535",
@@ -5830,7 +9551,31 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "YBL-1",
     "lz": "Mike 3",
     "parentRegion": "YBL-1",
-    "minZoom": 17
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-5537",
+    "name": "Remote Homestead",
+    "x": 6524,
+    "y": 2189,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "YBL-1",
+    "lz": "Mike 1",
+    "parentRegion": "YBL-1",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-5536",
+    "name": "Campsite",
+    "x": 6359,
+    "y": 2063,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "YBL-1",
+    "lz": "Mike 1",
+    "parentRegion": "YBL-1",
+    "minZoom": 16.5
   },
   {
     "id": "sub-5545",
@@ -5842,7 +9587,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "YBL-1",
     "lz": "Mike 2",
     "parentRegion": "YBL-1",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-5549",
@@ -5854,7 +9599,31 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "YBL-1",
     "lz": "Mike 2",
     "parentRegion": "YBL-1",
-    "minZoom": 17
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-6493",
+    "name": "Remote Dwelling",
+    "x": 10064,
+    "y": 5846,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Pha Lang",
+    "lz": "Alpha 3",
+    "parentRegion": "Pha Lang",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-6481",
+    "name": "Empty Villa",
+    "x": 10613,
+    "y": 7120,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Pha Lang",
+    "lz": "Alpha 1",
+    "parentRegion": "Pha Lang",
+    "minZoom": 16.5
   },
   {
     "id": "sub-6489",
@@ -5866,7 +9635,19 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Pha Lang",
     "lz": "Alpha 1",
     "parentRegion": "Pha Lang",
-    "minZoom": 17
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-6495",
+    "name": "Remote Homestead",
+    "x": 10935,
+    "y": 6310,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Pha Lang",
+    "lz": "Alpha 1",
+    "parentRegion": "Pha Lang",
+    "minZoom": 16.5
   },
   {
     "id": "sub-399",
@@ -5878,7 +9659,19 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Pha Lang Airfield",
     "lz": "Papa 1",
     "parentRegion": "Pha Lang Airfield",
-    "minZoom": 17
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-6480",
+    "name": "Empty Villa",
+    "x": 10560,
+    "y": 7048,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Pha Lang",
+    "lz": "Alpha 1",
+    "parentRegion": "Pha Lang",
+    "minZoom": 16.5
   },
   {
     "id": "sub-1256",
@@ -5890,7 +9683,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Pha Lang Airfield",
     "lz": "Papa 1",
     "parentRegion": "Pha Lang Airfield",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-5544",
@@ -5902,7 +9695,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "YBL-1",
     "lz": "Bravo 3",
     "parentRegion": "YBL-1",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-5553",
@@ -5914,7 +9707,19 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "YBL-1",
     "lz": "Mike 4",
     "parentRegion": "YBL-1",
-    "minZoom": 17
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-5558",
+    "name": "Riverside Shack",
+    "x": 4726,
+    "y": 2273,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "YBL-1",
+    "lz": "Lima 2",
+    "parentRegion": "YBL-1",
+    "minZoom": 16.5
   },
   {
     "id": "sub-5561",
@@ -5926,7 +9731,31 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "YBL-1",
     "lz": "Lima 2",
     "parentRegion": "YBL-1",
-    "minZoom": 17
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-5562",
+    "name": "Makeshift Shack",
+    "x": 4633,
+    "y": 1709,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "YBL-1",
+    "lz": "Lima 2",
+    "parentRegion": "YBL-1",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-5566",
+    "name": "Rest Point",
+    "x": 3830,
+    "y": 2443,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "YBL-1",
+    "lz": "Lima 3",
+    "parentRegion": "YBL-1",
+    "minZoom": 16.5
   },
   {
     "id": "sub-5568",
@@ -5938,7 +9767,43 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "YBL-1",
     "lz": "Lima 3",
     "parentRegion": "YBL-1",
-    "minZoom": 17
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-5791",
+    "name": "Farm House",
+    "x": 9615,
+    "y": 6943,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Pha Lang",
+    "lz": "Alpha 2",
+    "parentRegion": "Pha Lang",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-7275",
+    "name": "Derelict Shelter",
+    "x": 6498,
+    "y": 6171,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Midnight Sapphire",
+    "lz": "Hotel 3",
+    "parentRegion": "Midnight Sapphire",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-5753",
+    "name": "Remote Outpost",
+    "x": 10235,
+    "y": 4810,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Ban Pa",
+    "lz": "Oscar 1",
+    "parentRegion": "Ban Pa",
+    "minZoom": 16.5
   },
   {
     "id": "sub-5629",
@@ -5950,7 +9815,19 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Blue Lagoon",
     "lz": "November 1",
     "parentRegion": "Blue Lagoon",
-    "minZoom": 17
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-5630",
+    "name": "Remote House",
+    "x": 8347,
+    "y": 2482,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Blue Lagoon",
+    "lz": "November 2",
+    "parentRegion": "Blue Lagoon",
+    "minZoom": 16.5
   },
   {
     "id": "sub-390",
@@ -5962,7 +9839,31 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Blue Lagoon",
     "lz": "Kilo 1",
     "parentRegion": "Blue Lagoon",
-    "minZoom": 17
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-5633",
+    "name": "Trashed Campsite",
+    "x": 8452,
+    "y": 3004,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Blue Lagoon",
+    "lz": "November 2",
+    "parentRegion": "Blue Lagoon",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-3622",
+    "name": "Roadside House",
+    "x": 4012,
+    "y": 4512,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Sawmill",
+    "lz": "Echo 2",
+    "parentRegion": "Sawmill",
+    "minZoom": 16.5
   },
   {
     "id": "sub-2218",
@@ -5974,7 +9875,43 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Tiger Bay",
     "lz": "Juliett 2",
     "parentRegion": "Tiger Bay",
-    "minZoom": 17
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-5831",
+    "name": "Secluded Shelter",
+    "x": 7908,
+    "y": 5808,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Pha Lang Airfield",
+    "lz": "Golf 3",
+    "parentRegion": "Pha Lang Airfield",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-5836",
+    "name": "Remote Shelter",
+    "x": 9100,
+    "y": 6301,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Pha Lang Airfield",
+    "lz": "Papa 1",
+    "parentRegion": "Pha Lang Airfield",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-5840",
+    "name": "Old Toolshed",
+    "x": 9436,
+    "y": 5687,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Pha Lang Airfield",
+    "lz": "Alpha 3",
+    "parentRegion": "Pha Lang Airfield",
+    "minZoom": 16.5
   },
   {
     "id": "sub-5844",
@@ -5986,7 +9923,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Pha Lang Airfield",
     "lz": "Golf 2",
     "parentRegion": "Pha Lang Airfield",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-5334",
@@ -5998,7 +9935,19 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Nam Thaven",
     "lz": "Bravo 1",
     "parentRegion": "Nam Thaven",
-    "minZoom": 17
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-3671",
+    "name": "Abandoned Shack",
+    "x": 2599,
+    "y": 5525,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Sawmill",
+    "lz": "Echo 4",
+    "parentRegion": "Sawmill",
+    "minZoom": 16.5
   },
   {
     "id": "sub-3814",
@@ -6010,7 +9959,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Sawmill",
     "lz": "Delta 4",
     "parentRegion": "Sawmill",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-3120",
@@ -6022,7 +9971,31 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Pha Lang Airfield",
     "lz": "Golf 3",
     "parentRegion": "Pha Lang Airfield",
-    "minZoom": 17
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-5824",
+    "name": "Woodshed",
+    "x": 7559,
+    "y": 5447,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Pha Lang Airfield",
+    "lz": "Hotel 4",
+    "parentRegion": "Pha Lang Airfield",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-3754",
+    "name": "Trashed Campsite",
+    "x": 5275,
+    "y": 4420,
+    "kind": "sublocation",
+    "tier": "Tier 4",
+    "faction": "Rogue Ops",
+    "lz": "Tango 2",
+    "parentRegion": "RLSL-1 Radio Observatory",
+    "minZoom": 16.5
   },
   {
     "id": "sub-5078",
@@ -6034,7 +10007,19 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Nam Thaven",
     "lz": "Bravo 2",
     "parentRegion": "Nam Thaven",
-    "minZoom": 17
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-5825",
+    "name": "Remote Shelter",
+    "x": 7338,
+    "y": 5559,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Pha Lang Airfield",
+    "lz": "Hotel 4",
+    "parentRegion": "Pha Lang Airfield",
+    "minZoom": 16.5
   },
   {
     "id": "sub-5829",
@@ -6046,7 +10031,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Pha Lang Airfield",
     "lz": "Golf 1",
     "parentRegion": "Pha Lang Airfield",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-2378",
@@ -6058,7 +10043,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Hunter's Paradise",
     "lz": "Charlie 2",
     "parentRegion": "Hunter's Paradise",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-2548",
@@ -6070,7 +10055,31 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Midnight Sapphire",
     "lz": "Hotel 3",
     "parentRegion": "Midnight Sapphire",
-    "minZoom": 17
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-5845",
+    "name": "Trashed Campsite",
+    "x": 8767,
+    "y": 5326,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Pha Lang Airfield",
+    "lz": "Golf 2",
+    "parentRegion": "Pha Lang Airfield",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-3759",
+    "name": "Trashed Campsite",
+    "x": 5182,
+    "y": 4912,
+    "kind": "sublocation",
+    "tier": "Tier 4",
+    "faction": "Rogue Ops",
+    "lz": "Tango 2",
+    "parentRegion": "RLSL-1 Radio Observatory",
+    "minZoom": 16.5
   },
   {
     "id": "sub-5079",
@@ -6082,7 +10091,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Nam Thaven",
     "lz": "Bravo 3",
     "parentRegion": "Nam Thaven",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-5739",
@@ -6094,7 +10103,55 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Ban Pa",
     "lz": "Oscar 2",
     "parentRegion": "Ban Pa",
-    "minZoom": 17
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-5080",
+    "name": "Old Shelter",
+    "x": 4175,
+    "y": 3425,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Fort Narith",
+    "lz": "Delta 2",
+    "parentRegion": "Fort Narith",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-5736",
+    "name": "Abandoned Shed",
+    "x": 9890,
+    "y": 5604,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Ban Pa",
+    "lz": "Alpha 3",
+    "parentRegion": "Ban Pa",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-5737",
+    "name": "Remote Shelter",
+    "x": 9752,
+    "y": 5701,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Ban Pa",
+    "lz": "Alpha 3",
+    "parentRegion": "Ban Pa",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-5740",
+    "name": "Farm house",
+    "x": 9588,
+    "y": 5102,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Ban Pa",
+    "lz": "Oscar 2",
+    "parentRegion": "Ban Pa",
+    "minZoom": 16.5
   },
   {
     "id": "sub-401",
@@ -6118,7 +10175,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Pha Lang",
     "lz": "Alpha 2",
     "parentRegion": "Pha Lang",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-325",
@@ -6145,6 +10202,18 @@ export const SUB_POIS_05: RawPoi05[] = [
     "minZoom": 16
   },
   {
+    "id": "sub-5742",
+    "name": "Lakeside Shack",
+    "x": 9172,
+    "y": 4223,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Ban Pa",
+    "lz": "Oscar 3",
+    "parentRegion": "Ban Pa",
+    "minZoom": 16.5
+  },
+  {
     "id": "sub-2474",
     "name": "Construction Site",
     "x": 10441,
@@ -6154,7 +10223,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Blue Lagoon",
     "lz": "Kilo 1",
     "parentRegion": "Blue Lagoon",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-312",
@@ -6166,7 +10235,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Nam Thaven",
     "lz": "Bravo 2",
     "parentRegion": "Nam Thaven",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-2399",
@@ -6178,7 +10247,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Kiu Vongsa",
     "lz": "Charlie 2",
     "parentRegion": "Kiu Vongsa",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-5031",
@@ -6190,7 +10259,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Pha Lang Airfield",
     "lz": "Golf 1",
     "parentRegion": "Pha Lang Airfield",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-357",
@@ -6202,7 +10271,31 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Fort Narith",
     "lz": "Delta 2",
     "parentRegion": "Fort Narith",
-    "minZoom": 17
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-5038",
+    "name": "Trashed Campsite",
+    "x": 7756,
+    "y": 6371,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Pha Lang Airfield",
+    "lz": "Hotel 1",
+    "parentRegion": "Pha Lang Airfield",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-4934",
+    "name": "Old Hut",
+    "x": 7256,
+    "y": 1174,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Nam Thaven",
+    "lz": "Bravo 2",
+    "parentRegion": "Nam Thaven",
+    "minZoom": 16.5
   },
   {
     "id": "sub-1519",
@@ -6214,7 +10307,19 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Tiger Bay",
     "lz": "Juliett 1",
     "parentRegion": "Tiger Bay",
-    "minZoom": 17
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-4264",
+    "name": "Trashed Campsite",
+    "x": 9644,
+    "y": 2127,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Blue Lagoon",
+    "lz": "November 3",
+    "parentRegion": "Blue Lagoon",
+    "minZoom": 16.5
   },
   {
     "id": "sub-3183",
@@ -6226,7 +10331,19 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Ban Pa",
     "lz": "India 3",
     "parentRegion": "Ban Pa",
-    "minZoom": 17
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-6037",
+    "name": "Campsite",
+    "x": 10600,
+    "y": 2583,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Tiger Bay",
+    "lz": "Kilo 3",
+    "parentRegion": "Tiger Bay",
+    "minZoom": 16.5
   },
   {
     "id": "sub-6039",
@@ -6238,7 +10355,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Tiger Bay",
     "lz": "Juliett 1",
     "parentRegion": "Tiger Bay",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-6040",
@@ -6250,7 +10367,19 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Tiger Bay",
     "lz": "Juliett 1",
     "parentRegion": "Tiger Bay",
-    "minZoom": 17
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-3768",
+    "name": "Trashed Campsite",
+    "x": 4869,
+    "y": 3675,
+    "kind": "sublocation",
+    "tier": "Tier 4",
+    "faction": "Rogue Ops",
+    "lz": "Tango 1",
+    "parentRegion": "RLSL-1 Radio Observatory",
+    "minZoom": 16.5
   },
   {
     "id": "sub-3184",
@@ -6262,7 +10391,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Ban Pa",
     "lz": "India 3",
     "parentRegion": "Ban Pa",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-5991",
@@ -6274,7 +10403,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Sawmill",
     "lz": "Delta 4",
     "parentRegion": "Sawmill",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-1695",
@@ -6286,7 +10415,43 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Pha Lang",
     "lz": "Alpha 1",
     "parentRegion": "Pha Lang",
-    "minZoom": 17
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-5620",
+    "name": "Trashed Campsite",
+    "x": 7768,
+    "y": 3252,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Blue Lagoon",
+    "lz": "November 1",
+    "parentRegion": "Blue Lagoon",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-5303",
+    "name": "Woodshed",
+    "x": 6883,
+    "y": 5891,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Hunter's Paradise",
+    "lz": "Hotel 2",
+    "parentRegion": "Hunter's Paradise",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-5309",
+    "name": "Woodshed",
+    "x": 5944,
+    "y": 6517,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Hunter's Paradise",
+    "lz": "Foxtrot 3",
+    "parentRegion": "Hunter's Paradise",
+    "minZoom": 16.5
   },
   {
     "id": "sub-5564",
@@ -6310,7 +10475,19 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "YBL-1",
     "lz": "Lima 3",
     "parentRegion": "YBL-1",
-    "minZoom": 17
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-5312",
+    "name": "Fishing Hut",
+    "x": 5309,
+    "y": 7091,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Hunter's Paradise",
+    "lz": "Foxtrot 2",
+    "parentRegion": "Hunter's Paradise",
+    "minZoom": 16.5
   },
   {
     "id": "sub-2229",
@@ -6337,6 +10514,90 @@ export const SUB_POIS_05: RawPoi05[] = [
     "minZoom": 16
   },
   {
+    "id": "sub-5636",
+    "name": "Roadside Shed",
+    "x": 8763,
+    "y": 2398,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Blue Lagoon",
+    "lz": "November 2",
+    "parentRegion": "Blue Lagoon",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-5311",
+    "name": "Trashed Campsite",
+    "x": 6363,
+    "y": 6807,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Hunter's Paradise",
+    "lz": "Foxtrot 1",
+    "parentRegion": "Hunter's Paradise",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-5877",
+    "name": "Woodshed",
+    "x": 5052,
+    "y": 6783,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Hunter's Paradise",
+    "lz": "Foxtrot 2",
+    "parentRegion": "Hunter's Paradise",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-5879",
+    "name": "Field Shelter",
+    "x": 4822,
+    "y": 6909,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Hunter's Paradise",
+    "lz": "Charlie 2",
+    "parentRegion": "Hunter's Paradise",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-6477",
+    "name": "Abandoned Shelter",
+    "x": 9997,
+    "y": 6579,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Pha Lang",
+    "lz": "Alpha 2",
+    "parentRegion": "Pha Lang",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-5884",
+    "name": "Field Shelter",
+    "x": 6198,
+    "y": 6410,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Hunter's Paradise",
+    "lz": "Hotel 3",
+    "parentRegion": "Hunter's Paradise",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-5648",
+    "name": "Farm Shed",
+    "x": 8877,
+    "y": 1979,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Blue Lagoon",
+    "lz": "November 2",
+    "parentRegion": "Blue Lagoon",
+    "minZoom": 16.5
+  },
+  {
     "id": "sub-6479",
     "name": "Doctor's Office",
     "x": 10516,
@@ -6346,7 +10607,31 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Pha Lang",
     "lz": "Alpha 1",
     "parentRegion": "Pha Lang",
-    "minZoom": 17
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-5313",
+    "name": "Roadside Shelter",
+    "x": 5076,
+    "y": 7128,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Hunter's Paradise",
+    "lz": "Foxtrot 2",
+    "parentRegion": "Hunter's Paradise",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-5886",
+    "name": "Rest Point",
+    "x": 6016,
+    "y": 5663,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Hunter's Paradise",
+    "lz": "Quebec 3",
+    "parentRegion": "Hunter's Paradise",
+    "minZoom": 16.5
   },
   {
     "id": "sub-408",
@@ -6361,6 +10646,18 @@ export const SUB_POIS_05: RawPoi05[] = [
     "minZoom": 16
   },
   {
+    "id": "sub-6476",
+    "name": "Abandoned Shack",
+    "x": 9866,
+    "y": 6504,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Pha Lang",
+    "lz": "Alpha 2",
+    "parentRegion": "Pha Lang",
+    "minZoom": 16.5
+  },
+  {
     "id": "sub-932",
     "name": "Phon Chai Farm",
     "x": 5772,
@@ -6370,7 +10667,163 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "YBL-1",
     "lz": "Mike 4",
     "parentRegion": "YBL-1",
-    "minZoom": 17
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-5805",
+    "name": "Secluded Shelter",
+    "x": 9515,
+    "y": 5979,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Pha Lang Airfield",
+    "lz": "Alpha 3",
+    "parentRegion": "Pha Lang Airfield",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-6275",
+    "name": "Luxury Villa",
+    "x": 3505,
+    "y": 6879,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Kiu Vongsa",
+    "lz": "Charlie 2",
+    "parentRegion": "Kiu Vongsa",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-6286",
+    "name": "Field Shelter",
+    "x": 4098,
+    "y": 6831,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Kiu Vongsa",
+    "lz": "Charlie 2",
+    "parentRegion": "Kiu Vongsa",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-5133",
+    "name": "Old Shack",
+    "x": 6513,
+    "y": 5986,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Midnight Sapphire",
+    "lz": "Hotel 3",
+    "parentRegion": "Midnight Sapphire",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-6484",
+    "name": "Field Shelter",
+    "x": 10716,
+    "y": 6441,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Pha Lang",
+    "lz": "Alpha 1",
+    "parentRegion": "Pha Lang",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-6486",
+    "name": "Lonely House",
+    "x": 9989,
+    "y": 6670,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Pha Lang",
+    "lz": "Alpha 2",
+    "parentRegion": "Pha Lang",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-6491",
+    "name": "Old Hut",
+    "x": 10551,
+    "y": 6892,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Pha Lang",
+    "lz": "Alpha 1",
+    "parentRegion": "Pha Lang",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-3670",
+    "name": "Roadside Shed",
+    "x": 2629,
+    "y": 5439,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Sawmill",
+    "lz": "Echo 4",
+    "parentRegion": "Sawmill",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-5649",
+    "name": "Rest Point",
+    "x": 10443,
+    "y": 2100,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Blue Lagoon",
+    "lz": "Kilo 3",
+    "parentRegion": "Blue Lagoon",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-3672",
+    "name": "Lakeside Shack",
+    "x": 3161,
+    "y": 5555,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Sawmill",
+    "lz": "Echo 4",
+    "parentRegion": "Sawmill",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-5659",
+    "name": "Trashed Campsite",
+    "x": 9680,
+    "y": 5770,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Pha Lang",
+    "lz": "Alpha 3",
+    "parentRegion": "Pha Lang",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-4911",
+    "name": "Trashed Campsite",
+    "x": 7235,
+    "y": 2674,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Nam Thaven",
+    "lz": "Bravo 3",
+    "parentRegion": "Nam Thaven",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-6298",
+    "name": "Roadside Toolshed",
+    "x": 3537,
+    "y": 6406,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Kiu Vongsa",
+    "lz": "Charlie 1",
+    "parentRegion": "Kiu Vongsa",
+    "minZoom": 16.5
   },
   {
     "id": "sub-5851",
@@ -6382,7 +10835,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Pha Lang Airfield",
     "lz": "Papa 3",
     "parentRegion": "Pha Lang Airfield",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-5028",
@@ -6397,6 +10850,18 @@ export const SUB_POIS_05: RawPoi05[] = [
     "minZoom": 16
   },
   {
+    "id": "sub-5735",
+    "name": "Trashed Campsite",
+    "x": 10123,
+    "y": 5435,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Ban Pa",
+    "lz": "Oscar 1",
+    "parentRegion": "Ban Pa",
+    "minZoom": 16.5
+  },
+  {
     "id": "sub-3134",
     "name": "Nony Village",
     "x": 5441,
@@ -6406,7 +10871,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Hunter's Paradise",
     "lz": "Foxtrot 3",
     "parentRegion": "Hunter's Paradise",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-6989",
@@ -6421,6 +10886,30 @@ export const SUB_POIS_05: RawPoi05[] = [
     "minZoom": 16
   },
   {
+    "id": "sub-6990",
+    "name": "Roadside House",
+    "x": 9681,
+    "y": 4424,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Ban Pa",
+    "lz": "Oscar 3",
+    "parentRegion": "Ban Pa",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-6991",
+    "name": "Field Shelter",
+    "x": 3126,
+    "y": 3205,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Sawmill",
+    "lz": "Delta 4",
+    "parentRegion": "Sawmill",
+    "minZoom": 16.5
+  },
+  {
     "id": "sub-2689",
     "name": "Old Reservoirs",
     "x": 10336,
@@ -6430,7 +10919,31 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Pha Lang",
     "lz": "Alpha 1",
     "parentRegion": "Pha Lang",
-    "minZoom": 17
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-3816",
+    "name": "Field Shelter",
+    "x": 3459,
+    "y": 3449,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Sawmill",
+    "lz": "Delta 4",
+    "parentRegion": "Sawmill",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-4959",
+    "name": "Campsite",
+    "x": 6462,
+    "y": 1626,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Nam Thaven",
+    "lz": "Bravo 2",
+    "parentRegion": "Nam Thaven",
+    "minZoom": 16.5
   },
   {
     "id": "sub-334",
@@ -6466,7 +10979,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Pha Lang",
     "lz": "Oscar 1",
     "parentRegion": "Pha Lang",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-336",
@@ -6478,7 +10991,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Pha Lang",
     "lz": "Alpha 2",
     "parentRegion": "Pha Lang",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-335",
@@ -6514,7 +11027,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Pha Lang",
     "lz": "Alpha 1",
     "parentRegion": "Pha Lang",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-340",
@@ -6526,7 +11039,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Pha Lang",
     "lz": "Alpha 1",
     "parentRegion": "Pha Lang",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-341",
@@ -6550,7 +11063,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Pha Lang",
     "lz": "Alpha 3",
     "parentRegion": "Pha Lang",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-587",
@@ -6565,6 +11078,90 @@ export const SUB_POIS_05: RawPoi05[] = [
     "minZoom": 16
   },
   {
+    "id": "sub-7092",
+    "name": "Field Shelter",
+    "x": 7482,
+    "y": 1760,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Nam Thaven",
+    "lz": "Bravo 1",
+    "parentRegion": "Nam Thaven",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-7097",
+    "name": "Field Shelter",
+    "x": 6996,
+    "y": 1436,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Nam Thaven",
+    "lz": "Bravo 2",
+    "parentRegion": "Nam Thaven",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-7091",
+    "name": "Roadside House",
+    "x": 8098,
+    "y": 1867,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Blue Lagoon",
+    "lz": "Bravo 1",
+    "parentRegion": "Blue Lagoon",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-7093",
+    "name": "Field Shelter",
+    "x": 7378,
+    "y": 2505,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Nam Thaven",
+    "lz": "Bravo 3",
+    "parentRegion": "Nam Thaven",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-7094",
+    "name": "Field Shelter",
+    "x": 7309,
+    "y": 2377,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Nam Thaven",
+    "lz": "Bravo 3",
+    "parentRegion": "Nam Thaven",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-7095",
+    "name": "Field Shelter",
+    "x": 7099,
+    "y": 2351,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Nam Thaven",
+    "lz": "Bravo 3",
+    "parentRegion": "Nam Thaven",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-7096",
+    "name": "Field Shelter",
+    "x": 6844,
+    "y": 1402,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Nam Thaven",
+    "lz": "Bravo 2",
+    "parentRegion": "Nam Thaven",
+    "minZoom": 16.5
+  },
+  {
     "id": "sub-750",
     "name": "Tiger Bay Central South-East Entrance",
     "x": 9910,
@@ -6574,7 +11171,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Tiger Bay",
     "lz": "Juliett 3",
     "parentRegion": "Tiger Bay",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-1252",
@@ -6586,7 +11183,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Ban Pa",
     "lz": "India 2",
     "parentRegion": "Ban Pa",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-3175",
@@ -6598,7 +11195,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "YBL-1",
     "lz": "Mike 2",
     "parentRegion": "YBL-1",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-2473",
@@ -6610,7 +11207,19 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Pha Lang",
     "lz": "Alpha 3",
     "parentRegion": "Pha Lang",
-    "minZoom": 17
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-5746",
+    "name": "Old Shack",
+    "x": 9944,
+    "y": 4237,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Ban Pa",
+    "lz": "India 3",
+    "parentRegion": "Ban Pa",
+    "minZoom": 16.5
   },
   {
     "id": "sub-2734",
@@ -6622,7 +11231,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Pha Lang",
     "lz": "Alpha 2",
     "parentRegion": "Pha Lang",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-1258",
@@ -6646,7 +11255,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Pha Lang",
     "lz": "Alpha 1",
     "parentRegion": "Pha Lang",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-2231",
@@ -6670,7 +11279,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Pha Lang",
     "lz": "Alpha 1",
     "parentRegion": "Pha Lang",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-346",
@@ -6694,7 +11303,19 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Tiger Bay",
     "lz": "Juliett 1",
     "parentRegion": "Tiger Bay",
-    "minZoom": 17
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-1492",
+    "name": "Fishing Hut",
+    "x": 4176,
+    "y": 4518,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Sawmill",
+    "lz": "Echo 3",
+    "parentRegion": "Sawmill",
+    "minZoom": 16.5
   },
   {
     "id": "sub-1700",
@@ -6706,7 +11327,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Kiu Vongsa",
     "lz": "Charlie 3",
     "parentRegion": "Kiu Vongsa",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-2324",
@@ -6718,7 +11339,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "YBL-1",
     "lz": "Mike 1",
     "parentRegion": "YBL-1",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-2740",
@@ -6730,7 +11351,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Hunter's Paradise",
     "lz": "Quebec 1",
     "parentRegion": "Hunter's Paradise",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-2508",
@@ -6742,7 +11363,19 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Midnight Sapphire",
     "lz": "Hotel 3",
     "parentRegion": "Midnight Sapphire",
-    "minZoom": 17
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-6482",
+    "name": "Empty Villa",
+    "x": 10728,
+    "y": 6922,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Pha Lang",
+    "lz": "Alpha 1",
+    "parentRegion": "Pha Lang",
+    "minZoom": 16.5
   },
   {
     "id": "sub-6485",
@@ -6754,11 +11387,23 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Pha Lang",
     "lz": "Alpha 1",
     "parentRegion": "Pha Lang",
-    "minZoom": 17
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-6488",
+    "name": "Luxury Villa",
+    "x": 10639,
+    "y": 6948,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Pha Lang",
+    "lz": "Alpha 1",
+    "parentRegion": "Pha Lang",
+    "minZoom": 16.5
   },
   {
     "id": "sub-6490",
-    "name": "Obstacle Course",
+    "name": "Obstacle Course ",
     "x": 10840,
     "y": 7135,
     "kind": "sublocation",
@@ -6767,6 +11412,18 @@ export const SUB_POIS_05: RawPoi05[] = [
     "lz": "Alpha 1",
     "parentRegion": "Pha Lang",
     "minZoom": 16
+  },
+  {
+    "id": "sub-6494",
+    "name": "Remote Homestead",
+    "x": 10264,
+    "y": 5853,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Pha Lang",
+    "lz": "Alpha 3",
+    "parentRegion": "Pha Lang",
+    "minZoom": 16.5
   },
   {
     "id": "sub-6498",
@@ -6778,7 +11435,19 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Pha Lang",
     "lz": "Alpha 1",
     "parentRegion": "Pha Lang",
-    "minZoom": 17
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-6499",
+    "name": "Riverside Shack",
+    "x": 9733,
+    "y": 5994,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Pha Lang",
+    "lz": "Alpha 3",
+    "parentRegion": "Pha Lang",
+    "minZoom": 16.5
   },
   {
     "id": "sub-6503",
@@ -6790,7 +11459,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Pha Lang",
     "lz": "Alpha 1",
     "parentRegion": "Pha Lang",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-6478",
@@ -6802,7 +11471,67 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Pha Lang",
     "lz": "Alpha 1",
     "parentRegion": "Pha Lang",
-    "minZoom": 17
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-6483",
+    "name": "Farm Shed",
+    "x": 9933,
+    "y": 6055,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Pha Lang",
+    "lz": "Alpha 3",
+    "parentRegion": "Pha Lang",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-6492",
+    "name": "Old Shelter",
+    "x": 10178,
+    "y": 5772,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Pha Lang",
+    "lz": "Alpha 3",
+    "parentRegion": "Pha Lang",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-6496",
+    "name": "Rest Point",
+    "x": 9671,
+    "y": 6119,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Pha Lang",
+    "lz": "Alpha 2",
+    "parentRegion": "Pha Lang",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-6500",
+    "name": "Roadside House",
+    "x": 9995,
+    "y": 6822,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Pha Lang",
+    "lz": "Alpha 2",
+    "parentRegion": "Pha Lang",
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-6501",
+    "name": "Secluded Shelter",
+    "x": 10649,
+    "y": 6126,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Pha Lang",
+    "lz": "Alpha 1",
+    "parentRegion": "Pha Lang",
+    "minZoom": 16.5
   },
   {
     "id": "sub-3822",
@@ -6814,7 +11543,7 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Sawmill",
     "lz": "Delta 4",
     "parentRegion": "Sawmill",
-    "minZoom": 17
+    "minZoom": 16.5
   },
   {
     "id": "sub-3712",
@@ -6826,7 +11555,19 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "Ban Pa",
     "lz": "India 2",
     "parentRegion": "Ban Pa",
-    "minZoom": 17
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-3823",
+    "name": "Remote House",
+    "x": 4043,
+    "y": 3654,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "Sawmill",
+    "lz": "Delta 2",
+    "parentRegion": "Sawmill",
+    "minZoom": 16.5
   },
   {
     "id": "sub-6502",
@@ -6850,7 +11591,19 @@ export const SUB_POIS_05: RawPoi05[] = [
     "faction": "YBL-1",
     "lz": "Mike 1",
     "parentRegion": "YBL-1",
-    "minZoom": 17
+    "minZoom": 16.5
+  },
+  {
+    "id": "sub-5539",
+    "name": "Field Shelter",
+    "x": 6421,
+    "y": 2392,
+    "kind": "sublocation",
+    "tier": "Compound",
+    "faction": "YBL-1",
+    "lz": "Mike 1",
+    "parentRegion": "YBL-1",
+    "minZoom": 16.5
   }
 ];
 
@@ -6861,7 +11614,8 @@ export const BLUE_CRATES_05: ResourceSpawn05[] = [
     "x": 9782,
     "y": 2774,
     "poi": "Tiger Bay",
-    "floor": 0
+    "floor": 0,
+    "tier": 3
   },
   {
     "id": "crate-7187",
@@ -6869,7 +11623,8 @@ export const BLUE_CRATES_05: ResourceSpawn05[] = [
     "x": 8684,
     "y": 5188,
     "poi": "Pha Lang Airfield",
-    "floor": 0
+    "floor": 0,
+    "tier": 2
   },
   {
     "id": "crate-6727",
@@ -6877,7 +11632,8 @@ export const BLUE_CRATES_05: ResourceSpawn05[] = [
     "x": 10015,
     "y": 2718,
     "poi": "Tiger Bay",
-    "floor": 0
+    "floor": 0,
+    "tier": 3
   },
   {
     "id": "crate-7274",
@@ -6885,7 +11641,8 @@ export const BLUE_CRATES_05: ResourceSpawn05[] = [
     "x": 3781,
     "y": 2180,
     "poi": "YBL-1",
-    "floor": 0
+    "floor": 0,
+    "tier": 2
   },
   {
     "id": "crate-6728",
@@ -6893,7 +11650,8 @@ export const BLUE_CRATES_05: ResourceSpawn05[] = [
     "x": 10014,
     "y": 2598,
     "poi": "Tiger Bay",
-    "floor": 0
+    "floor": 0,
+    "tier": 2
   },
   {
     "id": "crate-6729",
@@ -6901,7 +11659,8 @@ export const BLUE_CRATES_05: ResourceSpawn05[] = [
     "x": 9573,
     "y": 2895,
     "poi": "Ban Khamphet",
-    "floor": 0
+    "floor": 0,
+    "tier": 3
   },
   {
     "id": "crate-6730",
@@ -6909,7 +11668,8 @@ export const BLUE_CRATES_05: ResourceSpawn05[] = [
     "x": 9628,
     "y": 2875,
     "poi": "Tiger Bay",
-    "floor": 0
+    "floor": 0,
+    "tier": 3
   },
   {
     "id": "crate-6750",
@@ -6917,7 +11677,8 @@ export const BLUE_CRATES_05: ResourceSpawn05[] = [
     "x": 9321,
     "y": 1740,
     "poi": "Blue Lagoon",
-    "floor": 0
+    "floor": 0,
+    "tier": 2
   },
   {
     "id": "crate-6749",
@@ -6925,7 +11686,8 @@ export const BLUE_CRATES_05: ResourceSpawn05[] = [
     "x": 9884,
     "y": 1745,
     "poi": "Blue Lagoon",
-    "floor": 0
+    "floor": 0,
+    "tier": 2
   },
   {
     "id": "crate-6731",
@@ -6933,15 +11695,17 @@ export const BLUE_CRATES_05: ResourceSpawn05[] = [
     "x": 9559,
     "y": 3031,
     "poi": "Tiger Bay",
-    "floor": 0
+    "floor": 0,
+    "tier": 2
   },
   {
     "id": "crate-6745",
     "name": "Building Material Crate",
     "x": 8466,
     "y": 4140,
-    "poi": "Ground Zero",
-    "floor": 0
+    "poi": "Lakevale Sanctuary",
+    "floor": 0,
+    "tier": 3
   },
   {
     "id": "crate-6732",
@@ -6949,7 +11713,8 @@ export const BLUE_CRATES_05: ResourceSpawn05[] = [
     "x": 10088,
     "y": 2948,
     "poi": "Tiger Bay",
-    "floor": 0
+    "floor": 0,
+    "tier": 3
   },
   {
     "id": "crate-6740",
@@ -6957,7 +11722,8 @@ export const BLUE_CRATES_05: ResourceSpawn05[] = [
     "x": 9353,
     "y": 4746,
     "poi": "Ban Pa",
-    "floor": 0
+    "floor": 0,
+    "tier": 2
   },
   {
     "id": "crate-6738",
@@ -6965,7 +11731,8 @@ export const BLUE_CRATES_05: ResourceSpawn05[] = [
     "x": 10557,
     "y": 4016,
     "poi": "Ban Pa",
-    "floor": 0
+    "floor": 0,
+    "tier": 2
   },
   {
     "id": "crate-6742",
@@ -6973,7 +11740,8 @@ export const BLUE_CRATES_05: ResourceSpawn05[] = [
     "x": 10059,
     "y": 5230,
     "poi": "Ban Pa",
-    "floor": 0
+    "floor": 0,
+    "tier": 2
   },
   {
     "id": "crate-6741",
@@ -6981,7 +11749,8 @@ export const BLUE_CRATES_05: ResourceSpawn05[] = [
     "x": 9599,
     "y": 5099,
     "poi": "Ban Pa",
-    "floor": 0
+    "floor": 0,
+    "tier": 2
   },
   {
     "id": "crate-6733",
@@ -6989,7 +11758,8 @@ export const BLUE_CRATES_05: ResourceSpawn05[] = [
     "x": 9588,
     "y": 3098,
     "poi": "Tiger Bay",
-    "floor": 0
+    "floor": 0,
+    "tier": 3
   },
   {
     "id": "crate-6735",
@@ -6997,7 +11767,8 @@ export const BLUE_CRATES_05: ResourceSpawn05[] = [
     "x": 9621,
     "y": 3302,
     "poi": "Tiger Bay",
-    "floor": 0
+    "floor": 0,
+    "tier": 3
   },
   {
     "id": "crate-6739",
@@ -7005,7 +11776,8 @@ export const BLUE_CRATES_05: ResourceSpawn05[] = [
     "x": 9817,
     "y": 4109,
     "poi": "Ban Pa",
-    "floor": 0
+    "floor": 0,
+    "tier": 2
   },
   {
     "id": "crate-6737",
@@ -7013,7 +11785,8 @@ export const BLUE_CRATES_05: ResourceSpawn05[] = [
     "x": 10523,
     "y": 3725,
     "poi": "Ban Pa",
-    "floor": 0
+    "floor": 0,
+    "tier": 2
   },
   {
     "id": "crate-6755",
@@ -7021,7 +11794,8 @@ export const BLUE_CRATES_05: ResourceSpawn05[] = [
     "x": 7942,
     "y": 6025,
     "poi": "Ban Khamphet",
-    "floor": 0
+    "floor": 0,
+    "tier": 2
   },
   {
     "id": "crate-6734",
@@ -7029,7 +11803,8 @@ export const BLUE_CRATES_05: ResourceSpawn05[] = [
     "x": 9666,
     "y": 3114,
     "poi": "Tiger Bay",
-    "floor": 0
+    "floor": 0,
+    "tier": 3
   },
   {
     "id": "crate-6747",
@@ -7037,7 +11812,8 @@ export const BLUE_CRATES_05: ResourceSpawn05[] = [
     "x": 10439,
     "y": 1860,
     "poi": "Blue Lagoon",
-    "floor": 0
+    "floor": 0,
+    "tier": 2
   },
   {
     "id": "crate-6754",
@@ -7045,7 +11821,8 @@ export const BLUE_CRATES_05: ResourceSpawn05[] = [
     "x": 8139,
     "y": 5922,
     "poi": "Pha Lang Airfield",
-    "floor": 0
+    "floor": 0,
+    "tier": 2
   },
   {
     "id": "crate-6760",
@@ -7053,7 +11830,8 @@ export const BLUE_CRATES_05: ResourceSpawn05[] = [
     "x": 6715,
     "y": 6581,
     "poi": "Midnight Sapphire",
-    "floor": 0
+    "floor": 0,
+    "tier": 2
   },
   {
     "id": "crate-6770",
@@ -7061,7 +11839,8 @@ export const BLUE_CRATES_05: ResourceSpawn05[] = [
     "x": 4613,
     "y": 2951,
     "poi": "Fort Narith",
-    "floor": 0
+    "floor": 0,
+    "tier": 2
   },
   {
     "id": "crate-6758",
@@ -7069,7 +11848,8 @@ export const BLUE_CRATES_05: ResourceSpawn05[] = [
     "x": 7111,
     "y": 7003,
     "poi": "Midnight Sapphire",
-    "floor": 0
+    "floor": 0,
+    "tier": 3
   },
   {
     "id": "crate-6757",
@@ -7077,7 +11857,8 @@ export const BLUE_CRATES_05: ResourceSpawn05[] = [
     "x": 7461,
     "y": 5849,
     "poi": "Pha Lang Airfield",
-    "floor": 0
+    "floor": 0,
+    "tier": 2
   },
   {
     "id": "crate-6761",
@@ -7085,15 +11866,17 @@ export const BLUE_CRATES_05: ResourceSpawn05[] = [
     "x": 6785,
     "y": 6584,
     "poi": "Midnight Sapphire",
-    "floor": 0
+    "floor": 0,
+    "tier": 3
   },
   {
     "id": "crate-6767",
     "name": "Building Material Crate",
     "x": 6916,
     "y": 5100,
-    "poi": "Ground Zero",
-    "floor": 0
+    "poi": "Northern Reach",
+    "floor": 0,
+    "tier": 3
   },
   {
     "id": "crate-6783",
@@ -7101,7 +11884,8 @@ export const BLUE_CRATES_05: ResourceSpawn05[] = [
     "x": 5918,
     "y": 6796,
     "poi": "Hunter's Paradise",
-    "floor": 0
+    "floor": 0,
+    "tier": 2
   },
   {
     "id": "crate-6780",
@@ -7109,7 +11893,8 @@ export const BLUE_CRATES_05: ResourceSpawn05[] = [
     "x": 4032,
     "y": 4528,
     "poi": "Sawmill",
-    "floor": 0
+    "floor": 0,
+    "tier": 2
   },
   {
     "id": "crate-6782",
@@ -7117,7 +11902,8 @@ export const BLUE_CRATES_05: ResourceSpawn05[] = [
     "x": 3706,
     "y": 3694,
     "poi": "Sawmill",
-    "floor": 0
+    "floor": 0,
+    "tier": 2
   },
   {
     "id": "crate-6773",
@@ -7125,7 +11911,8 @@ export const BLUE_CRATES_05: ResourceSpawn05[] = [
     "x": 4535,
     "y": 2625,
     "poi": "Fort Narith",
-    "floor": 0
+    "floor": 0,
+    "tier": 3
   },
   {
     "id": "crate-6774",
@@ -7133,7 +11920,8 @@ export const BLUE_CRATES_05: ResourceSpawn05[] = [
     "x": 4164,
     "y": 2951,
     "poi": "Fort Narith",
-    "floor": 0
+    "floor": 0,
+    "tier": 3
   },
   {
     "id": "crate-6775",
@@ -7141,7 +11929,8 @@ export const BLUE_CRATES_05: ResourceSpawn05[] = [
     "x": 4130,
     "y": 3156,
     "poi": "Fort Narith",
-    "floor": 0
+    "floor": 0,
+    "tier": 3
   },
   {
     "id": "crate-6784",
@@ -7149,7 +11938,8 @@ export const BLUE_CRATES_05: ResourceSpawn05[] = [
     "x": 5788,
     "y": 5849,
     "poi": "Hunter's Paradise",
-    "floor": 0
+    "floor": 0,
+    "tier": 2
   },
   {
     "id": "crate-6777",
@@ -7157,7 +11947,8 @@ export const BLUE_CRATES_05: ResourceSpawn05[] = [
     "x": 3941,
     "y": 3489,
     "poi": "Fort Narith",
-    "floor": 0
+    "floor": 0,
+    "tier": 2
   },
   {
     "id": "crate-6776",
@@ -7165,7 +11956,8 @@ export const BLUE_CRATES_05: ResourceSpawn05[] = [
     "x": 4056,
     "y": 3410,
     "poi": "Fort Narith",
-    "floor": 0
+    "floor": 0,
+    "tier": 2
   },
   {
     "id": "crate-6778",
@@ -7173,7 +11965,8 @@ export const BLUE_CRATES_05: ResourceSpawn05[] = [
     "x": 4184,
     "y": 4085,
     "poi": "Sawmill",
-    "floor": 0
+    "floor": 0,
+    "tier": 2
   },
   {
     "id": "crate-6779",
@@ -7181,7 +11974,8 @@ export const BLUE_CRATES_05: ResourceSpawn05[] = [
     "x": 3927,
     "y": 4451,
     "poi": "Sawmill",
-    "floor": 0
+    "floor": 0,
+    "tier": 2
   },
   {
     "id": "crate-6781",
@@ -7189,23 +11983,26 @@ export const BLUE_CRATES_05: ResourceSpawn05[] = [
     "x": 3417,
     "y": 3218,
     "poi": "Sawmill",
-    "floor": 0
+    "floor": 0,
+    "tier": 2
   },
   {
     "id": "crate-6790",
     "name": "Building Material Crate",
     "x": 4945,
     "y": 4103,
-    "poi": "Ground Zero",
-    "floor": 0
+    "poi": "RLSL-1 Radio Observatory",
+    "floor": 0,
+    "tier": 3
   },
   {
     "id": "crate-6788",
     "name": "Building Material Crate",
     "x": 4983,
     "y": 4038,
-    "poi": "Ground Zero",
-    "floor": 0
+    "poi": "RLSL-1 Radio Observatory",
+    "floor": 0,
+    "tier": 3
   },
   {
     "id": "crate-6753",
@@ -7213,7 +12010,8 @@ export const BLUE_CRATES_05: ResourceSpawn05[] = [
     "x": 8350,
     "y": 2496,
     "poi": "Blue Lagoon",
-    "floor": 0
+    "floor": 0,
+    "tier": 2
   },
   {
     "id": "crate-6751",
@@ -7221,7 +12019,8 @@ export const BLUE_CRATES_05: ResourceSpawn05[] = [
     "x": 9167,
     "y": 1905,
     "poi": "Blue Lagoon",
-    "floor": 0
+    "floor": 0,
+    "tier": 2
   },
   {
     "id": "crate-6748",
@@ -7229,7 +12028,8 @@ export const BLUE_CRATES_05: ResourceSpawn05[] = [
     "x": 10620,
     "y": 2058,
     "poi": "Blue Lagoon",
-    "floor": 0
+    "floor": 0,
+    "tier": 2
   },
   {
     "id": "crate-6736",
@@ -7237,7 +12037,8 @@ export const BLUE_CRATES_05: ResourceSpawn05[] = [
     "x": 8915,
     "y": 2845,
     "poi": "Blue Lagoon",
-    "floor": 0
+    "floor": 0,
+    "tier": 2
   },
   {
     "id": "crate-6756",
@@ -7245,7 +12046,8 @@ export const BLUE_CRATES_05: ResourceSpawn05[] = [
     "x": 7435,
     "y": 5720,
     "poi": "Ban Khamphet",
-    "floor": 0
+    "floor": 0,
+    "tier": 2
   },
   {
     "id": "crate-6763",
@@ -7253,7 +12055,8 @@ export const BLUE_CRATES_05: ResourceSpawn05[] = [
     "x": 7034,
     "y": 6199,
     "poi": "Midnight Sapphire",
-    "floor": 0
+    "floor": 0,
+    "tier": 2
   },
   {
     "id": "crate-6762",
@@ -7261,7 +12064,8 @@ export const BLUE_CRATES_05: ResourceSpawn05[] = [
     "x": 6712,
     "y": 6229,
     "poi": "Midnight Sapphire",
-    "floor": 0
+    "floor": 0,
+    "tier": 2
   },
   {
     "id": "crate-6771",
@@ -7269,7 +12073,8 @@ export const BLUE_CRATES_05: ResourceSpawn05[] = [
     "x": 4634,
     "y": 3084,
     "poi": "Fort Narith",
-    "floor": 0
+    "floor": 0,
+    "tier": 2
   },
   {
     "id": "crate-6769",
@@ -7277,31 +12082,35 @@ export const BLUE_CRATES_05: ResourceSpawn05[] = [
     "x": 4565,
     "y": 2858,
     "poi": "Fort Narith",
-    "floor": 0
+    "floor": 0,
+    "tier": 2
   },
   {
     "id": "crate-6743",
     "name": "Building Material Crate",
     "x": 8242,
     "y": 4322,
-    "poi": "Ground Zero",
-    "floor": 0
+    "poi": "Lakevale Sanctuary",
+    "floor": 0,
+    "tier": 3
   },
   {
     "id": "crate-6789",
     "name": "Building Material Crate",
     "x": 5021,
     "y": 4084,
-    "poi": "Ground Zero",
-    "floor": 0
+    "poi": "RLSL-1 Radio Observatory",
+    "floor": 0,
+    "tier": 3
   },
   {
     "id": "crate-6791",
     "name": "Building Material Crate",
     "x": 5113,
     "y": 4179,
-    "poi": "Ground Zero",
-    "floor": 0
+    "poi": "RLSL-1 Radio Observatory",
+    "floor": 0,
+    "tier": 3
   },
   {
     "id": "crate-6752",
@@ -7309,15 +12118,17 @@ export const BLUE_CRATES_05: ResourceSpawn05[] = [
     "x": 8182,
     "y": 2054,
     "poi": "Blue Lagoon",
-    "floor": 0
+    "floor": 0,
+    "tier": 2
   },
   {
     "id": "crate-6766",
     "name": "Building Material Crate",
     "x": 6904,
     "y": 5243,
-    "poi": "Ground Zero",
-    "floor": 0
+    "poi": "Northern Reach",
+    "floor": 0,
+    "tier": 3
   },
   {
     "id": "crate-6804",
@@ -7325,39 +12136,44 @@ export const BLUE_CRATES_05: ResourceSpawn05[] = [
     "x": 5001,
     "y": 6588,
     "poi": "Hunter's Paradise",
-    "floor": 0
+    "floor": 0,
+    "tier": 2
   },
   {
     "id": "crate-6746",
     "name": "Building Material Crate",
     "x": 8456,
     "y": 4188,
-    "poi": "Ground Zero",
-    "floor": 0
+    "poi": "Lakevale Sanctuary",
+    "floor": 0,
+    "tier": 3
   },
   {
     "id": "crate-6744",
     "name": "Building Material Crate",
     "x": 8387,
     "y": 4169,
-    "poi": "Ground Zero",
-    "floor": 0
+    "poi": "Lakevale Sanctuary",
+    "floor": 0,
+    "tier": 3
   },
   {
     "id": "crate-6764",
     "name": "Building Material Crate",
     "x": 7096,
     "y": 5342,
-    "poi": "Ground Zero",
-    "floor": 0
+    "poi": "Northern Reach",
+    "floor": 0,
+    "tier": 3
   },
   {
     "id": "crate-6765",
     "name": "Building Material Crate",
     "x": 7038,
     "y": 5261,
-    "poi": "Ground Zero",
-    "floor": 0
+    "poi": "Northern Reach",
+    "floor": 0,
+    "tier": 3
   },
   {
     "id": "crate-6772",
@@ -7365,7 +12181,8 @@ export const BLUE_CRATES_05: ResourceSpawn05[] = [
     "x": 4419,
     "y": 3010,
     "poi": "Fort Narith",
-    "floor": 0
+    "floor": 0,
+    "tier": 3
   },
   {
     "id": "crate-6759",
@@ -7373,15 +12190,17 @@ export const BLUE_CRATES_05: ResourceSpawn05[] = [
     "x": 6890,
     "y": 6922,
     "poi": "Midnight Sapphire",
-    "floor": 0
+    "floor": 0,
+    "tier": 3
   },
   {
     "id": "crate-6768",
     "name": "Building Material Crate",
     "x": 7105,
     "y": 5106,
-    "poi": "Ground Zero",
-    "floor": 0
+    "poi": "Northern Reach",
+    "floor": 0,
+    "tier": 3
   },
   {
     "id": "crate-6803",
@@ -7389,7 +12208,8 @@ export const BLUE_CRATES_05: ResourceSpawn05[] = [
     "x": 5015,
     "y": 6535,
     "poi": "Hunter's Paradise",
-    "floor": 0
+    "floor": 0,
+    "tier": 2
   },
   {
     "id": "crate-6805",
@@ -7397,7 +12217,8 @@ export const BLUE_CRATES_05: ResourceSpawn05[] = [
     "x": 5476,
     "y": 6340,
     "poi": "Hunter's Paradise",
-    "floor": 0
+    "floor": 0,
+    "tier": 2
   },
   {
     "id": "crate-6806",
@@ -7405,7 +12226,8 @@ export const BLUE_CRATES_05: ResourceSpawn05[] = [
     "x": 5228,
     "y": 6873,
     "poi": "Hunter's Paradise",
-    "floor": 0
+    "floor": 0,
+    "tier": 2
   },
   {
     "id": "crate-6818",
@@ -7413,7 +12235,8 @@ export const BLUE_CRATES_05: ResourceSpawn05[] = [
     "x": 5767,
     "y": 2150,
     "poi": "YBL-1",
-    "floor": 0
+    "floor": 0,
+    "tier": 2
   },
   {
     "id": "crate-6820",
@@ -7421,7 +12244,8 @@ export const BLUE_CRATES_05: ResourceSpawn05[] = [
     "x": 6066,
     "y": 1854,
     "poi": "YBL-1",
-    "floor": 0
+    "floor": 0,
+    "tier": 2
   },
   {
     "id": "crate-6807",
@@ -7429,7 +12253,8 @@ export const BLUE_CRATES_05: ResourceSpawn05[] = [
     "x": 5284,
     "y": 5899,
     "poi": "Hunter's Paradise",
-    "floor": 0
+    "floor": 0,
+    "tier": 2
   },
   {
     "id": "crate-6813",
@@ -7437,7 +12262,8 @@ export const BLUE_CRATES_05: ResourceSpawn05[] = [
     "x": 3679,
     "y": 5242,
     "poi": "Sawmill",
-    "floor": 0
+    "floor": 0,
+    "tier": 2
   },
   {
     "id": "crate-6817",
@@ -7445,7 +12271,8 @@ export const BLUE_CRATES_05: ResourceSpawn05[] = [
     "x": 6059,
     "y": 2828,
     "poi": "YBL-1",
-    "floor": 0
+    "floor": 0,
+    "tier": 2
   },
   {
     "id": "crate-6824",
@@ -7453,7 +12280,8 @@ export const BLUE_CRATES_05: ResourceSpawn05[] = [
     "x": 10385,
     "y": 5406,
     "poi": "Pha Lang Airfield",
-    "floor": 0
+    "floor": 0,
+    "tier": 2
   },
   {
     "id": "crate-6821",
@@ -7461,7 +12289,8 @@ export const BLUE_CRATES_05: ResourceSpawn05[] = [
     "x": 9331,
     "y": 6067,
     "poi": "Pha Lang Airfield",
-    "floor": 0
+    "floor": 0,
+    "tier": 2
   },
   {
     "id": "crate-6808",
@@ -7469,7 +12298,8 @@ export const BLUE_CRATES_05: ResourceSpawn05[] = [
     "x": 4826,
     "y": 5625,
     "poi": "Hunter's Paradise",
-    "floor": 0
+    "floor": 0,
+    "tier": 2
   },
   {
     "id": "crate-6814",
@@ -7477,7 +12307,8 @@ export const BLUE_CRATES_05: ResourceSpawn05[] = [
     "x": 5209,
     "y": 3075,
     "poi": "YBL-1",
-    "floor": 0
+    "floor": 0,
+    "tier": 2
   },
   {
     "id": "crate-6823",
@@ -7485,7 +12316,8 @@ export const BLUE_CRATES_05: ResourceSpawn05[] = [
     "x": 8980,
     "y": 6315,
     "poi": "Pha Lang Airfield",
-    "floor": 0
+    "floor": 0,
+    "tier": 2
   },
   {
     "id": "crate-6809",
@@ -7493,7 +12325,8 @@ export const BLUE_CRATES_05: ResourceSpawn05[] = [
     "x": 5134,
     "y": 5339,
     "poi": "Hunter's Paradise",
-    "floor": 0
+    "floor": 0,
+    "tier": 2
   },
   {
     "id": "crate-6811",
@@ -7501,7 +12334,8 @@ export const BLUE_CRATES_05: ResourceSpawn05[] = [
     "x": 7312,
     "y": 6098,
     "poi": "Midnight Sapphire",
-    "floor": 0
+    "floor": 0,
+    "tier": 2
   },
   {
     "id": "crate-6819",
@@ -7509,7 +12343,8 @@ export const BLUE_CRATES_05: ResourceSpawn05[] = [
     "x": 5756,
     "y": 1808,
     "poi": "YBL-1",
-    "floor": 0
+    "floor": 0,
+    "tier": 2
   },
   {
     "id": "crate-6810",
@@ -7517,7 +12352,8 @@ export const BLUE_CRATES_05: ResourceSpawn05[] = [
     "x": 5832,
     "y": 5377,
     "poi": "Hunter's Paradise",
-    "floor": 0
+    "floor": 0,
+    "tier": 2
   },
   {
     "id": "crate-6815",
@@ -7525,7 +12361,8 @@ export const BLUE_CRATES_05: ResourceSpawn05[] = [
     "x": 5847,
     "y": 3025,
     "poi": "YBL-1",
-    "floor": 0
+    "floor": 0,
+    "tier": 2
   },
   {
     "id": "crate-6816",
@@ -7533,7 +12370,8 @@ export const BLUE_CRATES_05: ResourceSpawn05[] = [
     "x": 5800,
     "y": 3126,
     "poi": "YBL-1",
-    "floor": 0
+    "floor": 0,
+    "tier": 2
   },
   {
     "id": "crate-6812",
@@ -7541,7 +12379,8 @@ export const BLUE_CRATES_05: ResourceSpawn05[] = [
     "x": 7427,
     "y": 6114,
     "poi": "Midnight Sapphire",
-    "floor": 0
+    "floor": 0,
+    "tier": 2
   },
   {
     "id": "crate-6822",
@@ -7549,15 +12388,26 @@ export const BLUE_CRATES_05: ResourceSpawn05[] = [
     "x": 9075,
     "y": 5856,
     "poi": "Pha Lang Airfield",
-    "floor": 0
+    "floor": 0,
+    "tier": 2
   },
   {
     "id": "crate-7456",
     "name": "Building Material Crate",
     "x": 5174,
     "y": 4097,
-    "poi": "Ground Zero",
-    "floor": -2
+    "poi": "RLSL-1 Radio Observatory",
+    "floor": -2,
+    "tier": 3
+  },
+  {
+    "id": "crate-7504",
+    "name": "Building Material Crate",
+    "x": 6955,
+    "y": 3002,
+    "poi": "YBL-1",
+    "floor": 0,
+    "tier": 2
   },
   {
     "id": "crate-7031",
@@ -7565,7 +12415,8 @@ export const BLUE_CRATES_05: ResourceSpawn05[] = [
     "x": 7750,
     "y": 2947,
     "poi": "Blue Lagoon",
-    "floor": 0
+    "floor": 0,
+    "tier": 2
   },
   {
     "id": "crate-7022",
@@ -7573,7 +12424,8 @@ export const BLUE_CRATES_05: ResourceSpawn05[] = [
     "x": 3445,
     "y": 3636,
     "poi": "Sawmill",
-    "floor": 0
+    "floor": 0,
+    "tier": 2
   },
   {
     "id": "crate-7023",
@@ -7581,7 +12433,8 @@ export const BLUE_CRATES_05: ResourceSpawn05[] = [
     "x": 9770,
     "y": 4779,
     "poi": "Ban Pa",
-    "floor": 0
+    "floor": 0,
+    "tier": 2
   },
   {
     "id": "crate-7029",
@@ -7589,7 +12442,8 @@ export const BLUE_CRATES_05: ResourceSpawn05[] = [
     "x": 7806,
     "y": 2930,
     "poi": "Blue Lagoon",
-    "floor": 0
+    "floor": 0,
+    "tier": 2
   },
   {
     "id": "crate-7039",
@@ -7597,7 +12451,8 @@ export const BLUE_CRATES_05: ResourceSpawn05[] = [
     "x": 3027,
     "y": 5676,
     "poi": "Sawmill",
-    "floor": 0
+    "floor": 0,
+    "tier": 2
   },
   {
     "id": "crate-7038",
@@ -7605,7 +12460,8 @@ export const BLUE_CRATES_05: ResourceSpawn05[] = [
     "x": 2722,
     "y": 5415,
     "poi": "Sawmill",
-    "floor": 0
+    "floor": 0,
+    "tier": 2
   },
   {
     "id": "crate-7089",
@@ -7613,7 +12469,8 @@ export const BLUE_CRATES_05: ResourceSpawn05[] = [
     "x": 4488,
     "y": 4675,
     "poi": "Sawmill",
-    "floor": 0
+    "floor": 0,
+    "tier": 2
   }
 ];
 
@@ -8001,135 +12858,424 @@ export const DISASSEMBLY_SPAWNS_05: ResourceSpawn05[] = [
 export const CHEMICAL_AREAS_05: ResourceSpawn05[] = [
   {
     "id": "chem-7298",
-    "name": "Chemicals Supplies Area",
+    "name": "Chemicals Supplies (Drug Lab)",
     "x": 3247,
     "y": 4361,
-    "poi": "Sawmill"
+    "poi": "Sawmill",
+    "floor": 0
   },
   {
     "id": "chem-7299",
-    "name": "Chemical Supplies Area",
+    "name": "Chemicals Supplies (Drug Lab)",
     "x": 5022,
     "y": 5111,
-    "poi": "Hunter's Paradise"
+    "poi": "Hunter's Paradise",
+    "floor": 0
+  },
+  {
+    "id": "chem-7540",
+    "name": "Chemicals Supplies (Old Blocks)",
+    "x": 9727,
+    "y": 3133,
+    "poi": "Tiger Bay",
+    "floor": 0
   },
   {
     "id": "chem-7277",
-    "name": "Chemical Supplies Area",
+    "name": "Chemicals Supplies (Cave)",
     "x": 9554,
     "y": 1500,
-    "poi": "Blue Lagoon"
+    "poi": "Blue Lagoon",
+    "floor": 0
   },
   {
     "id": "chem-7279",
-    "name": "Chemical Supplies Area",
+    "name": "Chemicals Supplies (Apartment Building)",
     "x": 10064,
     "y": 2802,
-    "poi": "Tiger Bay"
+    "poi": "Tiger Bay",
+    "floor": 0
   },
   {
     "id": "chem-7282",
-    "name": "Chemical Supplies Area",
+    "name": "Chemicals Supplies (South Hangar)",
     "x": 8234,
     "y": 5641,
-    "poi": "Pha Lang Airfield"
+    "poi": "Pha Lang Airfield",
+    "floor": 0
   },
   {
     "id": "chem-7284",
-    "name": "Chemical Supplies Area",
+    "name": "Chemicals Supplies (Drug Lab)",
     "x": 5170,
     "y": 7318,
-    "poi": "Hunter's Paradise"
+    "poi": "Hunter's Paradise",
+    "floor": 0
   },
   {
     "id": "chem-7287",
-    "name": "Chemical Supplies Area",
+    "name": "Chemicals Supplies (Drug Lab)",
     "x": 5473,
     "y": 3589,
-    "poi": "Ground Zero"
+    "poi": "RLSL-1 Radio Observatory",
+    "floor": 0
   },
   {
     "id": "chem-7288",
-    "name": "Chemical Supplies Area",
+    "name": "Chemicals Supplies (Savanpha Village)",
     "x": 4568,
     "y": 2870,
-    "poi": "Fort Narith"
+    "poi": "Fort Narith",
+    "floor": 0
   },
   {
     "id": "chem-7285",
-    "name": "Chemical Supplies Area",
+    "name": "Chemicals Supplies (Stash House)",
     "x": 6259,
     "y": 6143,
-    "poi": "Hunter's Paradise"
+    "poi": "Hunter's Paradise",
+    "floor": 0
   },
   {
     "id": "chem-7289",
-    "name": "Chemical Supplies Area",
+    "name": "Chemicals Supplies (Nakasa village)",
     "x": 4029,
     "y": 3470,
-    "poi": "Fort Narith"
+    "poi": "Fort Narith",
+    "floor": 0
   },
   {
     "id": "chem-7281",
-    "name": "Chemical Supplies Area",
+    "name": "Chemicals Supplies (Drug Lab)",
     "x": 8200,
     "y": 3113,
-    "poi": "Blue Lagoon"
+    "poi": "Blue Lagoon",
+    "floor": 0
   },
   {
     "id": "chem-7293",
-    "name": "Chemical Supplies Area",
+    "name": "Chemicals Supplies (Main Building)",
     "x": 8357,
     "y": 4252,
-    "poi": "Ground Zero"
+    "poi": "Lakevale Sanctuary",
+    "floor": 0
   },
   {
     "id": "chem-7283",
-    "name": "Chemical Supplies Area",
+    "name": "Chemicals Supplies (Hidden Dock)",
     "x": 10964,
     "y": 3933,
-    "poi": "Ban Pa"
+    "poi": "Ban Pa",
+    "floor": 0
   },
   {
     "id": "chem-7286",
-    "name": "Chemical Supplies Area",
+    "name": "Chemicals Supplies (Stash House)",
     "x": 3067,
     "y": 5318,
-    "poi": "Sawmill"
+    "poi": "Sawmill",
+    "floor": 0
   },
   {
     "id": "chem-7291",
-    "name": "Chemical Supplies Area",
+    "name": "Chemicals Supplies (Roadside House)",
     "x": 6660,
     "y": 6719,
-    "poi": "Midnight Sapphire"
+    "poi": "Midnight Sapphire",
+    "floor": 0
   },
   {
     "id": "chem-7292",
-    "name": "Chemical Supplies Area",
+    "name": "Chemicals Supplies (Gas station)",
     "x": 7289,
     "y": 6144,
-    "poi": "Midnight Sapphire"
+    "poi": "Midnight Sapphire",
+    "floor": 0
   },
   {
     "id": "chem-7294",
-    "name": "Chemical Supplies Area",
+    "name": "Chemicals Supplies (Elder's house)",
     "x": 10580,
     "y": 3721,
-    "poi": "Ban Pa"
+    "poi": "Ban Pa",
+    "floor": 0
   },
   {
     "id": "chem-7290",
-    "name": "Chemical Supplies Area",
+    "name": "Chemicals Supplies (Drug Lab)",
     "x": 2974,
     "y": 3682,
-    "poi": "Sawmill"
+    "poi": "Sawmill",
+    "floor": 0
   },
   {
     "id": "chem-7492",
-    "name": "Chemical Supplies Area",
+    "name": "Chemicals Supplies (Drug Lab)",
     "x": 9728,
     "y": 4485,
-    "poi": "Ban Pa"
+    "poi": "Ban Pa",
+    "floor": 0
+  }
+];
+
+export const ELECTRONIC_AREAS_05: ResourceSpawn05[] = [
+  {
+    "id": "elec-7543",
+    "name": "Electronic Supplies (Trashed Campsite)",
+    "x": 5186,
+    "y": 4921,
+    "poi": "RLSL-1 Radio Observatory",
+    "floor": 0
+  },
+  {
+    "id": "elec-7544",
+    "name": "Electronic Supplies (Trashed Campsite)",
+    "x": 5285,
+    "y": 4433,
+    "poi": "RLSL-1 Radio Observatory",
+    "floor": 0
+  },
+  {
+    "id": "elec-7545",
+    "name": "Electronic Supplies (Headquarters)",
+    "x": 5087,
+    "y": 4030,
+    "poi": "RLSL-1 Radio Observatory",
+    "floor": 0
+  },
+  {
+    "id": "elec-7547",
+    "name": "Electronic Supplies (FN-3 Auxiliary base)",
+    "x": 5060,
+    "y": 3464,
+    "poi": "YBL-1",
+    "floor": 0
+  },
+  {
+    "id": "elec-7548",
+    "name": "Electronic Supplies (Trashed Campsite)",
+    "x": 9662,
+    "y": 2122,
+    "poi": "Blue Lagoon",
+    "floor": 0
+  },
+  {
+    "id": "elec-7550",
+    "name": "Electronic Supplies (Campsite)",
+    "x": 10605,
+    "y": 2592,
+    "poi": "Tiger Bay",
+    "floor": 0
+  },
+  {
+    "id": "elec-7556",
+    "name": "Electronic Supplies (Trashed Campsite)",
+    "x": 8773,
+    "y": 5328,
+    "poi": "Pha Lang Airfield",
+    "floor": 0
+  },
+  {
+    "id": "elec-7555",
+    "name": "Electronic Supplies (Siang Radio Station)",
+    "x": 9310,
+    "y": 4725,
+    "poi": "Ban Pa",
+    "floor": 0
+  },
+  {
+    "id": "elec-7557",
+    "name": "Electronic Supplies (Trashed Campsite)",
+    "x": 8950,
+    "y": 4935,
+    "poi": "Pha Lang Airfield",
+    "floor": 0
+  },
+  {
+    "id": "elec-7559",
+    "name": "Electronic Supplies (Headquarters)",
+    "x": 6914,
+    "y": 5242,
+    "poi": "Northern Reach",
+    "floor": 1
+  },
+  {
+    "id": "elec-7563",
+    "name": "Electronic Supplies (Trashed Campsite)",
+    "x": 3358,
+    "y": 4343,
+    "poi": "Sawmill",
+    "floor": 0
+  },
+  {
+    "id": "elec-7565",
+    "name": "Electronic Supplies (Trashed Campsite)",
+    "x": 8461,
+    "y": 3004,
+    "poi": "Blue Lagoon",
+    "floor": 0
+  },
+  {
+    "id": "elec-7558",
+    "name": "Electronic Supplies (Bridge Checkpoint)",
+    "x": 6961,
+    "y": 5194,
+    "poi": "Northern Reach",
+    "floor": 1
+  },
+  {
+    "id": "elec-7549",
+    "name": "Electronic Supplies (Campsite)",
+    "x": 10055,
+    "y": 2267,
+    "poi": "Blue Lagoon",
+    "floor": 0
+  },
+  {
+    "id": "elec-7560",
+    "name": "Electronic Supplies (Headquarters)",
+    "x": 6926,
+    "y": 5261,
+    "poi": "Northern Reach",
+    "floor": 1
+  },
+  {
+    "id": "elec-7562",
+    "name": "Electronic Supplies (Trashed Campsite)",
+    "x": 3565,
+    "y": 4221,
+    "poi": "Sawmill",
+    "floor": 0
+  },
+  {
+    "id": "elec-7564",
+    "name": "Electronic Supplies (Trashed Campsite)",
+    "x": 8509,
+    "y": 6246,
+    "poi": "Pha Lang Airfield",
+    "floor": 0
+  },
+  {
+    "id": "elec-7552",
+    "name": "Electronic Supplies (LAF Checkpoint)",
+    "x": 9845,
+    "y": 2976,
+    "poi": "Tiger Bay",
+    "floor": 1
+  },
+  {
+    "id": "elec-7554",
+    "name": "Electronic Supplies (Country House)",
+    "x": 9979,
+    "y": 4389,
+    "poi": "Ban Pa",
+    "floor": 0
+  },
+  {
+    "id": "elec-7566",
+    "name": "Electronic Supplies (Trashed Campsite)",
+    "x": 7770,
+    "y": 3258,
+    "poi": "Blue Lagoon",
+    "floor": 0
+  },
+  {
+    "id": "elec-7568",
+    "name": "Electronic Supplies (Campsite)",
+    "x": 4732,
+    "y": 4334,
+    "poi": "Sawmill",
+    "floor": 0
+  },
+  {
+    "id": "elec-7546",
+    "name": "Electronic Supplies (Trashed Campsite)",
+    "x": 4886,
+    "y": 3684,
+    "poi": "RLSL-1 Radio Observatory",
+    "floor": 0
+  },
+  {
+    "id": "elec-7551",
+    "name": "Electronic Supplies (Riki's Gamer Grill)",
+    "x": 9930,
+    "y": 2729,
+    "poi": "Tiger Bay",
+    "floor": 0
+  },
+  {
+    "id": "elec-7553",
+    "name": "Electronic Supplies (Secluded Shelter)",
+    "x": 10475,
+    "y": 4491,
+    "poi": "Ban Pa",
+    "floor": 0
+  },
+  {
+    "id": "elec-7561",
+    "name": "Electronic Supplies (Trashed Campsite)",
+    "x": 3702,
+    "y": 2846,
+    "poi": "Sawmill",
+    "floor": 0
+  },
+  {
+    "id": "elec-7569",
+    "name": "Electronic Supplies (Woodshed)",
+    "x": 4297,
+    "y": 3934,
+    "poi": "Sawmill",
+    "floor": 0
+  }
+];
+
+export const MEDICAL_AREAS_05: ResourceSpawn05[] = [
+  {
+    "id": "med-7182",
+    "name": "Medical Supplies (Municipal Office Building)",
+    "x": 10056,
+    "y": 3018,
+    "poi": "Tiger Bay",
+    "floor": 0
+  },
+  {
+    "id": "med-7183",
+    "name": "Medical Supplies (Infirmary)",
+    "x": 4209,
+    "y": 3103,
+    "poi": "Fort Narith",
+    "floor": 0
+  },
+  {
+    "id": "med-7280",
+    "name": "Medical Supplies (UNLRA Headquarters)",
+    "x": 10131,
+    "y": 3237,
+    "poi": "Tiger Bay",
+    "floor": 0
+  },
+  {
+    "id": "med-7499",
+    "name": "Medical Supplies (Research Facility)",
+    "x": 6926,
+    "y": 5133,
+    "poi": "Northern Reach",
+    "floor": 0
+  },
+  {
+    "id": "med-7500",
+    "name": "Medical Supplies (LAF Checkpoint)",
+    "x": 9880,
+    "y": 2942,
+    "poi": "Tiger Bay",
+    "floor": 1
+  },
+  {
+    "id": "med-7502",
+    "name": "Medical Supplies (Main Building)",
+    "x": 8374,
+    "y": 4298,
+    "poi": "Lakevale Sanctuary",
+    "floor": -1
   }
 ];

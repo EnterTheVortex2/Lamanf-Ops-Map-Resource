@@ -2,7 +2,9 @@ import {
   BLUE_CRATES_05,
   CHEMICAL_AREAS_05,
   DISASSEMBLY_SPAWNS_05,
+  ELECTRONIC_AREAS_05,
   LAMANG_POIS,
+  MEDICAL_AREAS_05,
   type CustomMapPin,
   type MapLayerKey,
 } from "../config/mapConfig";
@@ -301,12 +303,49 @@ export function buildDisassemblyRecipes(
   });
 }
 
+const ELECTRONIC_AREA_MATERIALS = new Set([
+  "cpu",
+  "motherboard",
+  "ram",
+  "power supply",
+  "pc fan",
+  "circuit board",
+  "electrical parts",
+  "graphics card",
+]);
+
+const MEDICAL_AREA_MATERIALS = new Set([
+  "microscope",
+  "laboratory flask",
+  "mechanical pipette",
+  "complex glass electrode",
+  "vapor lamp",
+  "crystal prism",
+  "hepa filter",
+]);
+
+const CRATE_LOOT_MATERIALS = new Set([
+  "plastics",
+  "steel",
+  "wood",
+  "plumbing parts",
+  "mechanical parts",
+  "construction material",
+  "stainless steel sheet",
+  "glass",
+  "fine metal mesh",
+  "copper",
+  "water pump",
+  "silicone sealant",
+]);
+
 export function resolveSpawnPointsForMaterial(
   mat: CatalogMaterial,
   customPins: CustomMapPin[],
   extraLootNotes: string[] = []
 ): SpawnPoint[] {
   const points: SpawnPoint[] = [];
+  const canonicalName = mat.name.trim().toLowerCase();
 
   for (const pin of customPins) {
     if (pin.materialId === mat.id || pin.materialId === mat.key) {
@@ -339,7 +378,7 @@ export function resolveSpawnPointsForMaterial(
     .join(" ")
     .toLowerCase();
 
-  // Direct Disassembly Item matches (e.g., UNLRA Field Terminal, IMSI Catcher, Chemical Containment Container)
+  // Direct Disassembly Item matches
   for (const dis of DISASSEMBLY_SPAWNS_05) {
     if (textBlob.includes(dis.name.toLowerCase())) {
       points.push({
@@ -353,25 +392,51 @@ export function resolveSpawnPointsForMaterial(
   }
 
   // Direct Chemicals Supplies Areas when inspecting Chemicals
-  if (mat.name.toLowerCase() === "chemicals" || textBlob.includes("chemical supplies")) {
-    for (const chem of CHEMICAL_AREAS_05.slice(0, 12)) {
+  if (canonicalName === "chemicals") {
+    for (const chem of CHEMICAL_AREAS_05) {
       points.push({
         x: chem.x,
         y: chem.y,
-        title: `Chemicals Supplies — ${chem.poi}`,
+        title: `${chem.name} — ${chem.poi}`,
         source: "Chemicals Supplies Area",
         kind: "chemicals",
       });
     }
   }
 
-  // Exact Update 0.5 POIs & Sub-Locations matching material tags/notes
+  // Direct Electronic Supplies Areas (26 spots, including Trashed Campsites) for standard PC/electronics parts (NOT Server CPU)
+  if (ELECTRONIC_AREA_MATERIALS.has(canonicalName)) {
+    for (const elec of ELECTRONIC_AREAS_05.slice(0, 14)) {
+      points.push({
+        x: elec.x,
+        y: elec.y,
+        title: `${elec.name} — ${elec.poi}`,
+        source: "Electronic Supplies Area",
+        kind: "electronics",
+      });
+    }
+  }
+
+  // Direct Medical Supplies Areas (6 Tier 3-4 spots) for lab/medical items
+  if (MEDICAL_AREA_MATERIALS.has(canonicalName)) {
+    for (const med of MEDICAL_AREAS_05) {
+      points.push({
+        x: med.x,
+        y: med.y,
+        title: `${med.name} — ${med.poi}`,
+        source: "Medical Supplies Area",
+        tier: med.poi === "Fort Narith" || med.poi === "Tiger Bay" ? "Tier 3" : "Tier 4",
+        kind: "medical",
+      });
+    }
+  }
+
+  // Exact Update 0.5 POIs & Sub-Locations matching canonical material tag (prevents "cpu" matching "server cpu")
   const matchedPois: SpawnPoint[] = [];
   for (const poi of LAMANG_POIS) {
     if (poi.kind === "base" || poi.kind === "cop" || poi.kind === "lz") continue;
-    const nameMatch = textBlob.includes(poi.name.toLowerCase());
-    const tagMatch = poi.tags.some((tag) => tag.length >= 3 && textBlob.includes(tag));
-    if (nameMatch || tagMatch) {
+    const exactTagMatch = poi.tags.includes(canonicalName);
+    if (exactTagMatch) {
       matchedPois.push({
         x: poi.x,
         y: poi.y,
@@ -382,59 +447,37 @@ export function resolveSpawnPointsForMaterial(
         tier: poi.tier,
         lz: poi.lz,
         kind: poi.kind,
-        source: nameMatch
-          ? "Reported Spawn Location"
-          : poi.kind === "sublocation"
+        source:
+          poi.kind === "sublocation"
             ? `${poi.parentRegion || "Compound"} Spawn`
-            : "Loot Region",
+            : "Verified Loot Region",
       });
     }
   }
 
-  // Prioritize Tier 4 / Major POIs + top matching sub-compounds (cap to avoid crowding)
   matchedPois.sort((a, b) => {
     const score = (k?: string) => (k === "tier4" ? 0 : k === "major" ? 1 : 2);
     return score(a.kind) - score(b.kind);
   });
-  points.push(...matchedPois.slice(0, 14));
+  points.push(...matchedPois.slice(0, 16));
 
-  // Include representative Blue-Planked Building Material Crates for building materials
-  if (mat.layerHint === "blueCrates") {
+  // Include Tier-appropriate Building Material Crates ONLY for actual crate materials
+  if (CRATE_LOOT_MATERIALS.has(canonicalName)) {
+    const minCrateTier = canonicalName === "stainless steel sheet" ? 3 : 2;
     const seenRegions = new Set<string>();
     for (const crate of BLUE_CRATES_05) {
+      if ((crate.tier ?? 2) < minCrateTier) continue;
       if (seenRegions.has(crate.poi)) continue;
-      const matchesRegion =
-        textBlob.includes(crate.poi.toLowerCase()) || seenRegions.size < 6;
-      if (matchesRegion) {
-        seenRegions.add(crate.poi);
-        points.push({
-          x: crate.x,
-          y: crate.y,
-          title: `Building Material Crate — ${crate.poi}`,
-          source: "Blue-Planked Material Crate",
-          kind: "crate",
-        });
-      }
+      seenRegions.add(crate.poi);
+      points.push({
+        x: crate.x,
+        y: crate.y,
+        title: `Building Material Crate (L${crate.tier ?? 2}) — ${crate.poi}`,
+        tier: crate.tier ? `Crate Lv.${crate.tier}` : undefined,
+        source: "Blue-Planked Material Crate",
+        kind: "crate",
+      });
       if (seenRegions.size >= 10) break;
-    }
-  }
-
-  if (points.length === 0) {
-    const fallbackTag = mat.layerHint === "pcSpawns" ? "pc" : "blue_crate";
-    for (const poi of LAMANG_POIS) {
-      if (poi.kind !== "major" && poi.kind !== "tier4") continue;
-      if (poi.tags.includes(fallbackTag)) {
-        points.push({
-          x: poi.x,
-          y: poi.y,
-          title: poi.name,
-          tier: poi.tier,
-          lz: poi.lz,
-          kind: poi.kind,
-          source:
-            fallbackTag === "pc" ? "PC Part Spawn Zone" : "Blue-Planked Crate Zone",
-        });
-      }
     }
   }
 

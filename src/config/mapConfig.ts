@@ -4,8 +4,10 @@ import {
   CHEMICAL_AREAS_05,
   COPS_05,
   DISASSEMBLY_SPAWNS_05,
+  ELECTRONIC_AREAS_05,
   LZS_05,
   MAJOR_POIS_05,
+  MEDICAL_AREAS_05,
   SUB_POIS_05,
   type RawPoi05,
 } from "./mapData05";
@@ -168,106 +170,158 @@ export function doesTaskBelongToFaction(
   return true;
 }
 
+const TIER_1_REGIONS = new Set(["Kiu Vongsa", "Nam Thaven", "Pha Lang"]);
+const TIER_3_REGIONS = new Set(["Fort Narith", "Tiger Bay", "Midnight Sapphire"]);
+const TIER_4_REGIONS = new Set([
+  "Northern Reach",
+  "Lakevale Sanctuary",
+  "RLSL-1 Radio Observatory",
+  "Ground Zero",
+]);
+
+function getRegionTierNum(region?: string): 1 | 2 | 3 | 4 {
+  if (!region) return 2;
+  if (TIER_4_REGIONS.has(region)) return 4;
+  if (TIER_3_REGIONS.has(region)) return 3;
+  if (TIER_1_REGIONS.has(region)) return 1;
+  return 2;
+}
+
+/**
+ * Tier-verified Update 0.5 canonical material tags per region.
+ * Uses exact canonical Hideout material names (lowercase) so substring collisions
+ * (e.g. "cpu" vs "server cpu", "steel" vs "stainless steel sheet") cannot occur.
+ */
 const REGION_LOOT_TAGS: Record<string, string[]> = {
   "Northern Reach": [
-    "northern reach",
-    "military",
-    "research",
     "server cpu",
-    "server",
     "military software",
+    "civilian software",
     "signal generator",
-    "laser tube",
-    "hepa",
     "oscilloscope",
-    "circuit",
-    "stainless",
-    "chemicals",
-    "pc",
-    "electrical",
+    "laser tube",
+    "cpu",
+    "motherboard",
+    "graphics card",
+    "ram",
+    "power supply",
+    "pc fan",
+    "circuit board",
+    "electrical parts",
+    "stainless steel sheet",
+    "tooling coolant",
+    "cnc drill bits",
+    "hepa filter",
     "microscope",
-    "flask",
-    "pipette",
-    "complex glass",
+    "laboratory flask",
+    "mechanical pipette",
+    "complex glass electrode",
+    "vapor lamp",
+    "crystal prism",
+    "chemicals",
+    "zinc electrode",
+    "blue_crate",
   ],
   "Lakevale Sanctuary": [
-    "lakevale",
-    "sanctuary",
-    "asylum",
-    "lab",
-    "glassware",
-    "flask",
-    "pipette",
+    "laboratory flask",
+    "mechanical pipette",
     "microscope",
-    "complex glass",
+    "complex glass electrode",
     "vapor lamp",
     "crystal prism",
+    "laser tube",
     "chemicals",
-    "hepa",
+    "hepa filter",
     "refrigerant",
     "zinc electrode",
+    "electrical parts",
+    "circuit board",
+    "stainless steel sheet",
+    "blue_crate",
   ],
   "RLSL-1 Radio Observatory": [
-    "rlsl",
-    "observatory",
-    "radio",
-    "radar",
-    "signal generator",
-    "oscilloscope",
-    "laser tube",
     "server cpu",
     "military software",
     "civilian software",
-    "circuit",
+    "signal generator",
+    "oscilloscope",
+    "laser tube",
+    "crystal prism",
+    "circuit board",
+    "electrical parts",
     "motherboard",
     "graphics card",
     "cpu",
     "ram",
     "power supply",
-    "pc",
+    "pc fan",
     "zinc electrode",
+    "tooling coolant",
+    "stainless steel sheet",
+    "blue_crate",
   ],
   "Ground Zero": [
-    "ground zero",
-    "exclusion",
-    "hepa",
+    "blue_crate",
+    "stainless steel sheet",
+    "hepa filter",
     "chemicals",
-    "server cpu",
-    "military software",
-    "crystal prism",
+    "electrical parts",
+    "circuit board",
+    "cpu",
   ],
   "Kiu Vongsa": [
-    "starter",
-    "town",
-    "blue_crate",
     "wood",
     "plastics",
     "fabrics",
     "glass",
-    "silicone",
+    "silicone sealant",
     "toolset",
+    "soldering iron",
+    "multimeter",
     "motor oil",
-    "construction",
-    "civilian software",
+  ],
+  "Nam Thaven": [
+    "wood",
+    "plastics",
+    "fabrics",
+    "glass",
+    "silicone sealant",
+    "toolset",
+    "soldering iron",
+    "multimeter",
+    "motor oil",
+  ],
+  "Pha Lang": [
+    "wood",
+    "plastics",
+    "fabrics",
+    "glass",
+    "silicone sealant",
+    "toolset",
+    "soldering iron",
+    "multimeter",
+    "motor oil",
   ],
   "Hunter's Paradise": [
-    "shooting",
-    "mechanical",
-    "tools",
-    "toolset",
-    "tooling coolant",
-    "cnc",
     "blue_crate",
     "steel",
+    "plastics",
+    "mechanical parts",
+    "plumbing parts",
+    "construction material",
+    "toolset",
+    "tooling coolant",
+    "cnc drill bits",
     "copper",
-    "burner head",
+    "analog indicator",
     "motor oil",
     "dynamo",
+    "refrigerant",
+    "chemicals",
+    "soldering iron",
   ],
   "Midnight Sapphire": [
-    "hotel",
-    "villa",
-    "pc",
+    "blue_crate",
     "motherboard",
     "graphics card",
     "cpu",
@@ -275,136 +329,124 @@ const REGION_LOOT_TAGS: Record<string, string[]> = {
     "power supply",
     "pc fan",
     "civilian software",
-    "electronics",
-    "electrical",
-    "glassware",
-    "vapor lamp",
-    "crystal prism",
-    "circuit",
+    "electrical parts",
+    "circuit board",
     "refrigerant",
-    "hepa",
-  ],
-  "Pha Lang": [
-    "starter",
-    "town",
-    "blue_crate",
-    "plastics",
-    "wood",
-    "fabrics",
+    "burner head",
     "glass",
-    "silicone",
-    "plumbing",
-    "soldering",
-    "multimeter",
-    "civilian software",
+    "fabrics",
+    "stainless steel sheet",
+    "chemicals",
   ],
   "Pha Lang Airfield": [
-    "airfield",
-    "hangar",
-    "mechanical",
+    "blue_crate",
     "steel",
-    "stainless",
+    "plastics",
+    "wood",
+    "plumbing parts",
+    "mechanical parts",
+    "construction material",
     "copper",
     "dynamo",
     "motor oil",
     "water pump",
     "analog indicator",
     "fine metal mesh",
-    "blue_crate",
-    "tools",
+    "toolset",
     "tooling coolant",
+    "soldering iron",
+    "multimeter",
+    "silicone sealant",
+    "chemicals",
   ],
   Sawmill: [
-    "sawmill",
-    "lumber",
+    "blue_crate",
     "wood",
     "steel",
-    "stainless",
-    "construction",
-    "blue_crate",
-    "mechanical",
-    "tools",
+    "plastics",
+    "construction material",
+    "mechanical parts",
+    "plumbing parts",
     "toolset",
-    "cnc",
-    "burner head",
+    "cnc drill bits",
     "copper",
     "fine metal mesh",
+    "analog indicator",
+    "motor oil",
+    "silicone sealant",
+    "chemicals",
   ],
   "Fort Narith": [
-    "military",
-    "fort",
+    "blue_crate",
     "military software",
+    "civilian software",
     "server cpu",
     "signal generator",
     "oscilloscope",
     "laser tube",
-    "pc",
-    "electronics",
-    "electrical",
+    "cpu",
+    "motherboard",
+    "graphics card",
+    "ram",
+    "power supply",
+    "electrical parts",
+    "circuit board",
     "steel",
-    "stainless",
-    "circuit",
+    "stainless steel sheet",
+    "construction material",
+    "mechanical parts",
+    "fine metal mesh",
     "dynamo",
-    "hepa",
+    "motor oil",
+    "hepa filter",
+    "laboratory flask",
+    "mechanical pipette",
+    "microscope",
+    "complex glass electrode",
     "analog indicator",
     "burner head",
+    "refrigerant",
+    "water pump",
+    "cnc drill bits",
+    "chemicals",
   ],
   "YBL-1 Bunker": [
-    "bunker",
-    "military",
-    "electronics",
-    "pc",
+    "blue_crate",
+    "server cpu",
+    "cpu",
     "motherboard",
     "power supply",
     "pc fan",
     "ram",
-    "cpu",
-    "electrical",
-    "server",
-    "circuit",
-    "dynamo",
+    "electrical parts",
+    "circuit board",
     "signal generator",
-    "soldering",
+    "oscilloscope",
+    "dynamo",
+    "soldering iron",
     "multimeter",
     "analog indicator",
     "zinc electrode",
+    "tooling coolant",
+    "water pump",
+    "burner head",
+    "copper",
   ],
-  "Nam Thaven": [
-    "starter",
-    "town",
+  "Ban Pa": [
     "blue_crate",
     "wood",
     "plastics",
-    "plumbing",
     "fabrics",
     "glass",
-    "silicone",
-    "motor oil",
+    "plumbing parts",
     "water pump",
-    "civilian software",
-  ],
-  "Ban Pa": [
-    "village",
-    "dock",
-    "clinic",
-    "glassware",
-    "glass",
-    "flask",
-    "pipette",
-    "microscope",
-    "complex glass",
     "chemicals",
-    "wood",
-    "blue_crate",
-    "plumbing",
-    "water pump",
-    "refrigerant",
-    "fabrics",
+    "laboratory flask",
+    "copper",
+    "silicone sealant",
   ],
   "Tiger Bay": [
-    "mall",
-    "unlra",
-    "pc",
+    "blue_crate",
     "motherboard",
     "graphics card",
     "cpu",
@@ -413,94 +455,221 @@ const REGION_LOOT_TAGS: Record<string, string[]> = {
     "power supply",
     "pc fan",
     "civilian software",
-    "electronics",
-    "electrical",
-    "glassware",
-    "glass",
-    "flask",
-    "pipette",
-    "microscope",
-    "construction",
-    "blue_crate",
-    "circuit",
-    "refrigerant",
-    "hepa",
+    "military software",
+    "electrical parts",
+    "circuit board",
     "oscilloscope",
-    "cement",
+    "multimeter",
+    "toolset",
+    "tooling coolant",
+    "cnc drill bits",
+    "copper",
+    "steel",
+    "stainless steel sheet",
+    "construction material",
+    "fine metal mesh",
+    "water pump",
+    "silicone sealant",
+    "glass",
+    "laboratory flask",
+    "mechanical pipette",
+    "microscope",
+    "complex glass electrode",
+    "vapor lamp",
+    "crystal prism",
+    "hepa filter",
+    "zinc electrode",
+    "refrigerant",
+    "burner head",
+    "chemicals",
   ],
   "Blue Lagoon": [
-    "resort",
-    "warehouse",
-    "electronics",
+    "blue_crate",
     "plastics",
-    "plumbing",
+    "plumbing parts",
     "water pump",
     "refrigerant",
     "copper",
     "burner head",
-    "silicone",
-    "blue_crate",
+    "silicone sealant",
     "multimeter",
-    "soldering",
+    "soldering iron",
+    "glass",
+    "electrical parts",
+    "chemicals",
   ],
 };
 
 function buildTagsForSub(poi: RawPoi05): string[] {
   const n = poi.name.toLowerCase();
-  const p = (poi.parentRegion || "").toLowerCase();
-  const tags: string[] = [n];
-  if (p) tags.push(p);
+  const region = poi.parentRegion || "";
+  const tierNum = getRegionTierNum(region);
+  const tags = new Set<string>();
 
-  if (/hospital|clinic|decontamination|medical|evac/.test(n)) {
-    tags.push("hepa", "microscope", "flask", "pipette", "complex glass", "chemicals", "glass");
+  // Medical / Bio-Lab / Quarantine facilities — strictly gated by Region Tier
+  if (/hospital|decontamination|quarantine|medical|research facility|laboratory/.test(n)) {
+    if (tierNum >= 3) {
+      tags.add("hepa filter");
+      tags.add("microscope");
+      tags.add("laboratory flask");
+      tags.add("mechanical pipette");
+      tags.add("complex glass electrode");
+      tags.add("chemicals");
+      if (region === "Lakevale Sanctuary" || region === "Tiger Bay") {
+        tags.add("vapor lamp");
+      }
+      if (region === "Lakevale Sanctuary") {
+        tags.add("crystal prism");
+        tags.add("zinc electrode");
+      }
+    } else if (tierNum === 2 && /clinic|medical/.test(n)) {
+      tags.add("laboratory flask");
+      tags.add("glass");
+    }
+  } else if (/clinic|infirmary/.test(n)) {
+    if (tierNum >= 3) {
+      tags.add("hepa filter");
+      tags.add("microscope");
+      tags.add("laboratory flask");
+      tags.add("mechanical pipette");
+      tags.add("complex glass electrode");
+    } else if (tierNum === 2) {
+      tags.add("laboratory flask");
+      tags.add("glass");
+    }
   }
-  if (/research|laboratory|drug lab/.test(n)) {
-    tags.push("chemicals", "flask", "pipette", "microscope", "complex glass", "vapor lamp", "zinc electrode");
+
+  if (/drug lab/.test(n)) {
+    tags.add("chemicals");
+    tags.add("glass");
   }
-  if (/armory|headquarters|offices|radio|telescope|substation|hotel|mall|radar/.test(n)) {
-    tags.push(
-      "pc",
-      "motherboard",
-      "graphics card",
-      "cpu",
-      "server cpu",
-      "ram",
-      "power supply",
-      "circuit",
-      "signal generator",
-      "oscilloscope",
-      "laser tube",
-      "civilian software",
-      "military software"
-    );
+
+  // Dedicated Server Rooms & High-Tier Comms / HQ Hubs (Server CPU vs regular CPU)
+  if (/headquarters|\bhq\b|server/.test(n) && tierNum >= 2) {
+    tags.add("cpu");
+    tags.add("motherboard");
+    tags.add("ram");
+    tags.add("power supply");
+    tags.add("electrical parts");
+    tags.add("circuit board");
+    if (tierNum >= 3 || region === "YBL-1") {
+      tags.add("server cpu");
+    }
+    if (tierNum >= 3) {
+      tags.add("military software");
+      tags.add("civilian software");
+      tags.add("signal generator");
+      tags.add("oscilloscope");
+    }
+    if (region === "RLSL-1 Radio Observatory" || region === "Northern Reach" || region === "Fort Narith") {
+      tags.add("laser tube");
+    }
   }
-  if (/warehouse|lumberyard|depot|construction|cement|hangar|garage|repair/.test(n)) {
-    tags.push(
-      "blue_crate",
-      "steel",
-      "stainless",
-      "wood",
-      "construction",
-      "plumbing",
-      "mechanical",
-      "copper",
-      "fine metal mesh",
-      "toolset",
-      "tooling coolant",
-      "cnc",
-      "motor oil",
-      "dynamo",
-      "burner head"
-    );
+
+  // Radio / Observatory / Radar / Tech Offices / Mall (NO blanket Server CPU on generic villas/motels)
+  if (/radio|telescope|radar/.test(n) && tierNum >= 2) {
+    tags.add("signal generator");
+    tags.add("oscilloscope");
+    tags.add("circuit board");
+    tags.add("electrical parts");
+    tags.add("cpu");
+    if (tierNum >= 4) {
+      tags.add("laser tube");
+      tags.add("server cpu");
+      tags.add("crystal prism");
+    }
   }
-  return tags;
+
+  if (/\bmall\b|\boffice|\bhotel\b/.test(n) && tierNum >= 2) {
+    tags.add("cpu");
+    tags.add("motherboard");
+    tags.add("graphics card");
+    tags.add("ram");
+    tags.add("power supply");
+    tags.add("pc fan");
+    tags.add("civilian software");
+    tags.add("electrical parts");
+    tags.add("circuit board");
+    if (region === "Tiger Bay" && /\bmall\b/.test(n)) {
+      tags.add("server cpu");
+      tags.add("oscilloscope");
+      tags.add("multimeter");
+      tags.add("toolset");
+      tags.add("tooling coolant");
+      tags.add("cnc drill bits");
+    }
+  }
+
+  // Trashed Campsites & Field Camps outside starter towns (Electronical spawn hotspots for CPU/PC parts, NOT Server CPU)
+  if (/trashed campsite/.test(n) && tierNum >= 2) {
+    tags.add("cpu");
+    tags.add("pc fan");
+    tags.add("ram");
+    tags.add("power supply");
+    tags.add("motherboard");
+    tags.add("circuit board");
+    tags.add("electrical parts");
+  }
+
+  // Kitchens / Canteens / Restaurants -> Burner Head & Refrigerant (NOT garages/sawmills)
+  if (/kitchen|canteen|mess hall|restaurant/.test(n) && tierNum >= 2) {
+    tags.add("burner head");
+    tags.add("refrigerant");
+  }
+
+  // Industrial Warehouses, Hangars, Motor Pools, Supply Yards (NO starter town blue crates)
+  if (/warehouse|hangar|motor pool|supply depot|supply yard|cement factory|trade depot|workshop|repair/.test(n)) {
+    if (tierNum >= 2) {
+      tags.add("blue_crate");
+      tags.add("steel");
+      tags.add("construction material");
+      tags.add("plumbing parts");
+      tags.add("mechanical parts");
+      tags.add("copper");
+      tags.add("fine metal mesh");
+      tags.add("toolset");
+      tags.add("tooling coolant");
+      tags.add("cnc drill bits");
+      tags.add("motor oil");
+      tags.add("dynamo");
+      tags.add("analog indicator");
+      tags.add("water pump");
+    } else {
+      tags.add("toolset");
+      tags.add("motor oil");
+      tags.add("soldering iron");
+    }
+    if (tierNum >= 3) {
+      tags.add("stainless steel sheet");
+    }
+  }
+
+  if (/lumberyard|logging area/.test(n)) {
+    tags.add("wood");
+    if (tierNum >= 2) {
+      tags.add("blue_crate");
+      tags.add("construction material");
+    }
+  }
+
+  if (/gas station|garage/.test(n)) {
+    tags.add("motor oil");
+    tags.add("toolset");
+    if (tierNum >= 2) {
+      tags.add("mechanical parts");
+      tags.add("analog indicator");
+      tags.add("dynamo");
+    }
+  }
+
+  return Array.from(tags);
 }
 
 export const LAMANG_POIS: LamangPoi[] = [
-  ...BASES_05.map((p) => ({ ...p, tags: ["base", p.name.toLowerCase()] })),
+  ...BASES_05.map((p) => ({ ...p, tags: ["base"] })),
   ...MAJOR_POIS_05.map((p) => ({
     ...p,
-    tags: REGION_LOOT_TAGS[p.name] || [p.name.toLowerCase()],
+    tags: REGION_LOOT_TAGS[p.name] || [],
   })),
   ...SUB_POIS_05.map((p) => ({
     ...p,
@@ -510,7 +679,13 @@ export const LAMANG_POIS: LamangPoi[] = [
   ...LZS_05.map((p) => ({ ...p, tags: ["lz"] })),
 ];
 
-export { BLUE_CRATES_05, DISASSEMBLY_SPAWNS_05, CHEMICAL_AREAS_05 };
+export {
+  BLUE_CRATES_05,
+  DISASSEMBLY_SPAWNS_05,
+  CHEMICAL_AREAS_05,
+  ELECTRONIC_AREAS_05,
+  MEDICAL_AREAS_05,
+};
 
 /**
  * Exact Update 0.5 PC Part & Tech Spawn anchors (verified EPSG:3857 coordinates)
