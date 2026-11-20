@@ -217,9 +217,9 @@ export function TasksTrackerPanel({
   };
 
   return (
-    <div className="flex-1 min-h-0 flex flex-col bg-[#0b0f16]">
+    <div className="flex-1 min-h-0 flex flex-col bg-[#0e131b]">
       {/* Vendor & Region Filter Controls */}
-      <div className="px-4 py-3.5 border-b border-white/[0.08] bg-[#0d121b] space-y-3 shrink-0">
+      <div className="px-4 py-3 border-b border-white/[0.075] bg-[#0e131b] space-y-2.5 shrink-0">
         {/* Horizontal scrollable Vendor Roster Strip */}
         <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
           <button
@@ -228,13 +228,13 @@ export function TasksTrackerPanel({
               setSelectedVendor("ALL");
               setSelectedArea("ALL");
             }}
-            className={`min-h-[44px] px-3 py-1.5 rounded-xl border text-left transition-colors shrink-0 flex items-center gap-2.5 ${
+            className={`min-h-[42px] px-2.5 py-1.5 rounded-lg border text-left transition-colors shrink-0 flex items-center gap-2 ${
               selectedVendor === "ALL"
-                ? "bg-[#1a2232] border-[#e5a93c]/75 text-[#f8fafc]"
-                : "bg-[#121822] border-white/[0.08] text-[#9fb0c4] hover:text-white hover:border-white/[0.18]"
+                ? "bg-[#141b26] border-[#e5a93c]/65 text-[#f8fafc]"
+                : "bg-[#0a0e14] border-white/[0.07] text-[#9fb0c4] hover:text-white hover:border-white/[0.16]"
             }`}
           >
-            <div className="w-7 h-7 rounded-lg bg-[#080c12] border border-white/[0.08] flex items-center justify-center text-[11px] font-semibold text-[#e5a93c]">
+            <div className="w-7 h-7 rounded-md bg-[#0e131b] border border-white/[0.08] flex items-center justify-center text-[11px] font-semibold text-[#e5a93c]">
               All
             </div>
             <div>
@@ -262,10 +262,10 @@ export function TasksTrackerPanel({
                   setSelectedVendor(vendor.name);
                   setSelectedArea("ALL");
                 }}
-                className={`min-h-[44px] px-3 py-1.5 rounded-xl border text-left transition-colors shrink-0 flex items-center gap-2.5 ${
+                className={`min-h-[42px] px-2.5 py-1.5 rounded-lg border text-left transition-colors shrink-0 flex items-center gap-2 ${
                   active
-                    ? "bg-[#1a2232] border-[#e5a93c]/75 text-[#f8fafc]"
-                    : "bg-[#121822] border-white/[0.08] text-[#9fb0c4] hover:text-white hover:border-white/[0.18]"
+                    ? "bg-[#141b26] border-[#e5a93c]/65 text-[#f8fafc]"
+                    : "bg-[#0a0e14] border-white/[0.07] text-[#9fb0c4] hover:text-white hover:border-white/[0.16]"
                 }`}
               >
                 {vendor.image && !failedImgUrls[vendor.image] ? (
@@ -274,11 +274,11 @@ export function TasksTrackerPanel({
                     alt={vendor.name}
                     referrerPolicy="no-referrer"
                     onError={() => markImgFailed(vendor.image!)}
-                    className="w-7 h-7 rounded-lg object-cover border border-white/[0.1] bg-[#080c12] shrink-0"
+                    className="w-7 h-7 rounded-md object-cover border border-white/[0.1] bg-[#080b10] shrink-0"
                     loading="lazy"
                   />
                 ) : (
-                  <div className="w-7 h-7 rounded-lg bg-[#080c12] border border-white/[0.08] flex items-center justify-center shrink-0">
+                  <div className="w-7 h-7 rounded-md bg-[#0e131b] border border-white/[0.08] flex items-center justify-center shrink-0">
                     <User className="w-3.5 h-3.5 text-[#8899ae]" />
                   </div>
                 )}
@@ -296,9 +296,9 @@ export function TasksTrackerPanel({
         </div>
 
         {/* Direct Vendor & Area Dropdowns */}
-        <div className="grid grid-cols-2 gap-2.5">
+        <div className="grid grid-cols-2 gap-2">
           <div>
-            <label className="block text-xs font-medium text-[#9fb0c4] mb-1">
+            <label className="block text-[11px] font-medium text-[#9fb0c4] mb-1">
               Vendor
             </label>
             <select
@@ -308,7 +308,7 @@ export function TasksTrackerPanel({
                 setSelectedVendor(e.target.value);
                 setSelectedArea("ALL");
               }}
-              className="w-full min-h-[38px] bg-[#121822] border border-white/[0.09] rounded-lg px-2.5 py-1.5 text-[13px] text-[#f1f5f9] focus:outline-none focus:border-[#e5a93c]"
+              className="w-full min-h-[36px] bg-[#0a0e14] border border-white/[0.08] rounded-lg px-2.5 py-1 text-[13px] text-[#f1f5f9] focus:outline-none focus:border-[#e5a93c]"
             >
               <option value="ALL">All Vendors ({factionTasks.length})</option>
               {vendors.map((v) => {
@@ -324,7 +324,7 @@ export function TasksTrackerPanel({
 
           <div>
             <div className="flex items-center justify-between mb-1">
-              <label className="block text-xs font-medium text-[#9fb0c4]">
+              <label className="block text-[11px] font-medium text-[#9fb0c4]">
                 Region
               </label>
               {selectedFaction !== "ALL" && (
@@ -348,7 +348,7 @@ export function TasksTrackerPanel({
                   : "ALL"
               }
               onChange={(e) => setSelectedArea(e.target.value)}
-              className="w-full min-h-[38px] bg-[#121822] border border-white/[0.09] rounded-lg px-2.5 py-1.5 text-[13px] text-[#f1f5f9] focus:outline-none focus:border-[#e5a93c]"
+              className="w-full min-h-[36px] bg-[#0a0e14] border border-white/[0.08] rounded-lg px-2.5 py-1 text-[13px] text-[#f1f5f9] focus:outline-none focus:border-[#e5a93c]"
             >
               <option value="ALL">
                 All Regions ({vendorScopedTasks.length})
@@ -381,20 +381,20 @@ export function TasksTrackerPanel({
                   ? `Search ${activeVendorProfile.name} tasks, walkthroughs, or keys...`
                   : "Search task, region, walkthrough, or required key..."
               }
-              className="w-full min-h-[38px] bg-[#070a0f] border border-white/[0.09] rounded-lg pl-9 pr-3 py-1.5 text-[13px] text-[#f1f5f9] placeholder:text-[#66778b] focus:outline-none focus:border-[#e5a93c] transition-colors"
+              className="w-full min-h-[36px] bg-[#0a0e14] border border-white/[0.08] rounded-lg pl-9 pr-3 py-1.5 text-[13px] text-[#f1f5f9] placeholder:text-[#66778b] focus:outline-none focus:border-[#e5a93c] transition-colors"
             />
           </div>
 
           <div className="flex items-center justify-between gap-2 flex-wrap">
-            <div className="flex items-center rounded-lg bg-[#070a0f] border border-white/[0.07] p-0.5 overflow-x-auto max-w-full">
+            <div className="flex items-center rounded-lg bg-[#0a0e14] border border-white/[0.07] p-0.5 overflow-x-auto max-w-full">
               {CATEGORY_OPTIONS.map((opt) => (
                 <button
                   key={opt.id}
                   type="button"
                   onClick={() => setCategoryFilter(opt.id)}
-                  className={`px-2.5 py-1 rounded-md text-xs font-medium transition-colors whitespace-nowrap ${
+                  className={`px-2 py-1 rounded-md text-xs font-medium transition-colors whitespace-nowrap ${
                     categoryFilter === opt.id
-                      ? "bg-[#1c2433] text-[#e5a93c]"
+                      ? "bg-[#141b26] text-[#e5a93c] ring-1 ring-white/[0.08]"
                       : "text-[#94a3b8] hover:text-[#f1f5f9]"
                   }`}
                 >
@@ -403,7 +403,7 @@ export function TasksTrackerPanel({
               ))}
             </div>
 
-            <div className="flex items-center rounded-lg bg-[#070a0f] border border-white/[0.07] p-0.5 shrink-0">
+            <div className="flex items-center rounded-lg bg-[#0a0e14] border border-white/[0.07] p-0.5 shrink-0">
               {(
                 [
                   { id: "all", label: "All" },
@@ -415,9 +415,9 @@ export function TasksTrackerPanel({
                   key={st.id}
                   type="button"
                   onClick={() => setStatusFilter(st.id)}
-                  className={`px-2.5 py-1 rounded-md text-xs font-medium transition-colors ${
+                  className={`px-2 py-1 rounded-md text-xs font-medium transition-colors ${
                     statusFilter === st.id
-                      ? "bg-[#1c2433] text-[#38bdf8]"
+                      ? "bg-[#141b26] text-[#38bdf8] ring-1 ring-white/[0.08]"
                       : "text-[#94a3b8] hover:text-[#f1f5f9]"
                   }`}
                 >
@@ -430,9 +430,9 @@ export function TasksTrackerPanel({
       </div>
 
       {/* Scrollable Tasks Feed */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-3.5">
+      <div className="flex-1 overflow-y-auto p-4 space-y-3">
         {activeVendorProfile && (
-          <div className="rounded-xl bg-[#121822] border border-white/[0.08] p-3.5 flex items-center justify-between gap-3">
+          <div className="rounded-xl bg-[#141b26] border border-white/[0.075] p-3.5 flex items-center justify-between gap-3">
             <div className="flex items-center gap-3 min-w-0">
               {activeVendorProfile.image &&
               !failedImgUrls[activeVendorProfile.image] ? (
@@ -444,7 +444,7 @@ export function TasksTrackerPanel({
                   className="w-10 h-10 rounded-lg object-cover border border-white/[0.12] shrink-0"
                 />
               ) : (
-                <div className="w-10 h-10 rounded-lg bg-[#080c12] border border-white/[0.08] flex items-center justify-center shrink-0">
+                <div className="w-10 h-10 rounded-lg bg-[#0a0e14] border border-white/[0.08] flex items-center justify-center shrink-0">
                   <User className="w-5 h-5 text-[#e5a93c]" />
                 </div>
               )}
@@ -491,20 +491,20 @@ export function TasksTrackerPanel({
         </div>
 
         {tasks.length === 0 ? (
-          <div className="rounded-xl border border-white/[0.08] bg-[#121822] p-8 text-center text-sm text-[#9fb0c4]">
+          <div className="rounded-xl border border-white/[0.075] bg-[#141b26] p-8 text-center text-sm text-[#9fb0c4]">
             {isLoadingApi
               ? "Loading vendor tasks & walkthroughs..."
               : "No vendor tasks cached yet. Click Sync Data in the top bar."}
           </div>
         ) : filteredTasks.length === 0 ? (
-          <div className="rounded-xl border border-white/[0.08] bg-[#121822] p-8 text-center text-sm text-[#9fb0c4]">
+          <div className="rounded-xl border border-white/[0.075] bg-[#141b26] p-8 text-center text-sm text-[#9fb0c4]">
             No tasks match{" "}
             {selectedVendor !== "ALL" ? selectedVendor : "your filters"}
             {selectedArea !== "ALL" ? ` in ${selectedArea}` : ""}.
           </div>
         ) : (
           <div
-            className={`grid gap-3.5 ${
+            className={`grid gap-3 ${
               isExpanded ? "grid-cols-1 md:grid-cols-2" : "grid-cols-1"
             }`}
           >
@@ -552,14 +552,14 @@ export function TasksTrackerPanel({
                 <article
                   key={task.id}
                   onClick={() => toggleTaskExpanded(task)}
-                  className={`rounded-xl border p-4.5 transition-colors flex flex-col justify-between cursor-pointer ${
+                  className={`rounded-xl border p-4 transition-colors flex flex-col justify-between cursor-pointer ${
                     isSelected
-                      ? "bg-[#141d2b] border-[#38bdf8]/75 shadow-lg"
+                      ? "bg-[#15202e] border-[#38bdf8]/75 shadow-lg"
                       : isOpen
-                        ? "bg-[#141b27] border-white/[0.2]"
+                        ? "bg-[#161f2c] border-white/[0.16]"
                         : isDone
-                          ? "bg-[#0e1716] border-[#214237]"
-                          : "bg-[#121822] border-white/[0.08] hover:border-white/[0.18]"
+                          ? "bg-[#0f1a18] border-[#22473b]"
+                          : "bg-[#141b26] border-white/[0.075] hover:border-white/[0.18]"
                   }`}
                 >
                   <div>
@@ -579,7 +579,7 @@ export function TasksTrackerPanel({
                           task.category === "Main Task"
                             ? "text-[#38bdf8]"
                             : task.category === "Hidden Task"
-                              ? "text-purple-400"
+                              ? "text-[#f59e0b]"
                               : task.category === "Contract"
                                 ? "text-[#e5a93c]"
                                 : "text-[#9fb0c4]"
@@ -663,7 +663,7 @@ export function TasksTrackerPanel({
                     )}
 
                     {task.hiddenNote && (
-                      <div className="mt-1.5 text-xs text-purple-300">
+                      <div className="mt-1.5 text-xs text-[#fde68a]">
                         Unlock: {task.hiddenNote}
                       </div>
                     )}
@@ -673,11 +673,11 @@ export function TasksTrackerPanel({
                        ====================================================== */}
                     {isOpen && (
                       <div
-                        className="mt-4 pt-4 border-t border-white/[0.08] space-y-4"
+                        className="mt-3.5 pt-3.5 border-t border-white/[0.075] space-y-3.5"
                         onClick={(e) => e.stopPropagation()}
                       >
                         {/* Live Community Location & Building Photos */}
-                        <div className="space-y-2.5">
+                        <div className="space-y-2">
                           <div className="flex items-center justify-between gap-2">
                             <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#38bdf8]">
                               <Camera className="w-3.5 h-3.5" />
@@ -722,7 +722,7 @@ export function TasksTrackerPanel({
                           </div>
 
                           {isLoadingGuide && locationPhotos.length === 0 ? (
-                            <div className="rounded-xl bg-[#090d14] border border-white/[0.07] p-4 flex items-center gap-2.5 text-xs text-[#9fb0c4]">
+                            <div className="rounded-lg bg-[#0a0e14] border border-white/[0.06] p-3.5 flex items-center gap-2.5 text-xs text-[#9fb0c4]">
                               <Loader2 className="w-4 h-4 animate-spin text-[#38bdf8]" />
                               <span>
                                 Fetching building &amp; interior location screenshots...
@@ -730,7 +730,7 @@ export function TasksTrackerPanel({
                             </div>
                           ) : locationPhotos.length > 0 ? (
                             <div
-                              className={`grid gap-2.5 ${
+                              className={`grid gap-2 ${
                                 isExpanded
                                   ? "grid-cols-2 sm:grid-cols-3"
                                   : "grid-cols-1 sm:grid-cols-2"
@@ -747,9 +747,9 @@ export function TasksTrackerPanel({
                                       caption: photo.caption,
                                     })
                                   }
-                                  className="group rounded-xl bg-[#080c12] border border-white/[0.09] hover:border-[#38bdf8]/70 overflow-hidden text-left transition-colors flex flex-col"
+                                  className="group rounded-lg bg-[#0a0e14] border border-white/[0.07] hover:border-[#38bdf8]/70 overflow-hidden text-left transition-colors flex flex-col"
                                 >
-                                  <div className="relative w-full h-36 bg-[#05080c] overflow-hidden">
+                                  <div className="relative w-full h-36 bg-[#06090d] overflow-hidden">
                                     <img
                                       src={photo.url}
                                       alt={photo.caption}
@@ -766,7 +766,7 @@ export function TasksTrackerPanel({
                               ))}
                             </div>
                           ) : (
-                            <div className="rounded-xl bg-[#090d14] border border-white/[0.07] px-3.5 py-2.5 flex items-center justify-between gap-2 text-xs text-[#9fb0c4]">
+                            <div className="rounded-lg bg-[#0a0e14] border border-white/[0.06] px-3 py-2.5 flex items-center justify-between gap-2 text-xs text-[#9fb0c4]">
                               <span>
                                 No screenshots hosted on this wiki page yet. Check GZW Tac Map for visual markers.
                               </span>
@@ -794,11 +794,11 @@ export function TasksTrackerPanel({
                               {stepSourceLabel}
                             </span>
                           </div>
-                          <ol className="space-y-2">
+                          <ol className="space-y-1.5">
                             {displaySteps.map((step, i) => (
                               <li
                                 key={i}
-                                className="flex items-start gap-2.5 text-[13px] text-[#dce5f0] leading-relaxed bg-[#0a0e15] border border-white/[0.06] rounded-xl px-3.5 py-2.5"
+                                className="flex items-start gap-2.5 text-[13px] text-[#dce5f0] leading-relaxed bg-[#0a0e14] border border-white/[0.055] rounded-lg px-3 py-2"
                               >
                                 <span className="font-mono-tabular text-xs font-bold text-[#e5a93c] shrink-0 mt-0.5">
                                   {i + 1}.
@@ -812,7 +812,7 @@ export function TasksTrackerPanel({
                         {/* Exact Coords & Nearest LZs */}
                         {(task.exactCoords.length > 0 ||
                           task.nearestLzs.length > 0) && (
-                          <div className="rounded-xl bg-[#0a0e15] border border-white/[0.07] px-3.5 py-3 space-y-2 text-[13px]">
+                          <div className="rounded-lg bg-[#0a0e14] border border-white/[0.06] px-3 py-2.5 space-y-1.5 text-[13px]">
                             <div className="flex items-center gap-1.5 text-xs font-semibold text-[#e5a93c]">
                               <Compass className="w-3.5 h-3.5" />
                               Infil &amp; Target Grids
@@ -843,16 +843,16 @@ export function TasksTrackerPanel({
 
                         {/* Required Gear, Keys & Task Items */}
                         {task.relatedItems.length > 0 && (
-                          <div className="space-y-2">
+                          <div className="space-y-1.5">
                             <div className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#e5a93c]">
                               <KeyRound className="w-3.5 h-3.5" />
                               Required Gear, Keys &amp; Items
                             </div>
-                            <div className="space-y-2">
+                            <div className="space-y-1.5">
                               {task.relatedItems.map((item, idx) => (
                                 <div
                                   key={`${item.name}-${idx}`}
-                                  className="flex items-center gap-3 rounded-xl bg-[#0a0e15] border border-white/[0.07] px-3 py-2"
+                                  className="flex items-center gap-3 rounded-lg bg-[#0a0e14] border border-white/[0.06] px-3 py-2"
                                 >
                                   <ItemThumbnail
                                     src={item.image}
@@ -882,7 +882,7 @@ export function TasksTrackerPanel({
 
                         {/* Tactical Tip */}
                         {(wikiIntel?.tips?.[0] || task.guideTip) && (
-                          <div className="rounded-xl bg-[#18130c] border border-[#e5a93c]/35 px-3.5 py-2.5 text-[13px] text-[#e2e8f0] leading-relaxed">
+                          <div className="rounded-lg bg-[#e5a93c]/[0.06] border border-[#e5a93c]/30 px-3 py-2 text-[13px] text-[#e2e8f0] leading-relaxed">
                             <span className="font-semibold text-[#e5a93c]">
                               Tip:{" "}
                             </span>
@@ -892,7 +892,7 @@ export function TasksTrackerPanel({
 
                         {/* Full Vendor Briefing */}
                         {task.briefing && (
-                          <div className="rounded-xl bg-white/[0.025] border border-white/[0.07] px-3.5 py-3 text-[13px] text-[#b4c2d4] leading-relaxed">
+                          <div className="rounded-lg bg-[#0a0e14] border border-white/[0.06] px-3 py-2.5 text-[13px] text-[#b4c2d4] leading-relaxed">
                             <div className="text-xs font-medium text-[#8899ae] mb-1">
                               {task.vendor} Briefing
                             </div>
@@ -905,16 +905,16 @@ export function TasksTrackerPanel({
 
                   {/* Card Footer */}
                   <div
-                    className="mt-4 pt-3 border-t border-white/[0.06] flex items-center justify-between gap-2"
+                    className="mt-3.5 pt-2.5 border-t border-white/[0.06] flex items-center justify-between gap-2"
                     onClick={(e) => e.stopPropagation()}
                   >
                     <button
                       type="button"
                       onClick={() => onLocateTaskOnMap(task)}
-                      className={`min-h-[38px] inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg border text-xs font-medium transition-colors ${
+                      className={`min-h-[36px] inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-medium transition-colors ${
                         isSelected
-                          ? "bg-[#16283b] border-[#38bdf8] text-[#7dd3fc]"
-                          : "bg-white/[0.04] border-white/[0.1] text-[#38bdf8] hover:border-[#38bdf8]"
+                          ? "bg-[#15283b] border-[#38bdf8] text-[#7dd3fc]"
+                          : "bg-white/[0.035] border-white/[0.09] text-[#38bdf8] hover:border-[#38bdf8]"
                       }`}
                     >
                       <MapPin className="w-3.5 h-3.5" />
@@ -926,10 +926,10 @@ export function TasksTrackerPanel({
                     <button
                       type="button"
                       onClick={() => onToggleTaskComplete(task.id)}
-                      className={`min-h-[38px] inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg border text-xs font-medium transition-colors whitespace-nowrap ${
+                      className={`min-h-[36px] inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-medium transition-colors whitespace-nowrap ${
                         isDone
-                          ? "bg-[#112720] border-[#2b6b53] text-[#34d399] hover:border-[#34d399]"
-                          : "bg-white/[0.04] border-white/[0.1] text-[#e2e8f0] hover:border-[#e5a93c] hover:text-[#e5a93c]"
+                          ? "bg-[#112922] border-[#2e7359] text-[#34d399] hover:border-[#34d399]"
+                          : "bg-white/[0.035] border-white/[0.09] text-[#e2e8f0] hover:border-[#e5a93c] hover:text-[#e5a93c]"
                       }`}
                     >
                       {isDone && <Check className="w-3.5 h-3.5 stroke-[2.5]" />}
@@ -950,10 +950,10 @@ export function TasksTrackerPanel({
           onClick={() => setLightboxImage(null)}
         >
           <div
-            className="max-w-4xl w-full rounded-2xl bg-[#0e131c] border border-white/[0.14] overflow-hidden shadow-2xl"
+            className="gzw-drawer-enter max-w-4xl w-full rounded-xl bg-[#0e131b] border border-white/[0.12] overflow-hidden shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="px-5 py-3 border-b border-white/[0.08] flex items-center justify-between gap-3">
+            <div className="px-5 py-3 border-b border-white/[0.075] flex items-center justify-between gap-3">
               <div className="min-w-0">
                 <div className="text-sm font-semibold text-[#f8fafc] truncate">
                   {lightboxImage.title}
@@ -973,7 +973,7 @@ export function TasksTrackerPanel({
                 <X className="w-4 h-4" />
               </button>
             </div>
-            <div className="p-3 bg-[#070a0f] flex justify-center">
+            <div className="p-3 bg-[#080b10] flex justify-center">
               <img
                 src={lightboxImage.src}
                 alt={lightboxImage.caption || lightboxImage.title}

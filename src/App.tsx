@@ -711,20 +711,14 @@ export default function App() {
   const isSidebarVisibleOnMobile = mobileTab !== "map";
 
   return (
-    <div className="h-[100dvh] w-screen flex flex-col bg-[#090c11] text-[#e8eef5] overflow-hidden">
+    <div className="h-[100dvh] w-screen flex flex-col bg-[#080b10] text-[#e8eef5] overflow-hidden">
       {/* Sleek Single-Line Top Bar */}
-      <header className="h-13 shrink-0 px-3 sm:px-5 border-b border-white/[0.08] bg-[#0b0f16]/95 backdrop-blur-md flex items-center justify-between gap-2 sm:gap-4 z-40">
+      <header className="h-12 shrink-0 px-3 sm:px-4 border-b border-white/[0.075] bg-[#0e131b]/95 backdrop-blur-md flex items-center justify-between gap-2 sm:gap-3 z-40">
         {/* Brand Wordmark + Operator Profile Switcher + Compact Faction Selector */}
-        <div className="flex items-center gap-2 sm:gap-3 whitespace-nowrap shrink-0 min-w-0">
+        <div className="flex items-center gap-1.5 sm:gap-2.5 whitespace-nowrap shrink-0 min-w-0">
           <div className="flex items-center gap-2">
-            <span className="font-display text-sm sm:text-lg font-semibold tracking-tight text-[#f8fafc]">
+            <span className="font-display text-[13px] sm:text-[17px] font-semibold tracking-tight text-[#f8fafc]">
               Lamang Operations
-            </span>
-            <span className="hidden xl:inline text-white/[0.2]" aria-hidden="true">
-              ·
-            </span>
-            <span className="hidden xl:inline text-xs font-medium text-[#8b98a9]">
-              Update 0.5
             </span>
           </div>
 
@@ -735,10 +729,10 @@ export default function App() {
               aria-label="Switch operator profile"
               aria-expanded={operatorMenuOpen}
               onClick={() => setOperatorMenuOpen((v) => !v)}
-              className="min-h-[32px] inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#070a0f] border border-white/[0.1] hover:border-[#38bdf8]/60 text-xs font-medium text-[#eef3f8] transition-colors"
+              className="min-h-[32px] inline-flex items-center gap-1 sm:gap-1.5 px-2 sm:px-2.5 py-1 rounded-lg bg-[#0a0e14] border border-white/[0.09] hover:border-[#38bdf8]/55 text-xs font-medium text-[#eef3f8] transition-colors"
             >
               <Users className="w-3.5 h-3.5 text-[#38bdf8] shrink-0" />
-              <span className="max-w-[92px] sm:max-w-[120px] truncate">
+              <span className="max-w-[68px] sm:max-w-[120px] truncate">
                 {activeOperatorProfile.name}
               </span>
               {selectedFaction !== "ALL" && (
@@ -751,7 +745,7 @@ export default function App() {
             </button>
 
             {operatorMenuOpen && (
-              <div className="absolute top-full left-0 mt-1.5 w-80 max-w-[calc(100vw-24px)] rounded-xl bg-[#0d121a]/98 backdrop-blur-xl border border-white/[0.12] p-2 shadow-2xl z-[1200] space-y-1.5">
+              <div className="gzw-popover-enter absolute top-full left-0 mt-1.5 w-80 max-w-[calc(100vw-24px)] rounded-xl bg-[#0e131b]/98 backdrop-blur-xl border border-white/[0.12] p-2 shadow-2xl z-[1200] space-y-1.5">
                 <div className="px-2 py-1 flex items-center justify-between border-b border-white/[0.07]">
                   <span className="text-[11px] font-semibold text-[#e2e8f0]">
                     Operator Slots (Local Saves)
@@ -771,8 +765,8 @@ export default function App() {
                       key={slot.id}
                       className={`rounded-lg border px-2.5 py-2 transition-colors ${
                         isActive
-                          ? "bg-[#152030] border-[#38bdf8]/70"
-                          : "bg-[#080c12] border-white/[0.07] hover:border-white/[0.18]"
+                          ? "bg-[#141b26] border-[#38bdf8]/65"
+                          : "bg-[#0a0e14] border-white/[0.07] hover:border-white/[0.16]"
                       }`}
                     >
                       {isRenaming ? (
@@ -791,7 +785,7 @@ export default function App() {
                               }
                             }}
                             aria-label="Operator slot name"
-                            className="flex-1 min-w-0 bg-[#05080d] border border-[#38bdf8] rounded px-2 py-1 text-xs text-white focus:outline-none"
+                            className="flex-1 min-w-0 bg-[#080b10] border border-[#38bdf8] rounded-md px-2 py-1 text-xs text-white focus:outline-none"
                           />
                           <button
                             type="button"
@@ -857,7 +851,7 @@ export default function App() {
           <div
             role="group"
             aria-label="Select faction"
-            className="hidden sm:flex items-center rounded-lg bg-[#070a0f] border border-white/[0.08] p-0.5"
+            className="hidden sm:flex items-center rounded-lg bg-[#0a0e14] border border-white/[0.08] p-0.5"
           >
             {(["ALL", "LRI", "MSS", "CSI"] as FactionId[]).map((fId) => {
               const isSelected = selectedFaction === fId;
@@ -874,7 +868,7 @@ export default function App() {
                   onClick={() => handleSelectFaction(fId)}
                   className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-[11px] font-semibold transition-colors ${
                     isSelected
-                      ? "bg-[#1a2232] text-[#f8fafc] shadow-sm"
+                      ? "bg-[#141b26] text-[#f8fafc] shadow-sm ring-1 ring-white/[0.08]"
                       : "text-[#8b98a9] hover:text-[#e2e8f0]"
                   }`}
                 >
@@ -892,12 +886,12 @@ export default function App() {
         </div>
 
         {/* Live Data Sync + Glance Mode Exit + Mobile Faction Select + Counter + Reset */}
-        <div className="flex items-center gap-2 sm:gap-2.5 shrink-0">
+        <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
           {glanceMode && (
             <button
               type="button"
               onClick={() => handleToggleGlanceMode(false)}
-              className="min-h-[34px] inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-[#e5a93c]/20 border border-[#e5a93c]/60 text-[#fde68a] hover:bg-[#e5a93c]/30 transition-colors whitespace-nowrap shrink-0"
+              className="min-h-[32px] inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-[#e5a93c]/18 border border-[#e5a93c]/55 text-[#fde68a] hover:bg-[#e5a93c]/28 transition-colors whitespace-nowrap shrink-0"
             >
               <Eye className="w-3.5 h-3.5" />
               <span>Exit Glance</span>
@@ -908,9 +902,9 @@ export default function App() {
             aria-label="Select faction mobile"
             value={selectedFaction}
             onChange={(e) => handleSelectFaction(e.target.value as FactionId)}
-            className="sm:hidden min-h-[34px] rounded-lg bg-[#070a0f] border border-white/[0.1] px-2 text-xs font-semibold text-[#f1f5f9] focus:outline-none focus:border-[#e5a93c]"
+            className="sm:hidden min-h-[32px] rounded-lg bg-[#0a0e14] border border-white/[0.1] px-1.5 text-xs font-semibold text-[#f1f5f9] focus:outline-none focus:border-[#e5a93c]"
           >
-            <option value="ALL">All Factions</option>
+            <option value="ALL">All</option>
             <option value="LRI">LRI</option>
             <option value="MSS">MSS</option>
             <option value="CSI">CSI</option>
@@ -935,7 +929,7 @@ export default function App() {
             disabled={apiStatus.mode === "loading"}
             onClick={() => handleRefreshApi(true)}
             aria-label="Sync Game Data"
-            className="min-h-[34px] inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-medium text-[#e2e8f0] hover:text-white border border-white/[0.1] hover:border-white/[0.2] bg-white/[0.04] hover:bg-white/[0.08] disabled:opacity-60 transition-colors whitespace-nowrap shrink-0"
+            className="min-h-[32px] inline-flex items-center gap-1.5 px-2 sm:px-2.5 py-1 rounded-lg text-xs font-medium text-[#e2e8f0] hover:text-white border border-white/[0.09] hover:border-white/[0.18] bg-[#141b26]/70 hover:bg-[#141b26] disabled:opacity-60 transition-colors whitespace-nowrap shrink-0"
           >
             <RefreshCw
               className={`w-3.5 h-3.5 ${
@@ -946,7 +940,7 @@ export default function App() {
           </button>
 
           <div className="text-right hidden sm:block pl-1">
-            <div className="font-mono-tabular text-xs sm:text-sm font-semibold text-[#f1f5f9]">
+            <div className="font-mono-tabular text-xs font-semibold text-[#f1f5f9]">
               {activeModeProgress.done}{" "}
               <span className="text-[11px] font-normal text-[#7f8ea1]">
                 / {activeModeProgress.total}
@@ -964,7 +958,7 @@ export default function App() {
             type="button"
             onClick={handleResetProgress}
             title={`Reset ${workspaceMode} progress for ${activeOperatorProfile.name}`}
-            className="min-h-[34px] inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-medium text-[#94a3b8] hover:text-white border border-white/[0.08] hover:border-white/[0.18] bg-white/[0.03] hover:bg-white/[0.07] transition-colors whitespace-nowrap shrink-0"
+            className="min-h-[32px] inline-flex items-center gap-1.5 px-2 sm:px-2.5 py-1 rounded-lg text-xs font-medium text-[#94a3b8] hover:text-white border border-white/[0.08] hover:border-white/[0.18] bg-white/[0.025] hover:bg-white/[0.06] transition-colors whitespace-nowrap shrink-0"
           >
             <RotateCcw className="w-3.5 h-3.5" />
             <span className="hidden sm:inline">Reset</span>
@@ -990,23 +984,23 @@ export default function App() {
           } flex-col flex-1 ${
             workspaceMode === "vendors"
               ? "lg:flex-1 lg:w-full"
-              : "lg:flex-none lg:shrink-0 lg:border-r border-white/[0.08]"
-          } min-h-0 bg-[#0b0f16] ${
+              : "lg:flex-none lg:shrink-0 lg:border-r border-white/[0.075]"
+          } min-h-0 bg-[#0e131b] ${
             isDraggingSplitter ? "" : "transition-[width] duration-150"
           }`}
         >
           {/* Desktop Workspace Mode Bar + Expand/Compact Width Preset Toggle */}
-          <div className="hidden lg:flex items-center justify-between gap-2 px-4 py-2.5 border-b border-white/[0.07] bg-[#0a0e14] shrink-0">
-            <div className="flex items-center gap-0.5 rounded-xl bg-[#070a0f] border border-white/[0.07] p-1 min-w-0">
+          <div className="hidden lg:flex items-center justify-between gap-2 px-3.5 py-2 border-b border-white/[0.075] bg-[#0e131b] shrink-0">
+            <div className="flex items-center gap-0.5 rounded-lg bg-[#0a0e14] border border-white/[0.07] p-0.5 min-w-0">
               <button
                 type="button"
                 onClick={() => {
                   setWorkspaceMode("hideout");
                   setMobileTab("hideout");
                 }}
-                className={`inline-flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-[11.5px] font-medium transition-colors whitespace-nowrap shrink-0 ${
+                className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-[11.5px] font-medium transition-colors whitespace-nowrap shrink-0 ${
                   workspaceMode === "hideout"
-                    ? "bg-[#1a2230] text-[#f8fafc] shadow-sm"
+                    ? "bg-[#141b26] text-[#f8fafc] shadow-sm ring-1 ring-white/[0.08]"
                     : "text-[#8896a8] hover:text-[#e2e8f0]"
                 }`}
               >
@@ -1023,9 +1017,9 @@ export default function App() {
                   setWorkspaceMode("tasks");
                   setMobileTab("tasks");
                 }}
-                className={`inline-flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-[11.5px] font-medium transition-colors whitespace-nowrap shrink-0 ${
+                className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-[11.5px] font-medium transition-colors whitespace-nowrap shrink-0 ${
                   workspaceMode === "tasks"
-                    ? "bg-[#1a2230] text-[#f8fafc] shadow-sm"
+                    ? "bg-[#141b26] text-[#f8fafc] shadow-sm ring-1 ring-white/[0.08]"
                     : "text-[#8896a8] hover:text-[#e2e8f0]"
                 }`}
               >
@@ -1042,9 +1036,9 @@ export default function App() {
                   setWorkspaceMode("vendors");
                   setMobileTab("vendors");
                 }}
-                className={`inline-flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-[11.5px] font-medium transition-colors whitespace-nowrap shrink-0 ${
+                className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-[11.5px] font-medium transition-colors whitespace-nowrap shrink-0 ${
                   workspaceMode === "vendors"
-                    ? "bg-[#1a2230] text-[#f8fafc] shadow-sm"
+                    ? "bg-[#141b26] text-[#f8fafc] shadow-sm ring-1 ring-white/[0.08]"
                     : "text-[#8896a8] hover:text-[#e2e8f0]"
                 }`}
               >
@@ -1058,9 +1052,9 @@ export default function App() {
                   setWorkspaceMode("keys");
                   setMobileTab("keys");
                 }}
-                className={`inline-flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-[11.5px] font-medium transition-colors whitespace-nowrap shrink-0 ${
+                className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-[11.5px] font-medium transition-colors whitespace-nowrap shrink-0 ${
                   workspaceMode === "keys"
-                    ? "bg-[#1a2230] text-[#f8fafc] shadow-sm"
+                    ? "bg-[#141b26] text-[#f8fafc] shadow-sm ring-1 ring-white/[0.08]"
                     : "text-[#8896a8] hover:text-[#e2e8f0]"
                 }`}
               >
@@ -1267,7 +1261,7 @@ export default function App() {
       {/* Mobile Bottom Navigation Bar (< lg only, thumb-reachable 56px height, >= 44px hit targets) */}
       <nav
         aria-label="Mobile sections"
-        className="lg:hidden h-14 shrink-0 border-t border-white/[0.08] bg-[#0a0e14]/95 backdrop-blur-lg grid grid-cols-5 z-30"
+        className="lg:hidden h-14 shrink-0 border-t border-white/[0.075] bg-[#0a0e14]/96 backdrop-blur-lg grid grid-cols-5 z-30"
       >
         <button
           type="button"
@@ -1278,7 +1272,7 @@ export default function App() {
           }}
           className={`flex flex-col items-center justify-center gap-0.5 min-h-[44px] text-[10px] font-medium transition-colors ${
             mobileTab === "hideout"
-              ? "text-[#e5a93c] bg-[#111720]"
+              ? "text-[#e5a93c] bg-[#141b26]"
               : "text-[#8b98a9] hover:text-white"
           }`}
         >
@@ -1295,7 +1289,7 @@ export default function App() {
           }}
           className={`flex flex-col items-center justify-center gap-0.5 min-h-[44px] text-[10px] font-medium transition-colors ${
             mobileTab === "tasks"
-              ? "text-[#38bdf8] bg-[#111720]"
+              ? "text-[#38bdf8] bg-[#141b26]"
               : "text-[#8b98a9] hover:text-white"
           }`}
         >
@@ -1312,7 +1306,7 @@ export default function App() {
           }}
           className={`flex flex-col items-center justify-center gap-0.5 min-h-[44px] text-[10px] font-medium transition-colors ${
             mobileTab === "vendors"
-              ? "text-[#34d399] bg-[#111720]"
+              ? "text-[#34d399] bg-[#141b26]"
               : "text-[#8b98a9] hover:text-white"
           }`}
         >
@@ -1329,7 +1323,7 @@ export default function App() {
           }}
           className={`flex flex-col items-center justify-center gap-0.5 min-h-[44px] text-[10px] font-medium transition-colors ${
             mobileTab === "keys"
-              ? "text-[#e5a93c] bg-[#111720]"
+              ? "text-[#e5a93c] bg-[#141b26]"
               : "text-[#8b98a9] hover:text-white"
           }`}
         >
@@ -1342,7 +1336,7 @@ export default function App() {
           onClick={() => setMobileTab("map")}
           className={`flex flex-col items-center justify-center gap-0.5 min-h-[44px] text-[10px] font-medium transition-colors ${
             mobileTab === "map"
-              ? "text-[#38bdf8] bg-[#111720]"
+              ? "text-[#38bdf8] bg-[#141b26]"
               : "text-[#8b98a9] hover:text-white"
           }`}
         >
@@ -1353,8 +1347,9 @@ export default function App() {
 
       {/* Subtle Action Toast */}
       {toast && (
-        <div className="fixed top-14 right-3 sm:right-4 z-[2000] pointer-events-none px-3.5 py-2 rounded-xl bg-[#0d121a]/96 backdrop-blur-xl border border-[#e5a93c]/55 text-xs font-medium text-[#f1f5f9] shadow-2xl max-w-[calc(100vw-24px)] sm:max-w-sm text-left">
-          {toast}
+        <div className="gzw-toast-enter fixed top-14 right-3 sm:right-4 z-[2000] pointer-events-none inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-[#0e131b]/96 backdrop-blur-xl border border-[#e5a93c]/45 text-xs font-medium text-[#f1f5f9] shadow-2xl max-w-[calc(100vw-24px)] sm:max-w-sm text-left">
+          <span className="w-1.5 h-1.5 rounded-full bg-[#e5a93c] shrink-0" />
+          <span>{toast}</span>
         </div>
       )}
     </div>

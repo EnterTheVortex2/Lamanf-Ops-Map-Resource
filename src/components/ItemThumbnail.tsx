@@ -21,7 +21,7 @@ export function ItemThumbnail({
   if (!src || failed) {
     return (
       <div
-        className={`${sizeClass} shrink-0 rounded-md bg-[#090d13] border border-slate-800 flex items-center justify-center text-slate-500`}
+        className={`${sizeClass} shrink-0 rounded-lg bg-[#0a0e14] border border-white/[0.08] flex items-center justify-center text-[#64748b]`}
         aria-hidden="true"
       >
         <Package className="w-4 h-4" />
@@ -31,7 +31,7 @@ export function ItemThumbnail({
 
   return (
     <div
-      className={`${sizeClass} shrink-0 rounded-md bg-[#090d13] border border-slate-800 flex items-center justify-center overflow-hidden p-1`}
+      className={`${sizeClass} shrink-0 rounded-lg bg-[#0a0e14] border border-white/[0.08] flex items-center justify-center overflow-hidden p-1`}
     >
       <img
         src={src}

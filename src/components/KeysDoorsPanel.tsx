@@ -79,24 +79,10 @@ export function KeysDoorsPanel({
   }, [keysList, selectedRegion, filterMode, ownedKeys, searchQuery]);
 
   return (
-    <div className="flex-1 min-h-0 flex flex-col bg-[#0b0f16]">
+    <div className="flex-1 min-h-0 flex flex-col bg-[#0e131b]">
       {/* Keyholder & Door Filters */}
-      <div className="px-4 py-3.5 border-b border-white/[0.08] bg-[#0d121b] space-y-3 shrink-0">
-        <div className="flex items-center justify-between gap-2">
-          <div>
-            <h2 className="font-display text-base font-semibold text-[#f8fafc]">
-              Keys &amp; Locked Doors
-            </h2>
-            <p className="text-xs text-[#a9b8ca] mt-0.5">
-              Track owned keys and jump to locked doors on the map.
-            </p>
-          </div>
-          <div className="font-mono-tabular text-sm font-semibold text-[#e5a93c] shrink-0">
-            {ownedCount} / {keysList.length}
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+      <div className="px-4 py-3 border-b border-white/[0.075] bg-[#0e131b] space-y-2.5 shrink-0">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
           <div className="relative">
             <Search className="w-4 h-4 text-[#7b8ca1] absolute left-3 top-1/2 -translate-y-1/2" />
             <input
@@ -104,7 +90,7 @@ export function KeysDoorsPanel({
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search key, door, region, task..."
-              className="w-full min-h-[38px] bg-[#070a0f] border border-white/[0.09] rounded-lg pl-9 pr-3 py-1.5 text-[13px] text-[#f1f5f9] placeholder:text-[#66778b] focus:outline-none focus:border-[#e5a93c] transition-colors"
+              className="w-full min-h-[36px] bg-[#0a0e14] border border-white/[0.08] rounded-lg pl-9 pr-3 py-1.5 text-[13px] text-[#f1f5f9] placeholder:text-[#66778b] focus:outline-none focus:border-[#e5a93c] transition-colors"
             />
           </div>
 
@@ -112,7 +98,7 @@ export function KeysDoorsPanel({
             aria-label="Filter keys by region"
             value={selectedRegion}
             onChange={(e) => setSelectedRegion(e.target.value)}
-            className="w-full min-h-[38px] bg-[#121822] border border-white/[0.09] rounded-lg px-2.5 py-1.5 text-[13px] text-[#f1f5f9] focus:outline-none focus:border-[#e5a93c]"
+            className="w-full min-h-[36px] bg-[#0a0e14] border border-white/[0.08] rounded-lg px-2.5 py-1.5 text-[13px] text-[#f1f5f9] focus:outline-none focus:border-[#e5a93c]"
           >
             <option value="ALL">All Regions ({keysList.length})</option>
             {regions.map((r) => (
@@ -124,29 +110,35 @@ export function KeysDoorsPanel({
           </select>
         </div>
 
-        <div className="flex items-center rounded-lg bg-[#070a0f] border border-white/[0.07] p-0.5 overflow-x-auto max-w-full">
-          {(
-            [
-              { id: "all", label: "All" },
-              { id: "task", label: "Task Keys" },
-              { id: "keycards", label: "Keycards" },
-              { id: "owned", label: "Owned" },
-              { id: "missing", label: "Missing" },
-            ] as { id: KeyFilterMode; label: string }[]
-          ).map((mode) => (
-            <button
-              key={mode.id}
-              type="button"
-              onClick={() => setFilterMode(mode.id)}
-              className={`px-3 py-1 rounded-md text-xs font-medium transition-colors whitespace-nowrap shrink-0 ${
-                filterMode === mode.id
-                  ? "bg-[#1c2433] text-[#e5a93c]"
-                  : "text-[#94a3b8] hover:text-[#f1f5f9]"
-              }`}
-            >
-              {mode.label}
-            </button>
-          ))}
+        <div className="flex items-center justify-between gap-2 flex-wrap">
+          <div className="flex items-center rounded-lg bg-[#0a0e14] border border-white/[0.07] p-0.5 overflow-x-auto max-w-full">
+            {(
+              [
+                { id: "all", label: "All" },
+                { id: "task", label: "Task Keys" },
+                { id: "keycards", label: "Keycards" },
+                { id: "owned", label: "Owned" },
+                { id: "missing", label: "Missing" },
+              ] as { id: KeyFilterMode; label: string }[]
+            ).map((mode) => (
+              <button
+                key={mode.id}
+                type="button"
+                onClick={() => setFilterMode(mode.id)}
+                className={`px-2.5 py-1 rounded-md text-xs font-medium transition-colors whitespace-nowrap shrink-0 ${
+                  filterMode === mode.id
+                    ? "bg-[#141b26] text-[#e5a93c] ring-1 ring-white/[0.08]"
+                    : "text-[#94a3b8] hover:text-[#f1f5f9]"
+                }`}
+              >
+                {mode.label}
+              </button>
+            ))}
+          </div>
+
+          <span className="font-mono-tabular text-xs font-semibold text-[#e5a93c] shrink-0">
+            {ownedCount} / {keysList.length} owned
+          </span>
         </div>
       </div>
 
@@ -157,18 +149,18 @@ export function KeysDoorsPanel({
         </div>
 
         {keysList.length === 0 ? (
-          <div className="rounded-xl border border-white/[0.08] bg-[#121822] p-8 text-center text-sm text-[#9fb0c4]">
+          <div className="rounded-xl border border-white/[0.075] bg-[#141b26] p-8 text-center text-sm text-[#9fb0c4]">
             {isLoadingApi
               ? "Loading keys & keycards..."
               : "No key data cached yet. Click Sync Data in the top bar."}
           </div>
         ) : filteredKeys.length === 0 ? (
-          <div className="rounded-xl border border-white/[0.08] bg-[#121822] p-8 text-center text-sm text-[#9fb0c4]">
+          <div className="rounded-xl border border-white/[0.075] bg-[#141b26] p-8 text-center text-sm text-[#9fb0c4]">
             No keys match your current filter.
           </div>
         ) : (
           <div
-            className={`grid gap-3.5 ${
+            className={`grid gap-3 ${
               isExpanded ? "grid-cols-1 md:grid-cols-2" : "grid-cols-1"
             }`}
           >
@@ -179,12 +171,12 @@ export function KeysDoorsPanel({
               return (
                 <article
                   key={keyDef.id}
-                  className={`rounded-xl border p-4.5 flex flex-col justify-between transition-colors ${
+                  className={`rounded-xl border p-4 flex flex-col justify-between transition-colors ${
                     isSelected
-                      ? "bg-[#141d2b] border-[#38bdf8]/75 shadow-lg"
+                      ? "bg-[#15202e] border-[#38bdf8]/75 shadow-lg"
                       : isOwned
-                        ? "bg-[#0e1716] border-[#214237]"
-                        : "bg-[#121822] border-white/[0.08] hover:border-white/[0.18]"
+                        ? "bg-[#0f1a18] border-[#22473b]"
+                        : "bg-[#141b26] border-white/[0.075] hover:border-white/[0.18]"
                   }`}
                 >
                   <div>
@@ -251,14 +243,14 @@ export function KeysDoorsPanel({
                     )}
                   </div>
 
-                  <div className="mt-4 pt-3 border-t border-white/[0.06] flex items-center justify-between gap-2">
+                  <div className="mt-3.5 pt-2.5 border-t border-white/[0.06] flex items-center justify-between gap-2">
                     <button
                       type="button"
                       onClick={() => onLocateKeyOnMap(keyDef)}
-                      className={`min-h-[38px] inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg border text-xs font-medium transition-colors ${
+                      className={`min-h-[36px] inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-medium transition-colors ${
                         isSelected
-                          ? "bg-[#16283b] border-[#38bdf8] text-[#7dd3fc]"
-                          : "bg-white/[0.04] border-white/[0.1] text-[#38bdf8] hover:border-[#38bdf8]"
+                          ? "bg-[#15283b] border-[#38bdf8] text-[#7dd3fc]"
+                          : "bg-white/[0.035] border-white/[0.09] text-[#38bdf8] hover:border-[#38bdf8]"
                       }`}
                     >
                       <MapPin className="w-3.5 h-3.5" />
@@ -268,10 +260,10 @@ export function KeysDoorsPanel({
                     <button
                       type="button"
                       onClick={() => onToggleOwnedKey(keyDef.id)}
-                      className={`min-h-[38px] inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg border text-xs font-medium transition-colors whitespace-nowrap ${
+                      className={`min-h-[36px] inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-medium transition-colors whitespace-nowrap ${
                         isOwned
-                          ? "bg-[#112720] border-[#2b6b53] text-[#34d399] hover:border-[#34d399]"
-                          : "bg-white/[0.04] border-white/[0.1] text-[#e2e8f0] hover:border-[#e5a93c] hover:text-[#e5a93c]"
+                          ? "bg-[#112922] border-[#2e7359] text-[#34d399] hover:border-[#34d399]"
+                          : "bg-white/[0.035] border-white/[0.09] text-[#e2e8f0] hover:border-[#e5a93c] hover:text-[#e5a93c]"
                       }`}
                     >
                       {isOwned && <Check className="w-3.5 h-3.5 stroke-[2.5]" />}

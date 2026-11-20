@@ -5,7 +5,7 @@ import {
   Package,
   Search,
   ShoppingBag,
-  Sparkles,
+  SlidersHorizontal,
   User,
   X,
 } from "lucide-react";
@@ -257,10 +257,10 @@ export function VendorShopPanel({
     : null;
 
   return (
-    <div className="flex-1 min-h-0 flex flex-col bg-[#0b0f16]">
+    <div className="flex-1 min-h-0 flex flex-col bg-[#0e131b]">
       {/* Storefront Header & Controls */}
-      <div className="border-b border-white/[0.08] bg-[#0d121b] shrink-0">
-        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 py-4 space-y-3.5">
+      <div className="border-b border-white/[0.075] bg-[#0e131b] shrink-0">
+        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 py-3.5 space-y-3">
           {/* Vendor Selector Roster */}
           <div className="flex items-center gap-2 overflow-x-auto pb-1">
             {vendors.map((vendor) => {
@@ -276,10 +276,10 @@ export function VendorShopPanel({
                     setSearchQuery("");
                     setInspectedItem(null);
                   }}
-                  className={`min-h-[52px] px-3.5 py-2 rounded-xl border text-left transition-all shrink-0 flex items-center gap-3 ${
+                  className={`min-h-[48px] px-3 py-1.5 rounded-xl border text-left transition-all shrink-0 flex items-center gap-2.5 ${
                     active
-                      ? "bg-[#1a2232] border-[#e5a93c]/75 text-[#f8fafc] shadow-[0_6px_20px_rgba(0,0,0,0.45)]"
-                      : "bg-[#121822] border-white/[0.08] text-[#9fb0c4] hover:text-white hover:border-white/[0.2]"
+                      ? "bg-[#141b26] border-[#e5a93c]/70 text-[#f8fafc] shadow-[0_6px_20px_rgba(0,0,0,0.4)]"
+                      : "bg-[#0a0e14] border-white/[0.07] text-[#9fb0c4] hover:text-white hover:border-white/[0.18]"
                   }`}
                 >
                   {vendor.image && !failedImgUrls[vendor.image] ? (
@@ -288,11 +288,11 @@ export function VendorShopPanel({
                       alt={vendor.name}
                       referrerPolicy="no-referrer"
                       onError={() => markImgFailed(vendor.image!)}
-                      className="w-9 h-9 rounded-lg object-cover border border-white/[0.12] bg-[#080c12] shrink-0"
+                      className="w-8 h-8 rounded-lg object-cover border border-white/[0.12] bg-[#080b10] shrink-0"
                       loading="lazy"
                     />
                   ) : (
-                    <div className="w-9 h-9 rounded-lg bg-[#080c12] border border-white/[0.08] flex items-center justify-center shrink-0">
+                    <div className="w-8 h-8 rounded-lg bg-[#0e131b] border border-white/[0.08] flex items-center justify-center shrink-0">
                       <User className="w-4 h-4 text-[#8899ae]" />
                     </div>
                   )}
@@ -312,7 +312,7 @@ export function VendorShopPanel({
           {/* Active Vendor Banner + Search / Sort / Rank Controls */}
           <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-3">
             {activeVendorProfile && (
-              <div className="flex items-center gap-3.5 min-w-0">
+              <div className="flex items-center gap-3 min-w-0">
                 {activeVendorProfile.image &&
                 !failedImgUrls[activeVendorProfile.image] ? (
                   <img
@@ -320,16 +320,16 @@ export function VendorShopPanel({
                     alt={activeVendorProfile.name}
                     referrerPolicy="no-referrer"
                     onError={() => markImgFailed(activeVendorProfile.image!)}
-                    className="w-11 h-11 rounded-xl object-cover border border-white/[0.14] shrink-0 hidden sm:block"
+                    className="w-10 h-10 rounded-xl object-cover border border-white/[0.12] shrink-0 hidden sm:block"
                   />
                 ) : (
-                  <div className="w-11 h-11 rounded-xl bg-[#121822] border border-white/[0.08] hidden sm:flex items-center justify-center shrink-0">
+                  <div className="w-10 h-10 rounded-xl bg-[#141b26] border border-white/[0.08] hidden sm:flex items-center justify-center shrink-0">
                     <ShoppingBag className="w-5 h-5 text-[#e5a93c]" />
                   </div>
                 )}
                 <div className="min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <h2 className="font-display text-lg font-semibold text-[#f8fafc] leading-tight">
+                    <h2 className="font-display text-base sm:text-lg font-semibold text-[#f8fafc] leading-tight">
                       {activeVendorProfile.name} Armory &amp; Supply
                     </h2>
                     {activeVendorProfile.fullName !== "Unknown" && (
@@ -352,8 +352,8 @@ export function VendorShopPanel({
             )}
 
             {/* Rank Filter + Search + Sort */}
-            <div className="flex flex-wrap items-center gap-2.5">
-              <div className="flex items-center rounded-xl bg-[#070a0f] border border-white/[0.08] p-1 overflow-x-auto max-w-full">
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="flex items-center rounded-lg bg-[#0a0e14] border border-white/[0.075] p-0.5 overflow-x-auto max-w-full">
                 {(
                   [
                     { id: "ALL" as const, label: `All (${vendorItems.length})` },
@@ -367,9 +367,9 @@ export function VendorShopPanel({
                     key={String(rk.id)}
                     type="button"
                     onClick={() => setSelectedRank(rk.id)}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors whitespace-nowrap shrink-0 ${
+                    className={`px-2.5 py-1 rounded-md text-xs font-medium transition-colors whitespace-nowrap shrink-0 ${
                       selectedRank === rk.id
-                        ? "bg-[#1c2433] text-[#e5a93c] shadow-sm"
+                        ? "bg-[#141b26] text-[#e5a93c] ring-1 ring-white/[0.08]"
                         : "text-[#94a3b8] hover:text-white"
                     }`}
                   >
@@ -378,14 +378,14 @@ export function VendorShopPanel({
                 ))}
               </div>
 
-              <div className="relative min-w-[210px] flex-1 sm:flex-none sm:w-64">
+              <div className="relative min-w-[200px] flex-1 sm:flex-none sm:w-60">
                 <Search className="w-4 h-4 text-[#7b8ca1] absolute left-3 top-1/2 -translate-y-1/2" />
                 <input
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder={`Search ${selectedVendor} stock...`}
-                  className="w-full min-h-[38px] bg-[#070a0f] border border-white/[0.09] rounded-xl pl-9 pr-3 py-1.5 text-[13px] text-[#f1f5f9] placeholder:text-[#66778b] focus:outline-none focus:border-[#e5a93c] transition-colors"
+                  className="w-full min-h-[36px] bg-[#0a0e14] border border-white/[0.08] rounded-lg pl-9 pr-3 py-1.5 text-[13px] text-[#f1f5f9] placeholder:text-[#66778b] focus:outline-none focus:border-[#e5a93c] transition-colors"
                 />
               </div>
 
@@ -395,7 +395,7 @@ export function VendorShopPanel({
                   aria-label="Sort vendor inventory"
                   value={sortMode}
                   onChange={(e) => setSortMode(e.target.value as SortMode)}
-                  className="min-h-[38px] bg-[#121822] border border-white/[0.09] rounded-xl pl-8 pr-3 py-1.5 text-xs text-[#f1f5f9] focus:outline-none focus:border-[#e5a93c]"
+                  className="min-h-[36px] bg-[#0a0e14] border border-white/[0.08] rounded-lg pl-8 pr-3 py-1.5 text-xs text-[#f1f5f9] focus:outline-none focus:border-[#e5a93c]"
                 >
                   <option value="default">Sort: Loyalty Rank</option>
                   <option value="price-asc">Price: Low to High</option>
@@ -415,10 +415,10 @@ export function VendorShopPanel({
                   key={grp.id}
                   type="button"
                   onClick={() => setSelectedGroup(grp.id)}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors whitespace-nowrap shrink-0 ${
+                  className={`px-2.5 py-1 rounded-lg text-xs font-medium border transition-colors whitespace-nowrap shrink-0 ${
                     active
-                      ? "bg-[#1a2232] border-[#38bdf8]/70 text-[#7dd3fc]"
-                      : "bg-[#121822] border-white/[0.07] text-[#9fb0c4] hover:text-white hover:border-white/[0.16]"
+                      ? "bg-[#15202e] border-[#38bdf8]/65 text-[#7dd3fc]"
+                      : "bg-[#0a0e14] border-white/[0.07] text-[#9fb0c4] hover:text-white hover:border-white/[0.16]"
                   }`}
                 >
                   {grp.label}{" "}
@@ -433,22 +433,22 @@ export function VendorShopPanel({
       </div>
 
       {/* Full-Screen Scrollable Product Catalog Grid */}
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto bg-[#080b10]">
         <div className="max-w-[1600px] mx-auto px-4 sm:px-6 py-5 space-y-6">
           {shopItems.length === 0 ? (
-            <div className="rounded-xl border border-white/[0.08] bg-[#121822] p-10 text-center text-sm text-[#a9b8ca]">
+            <div className="rounded-xl border border-white/[0.075] bg-[#141b26] p-10 text-center text-sm text-[#a9b8ca]">
               {isLoadingApi
                 ? "Loading vendor catalog..."
                 : "Vendor inventory is not loaded yet. Click Sync Data in the top bar."}
             </div>
           ) : filteredItems.length === 0 ? (
-            <div className="rounded-xl border border-white/[0.08] bg-[#121822] p-10 text-center text-sm text-[#a9b8ca]">
+            <div className="rounded-xl border border-white/[0.075] bg-[#141b26] p-10 text-center text-sm text-[#a9b8ca]">
               No {selectedVendor} items match the selected rank, category, or search term.
             </div>
           ) : (
             rankSections.map((section) => (
-              <section key={section.rank} className="space-y-3.5">
-                <div className="flex items-center justify-between border-b border-white/[0.07] pb-2.5">
+              <section key={section.rank} className="space-y-3">
+                <div className="flex items-center justify-between border-b border-white/[0.07] pb-2">
                   <h3 className="font-display text-base font-semibold text-[#e5a93c]">
                     {activeVendorProfile?.name} · {section.title}
                   </h3>
@@ -457,7 +457,7 @@ export function VendorShopPanel({
                   </span>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3.5">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
                   {section.items.map((item) => {
                     const enriched = getEnrichment(item);
                     const buyPrice = item.buyPrice || enriched?.buyPrice || null;
@@ -469,10 +469,10 @@ export function VendorShopPanel({
                       <article
                         key={item.id}
                         onClick={() => setInspectedItem(item)}
-                        className="group rounded-xl border border-white/[0.08] bg-[#121822] hover:border-[#e5a93c]/55 hover:bg-[#151c28] transition-all overflow-hidden flex flex-col cursor-pointer shadow-sm hover:shadow-[0_12px_28px_rgba(0,0,0,0.45)]"
+                        className="group rounded-xl border border-white/[0.075] bg-[#141b26] hover:border-[#e5a93c]/55 hover:-translate-y-0.5 transition-all duration-150 overflow-hidden flex flex-col cursor-pointer shadow-sm hover:shadow-[0_12px_28px_rgba(0,0,0,0.45)]"
                       >
                         {/* Product Showcase Image Stage */}
-                        <div className="relative h-36 bg-gradient-to-b from-[#0b1017] to-[#080b11] border-b border-white/[0.06] flex items-center justify-center p-4 overflow-hidden">
+                        <div className="relative h-36 bg-gradient-to-b from-[#0c1118] to-[#080b10] border-b border-white/[0.06] flex items-center justify-center p-4 overflow-hidden">
                           <span className="absolute top-2.5 left-2.5 text-[11px] font-medium px-2 py-0.5 rounded-md bg-black/55 border border-white/[0.08] text-[#cbd5e1]">
                             {item.rank ? `Rank ${item.rank}` : "Special"}
                           </span>
@@ -574,10 +574,10 @@ export function VendorShopPanel({
           onClick={() => setInspectedItem(null)}
         >
           <div
-            className="max-w-xl w-full rounded-2xl bg-[#111722] border border-white/[0.14] shadow-2xl overflow-hidden"
+            className="gzw-drawer-enter max-w-xl w-full rounded-xl bg-[#0e131b] border border-white/[0.12] shadow-2xl overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="px-5 py-4 border-b border-white/[0.08] flex items-start justify-between gap-3">
+            <div className="px-5 py-4 border-b border-white/[0.075] flex items-start justify-between gap-3">
               <div>
                 <div className="text-xs font-medium text-[#e5a93c]">
                   {inspectedItem.vendor} ·{" "}
@@ -602,7 +602,7 @@ export function VendorShopPanel({
 
             <div className="p-5 space-y-4 max-h-[80vh] overflow-y-auto">
               {/* Studio Product Showcase */}
-              <div className="h-48 rounded-xl bg-[#080c12] border border-white/[0.08] flex items-center justify-center p-4">
+              <div className="h-48 rounded-xl bg-[#0a0e14] border border-white/[0.07] flex items-center justify-center p-4">
                 {inspectedEnrichment?.image &&
                 !failedImgUrls[inspectedEnrichment.image] ? (
                   <img
@@ -621,26 +621,26 @@ export function VendorShopPanel({
               </div>
 
               {/* Price & Core Metadata Bar */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-                <div className="rounded-xl bg-[#0b1017] border border-white/[0.07] p-3">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                <div className="rounded-lg bg-[#0a0e14] border border-white/[0.06] p-3">
                   <div className="text-[11px] text-[#8899ae]">Buy Price</div>
                   <div className="font-mono-tabular text-base font-bold text-[#34d399] mt-0.5">
                     {inspectedBuyPrice || "Unlisted"}
                   </div>
                 </div>
-                <div className="rounded-xl bg-[#0b1017] border border-white/[0.07] p-3">
+                <div className="rounded-lg bg-[#0a0e14] border border-white/[0.06] p-3">
                   <div className="text-[11px] text-[#8899ae]">Sell Value</div>
                   <div className="font-mono-tabular text-sm font-semibold text-[#e5a93c] mt-0.5">
                     {inspectedEnrichment?.sellPrice || "—"}
                   </div>
                 </div>
-                <div className="rounded-xl bg-[#0b1017] border border-white/[0.07] p-3">
+                <div className="rounded-lg bg-[#0a0e14] border border-white/[0.06] p-3">
                   <div className="text-[11px] text-[#8899ae]">Grid Size</div>
                   <div className="font-mono-tabular text-sm font-semibold text-[#f1f5f9] mt-0.5">
                     {inspectedEnrichment?.gridSize || "—"}
                   </div>
                 </div>
-                <div className="rounded-xl bg-[#0b1017] border border-white/[0.07] p-3">
+                <div className="rounded-lg bg-[#0a0e14] border border-white/[0.06] p-3">
                   <div className="text-[11px] text-[#8899ae]">Weight</div>
                   <div className="font-mono-tabular text-sm font-semibold text-[#f1f5f9] mt-0.5">
                     {inspectedEnrichment?.weight || "—"}
@@ -652,9 +652,9 @@ export function VendorShopPanel({
               {inspectedEnrichment &&
                 (inspectedEnrichment.specs.length > 0 ||
                   inspectedEnrichment.manufacturer) && (
-                  <div className="rounded-xl bg-[#0b1017] border border-white/[0.07] p-4 space-y-2.5">
+                  <div className="rounded-lg bg-[#0a0e14] border border-white/[0.06] p-3.5 space-y-2.5">
                     <div className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#38bdf8]">
-                      <Sparkles className="w-3.5 h-3.5" />
+                      <SlidersHorizontal className="w-3.5 h-3.5" />
                       Specifications
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2 text-[13px]">
@@ -682,7 +682,7 @@ export function VendorShopPanel({
                 )}
 
               {inspectedEnrichment?.description && (
-                <p className="text-[13px] text-[#c4d0df] leading-relaxed rounded-xl bg-white/[0.025] border border-white/[0.06] p-3.5">
+                <p className="text-[13px] text-[#c4d0df] leading-relaxed rounded-lg bg-[#0a0e14] border border-white/[0.06] p-3.5">
                   {inspectedEnrichment.description}
                 </p>
               )}

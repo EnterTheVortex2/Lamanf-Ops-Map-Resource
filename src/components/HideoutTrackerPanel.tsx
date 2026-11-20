@@ -233,43 +233,38 @@ export function HideoutTrackerPanel({
   };
 
   return (
-    <div className="flex flex-col flex-1 min-h-0 bg-[#0b0f16]">
+    <div className="flex flex-col flex-1 min-h-0 bg-[#0e131b]">
       {/* Hideout Controls & Navigation */}
-      <div className="px-4 py-3.5 border-b border-white/[0.08] bg-[#0d121b] space-y-3 shrink-0">
-        <div className="flex items-center justify-between gap-2">
-          <div className="min-w-0">
-            <h2 className="font-display text-base font-semibold text-[#f8fafc]">
-              Hideout Upgrades · {builtCount} of {allUpgrades.length} built
-            </h2>
-            <p className="text-xs text-[#a9b8ca] truncate mt-0.5">
-              Select a station or material to view spawn locations on the map.
-            </p>
+      <div className="px-4 py-3 border-b border-white/[0.075] bg-[#0e131b] space-y-2.5 shrink-0">
+        {/* Search Input + Quick Supply List Action */}
+        <div className="flex items-center gap-2">
+          <div className="relative flex-1 min-w-0">
+            <Search className="w-4 h-4 text-[#7b8ca1] absolute left-3 top-1/2 -translate-y-1/2" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search upgrade or material..."
+              className="w-full min-h-[36px] bg-[#0a0e14] border border-white/[0.08] rounded-lg pl-9 pr-3 py-1.5 text-[13px] text-[#f1f5f9] placeholder:text-[#66778b] focus:outline-none focus:border-[#e5a93c] transition-colors"
+            />
           </div>
 
           <button
             type="button"
             onClick={() => onViewChange("manifest")}
-            className="min-h-[36px] inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-[#e5a93c] hover:bg-[#f0b94d] text-[#0c0f14] text-xs font-semibold transition-colors whitespace-nowrap shrink-0 shadow-sm"
+            className={`min-h-[36px] inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors whitespace-nowrap shrink-0 ${
+              activeView === "manifest"
+                ? "bg-[#f0b94d] text-[#080b10]"
+                : "bg-[#e5a93c] hover:bg-[#f0b94d] text-[#080b10]"
+            }`}
           >
             <ClipboardList className="w-3.5 h-3.5" />
-            Supply List ({supplyManifest.rows.filter((r) => r.toFind > 0).length})
+            <span>Supply List ({supplyManifest.rows.filter((r) => r.toFind > 0).length})</span>
           </button>
         </div>
 
-        {/* Search Input */}
-        <div className="relative">
-          <Search className="w-4 h-4 text-[#7b8ca1] absolute left-3 top-1/2 -translate-y-1/2" />
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search upgrade or material..."
-            className="w-full min-h-[38px] bg-[#070a0f] border border-white/[0.09] rounded-lg pl-9 pr-3 py-1.5 text-[13px] text-[#f1f5f9] placeholder:text-[#66778b] focus:outline-none focus:border-[#e5a93c] transition-colors"
-          />
-        </div>
-
         {/* Sub-view Switcher Tabs */}
-        <div className="grid grid-cols-4 gap-1 rounded-xl bg-[#070a0f] border border-white/[0.07] p-1">
+        <div className="grid grid-cols-4 gap-1 rounded-lg bg-[#0a0e14] border border-white/[0.07] p-0.5">
           {(
             [
               { id: "planner", label: "Upgrades" },
@@ -284,10 +279,10 @@ export function HideoutTrackerPanel({
                 key={tab.id}
                 type="button"
                 onClick={() => onViewChange(tab.id)}
-                className={`min-h-[34px] px-1.5 py-1 rounded-lg text-xs font-medium transition-colors whitespace-nowrap text-center ${
+                className={`min-h-[32px] px-1.5 py-1 rounded-md text-xs font-medium transition-colors whitespace-nowrap text-center ${
                   active
-                    ? "bg-[#1a2232] text-[#f8fafc] shadow-sm"
-                    : "text-[#98a9be] hover:text-[#e2e8f0]"
+                    ? "bg-[#141b26] text-[#f8fafc] shadow-sm ring-1 ring-white/[0.08]"
+                    : "text-[#94a3b8] hover:text-[#e2e8f0]"
                 }`}
               >
                 {tab.label}
@@ -303,7 +298,7 @@ export function HideoutTrackerPanel({
               aria-label="Filter hideout by room"
               value={roomFilter}
               onChange={(e) => setRoomFilter(e.target.value as "all" | RoomId)}
-              className="min-h-[36px] bg-[#121822] border border-white/[0.09] rounded-lg px-2.5 py-1 text-[13px] text-[#f1f5f9] focus:outline-none focus:border-[#e5a93c]"
+              className="min-h-[34px] bg-[#0a0e14] border border-white/[0.08] rounded-lg px-2.5 py-1 text-xs text-[#f1f5f9] focus:outline-none focus:border-[#e5a93c]"
             >
               <option value="all">All Rooms ({allUpgrades.length})</option>
               <option value="utility">
@@ -317,16 +312,16 @@ export function HideoutTrackerPanel({
               </option>
             </select>
 
-            <div className="flex items-center rounded-lg bg-[#070a0f] border border-white/[0.07] p-0.5">
+            <div className="flex items-center rounded-lg bg-[#0a0e14] border border-white/[0.07] p-0.5">
               {([0, 1, 2, 3] as const).map((lvl) => (
                 <button
                   key={lvl}
                   type="button"
                   onClick={() => setTierFilter(lvl)}
-                  className={`px-2.5 py-1 rounded-md text-xs font-medium transition-colors ${
+                  className={`px-2 py-1 rounded-md text-xs font-medium transition-colors whitespace-nowrap ${
                     tierFilter === lvl
-                      ? "bg-[#1c2433] text-[#e5a93c]"
-                      : "text-[#98a9be] hover:text-[#e2e8f0]"
+                      ? "bg-[#141b26] text-[#e5a93c] ring-1 ring-white/[0.08]"
+                      : "text-[#94a3b8] hover:text-[#e2e8f0]"
                   }`}
                 >
                   {lvl === 0 ? "All" : `Lv ${lvl}`}
@@ -334,7 +329,7 @@ export function HideoutTrackerPanel({
               ))}
             </div>
 
-            <div className="flex items-center rounded-lg bg-[#070a0f] border border-white/[0.07] p-0.5">
+            <div className="flex items-center rounded-lg bg-[#0a0e14] border border-white/[0.07] p-0.5">
               {(
                 [
                   { id: "all", label: "All" },
@@ -347,10 +342,10 @@ export function HideoutTrackerPanel({
                   key={st.id}
                   type="button"
                   onClick={() => setStatusFilter(st.id)}
-                  className={`px-2.5 py-1 rounded-md text-xs font-medium transition-colors ${
+                  className={`px-2 py-1 rounded-md text-xs font-medium transition-colors whitespace-nowrap ${
                     statusFilter === st.id
-                      ? "bg-[#1c2433] text-[#38bdf8]"
-                      : "text-[#98a9be] hover:text-[#e2e8f0]"
+                      ? "bg-[#141b26] text-[#38bdf8] ring-1 ring-white/[0.08]"
+                      : "text-[#94a3b8] hover:text-[#e2e8f0]"
                   }`}
                 >
                   {st.label}
@@ -370,7 +365,7 @@ export function HideoutTrackerPanel({
           <>
             {/* Selected Upgrade Material Spotlight */}
             {selectedUpgrade && (
-              <div className="rounded-xl bg-[#131b28] border border-[#38bdf8]/45 p-4.5 space-y-3.5 shadow-lg">
+              <div className="gzw-drawer-enter rounded-xl bg-[#141b26] border border-[#38bdf8]/45 p-4 space-y-3 shadow-lg">
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <div className="text-xs font-medium text-[#38bdf8]">
@@ -386,13 +381,13 @@ export function HideoutTrackerPanel({
                   <button
                     type="button"
                     onClick={() => onSelectUpgrade(null)}
-                    className="text-xs font-medium text-[#cbd5e1] hover:text-white px-2.5 py-1 rounded-lg border border-white/[0.12] hover:border-white/[0.25] transition-colors shrink-0"
+                    className="text-xs font-medium text-[#cbd5e1] hover:text-white px-2.5 py-1 rounded-lg border border-white/[0.1] hover:border-white/[0.22] transition-colors shrink-0"
                   >
                     Close
                   </button>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   {selectedUpgrade.requirements.map((req) => {
                     const key = normMatKey(req.name);
                     const mat = catalogByNorm.get(key) || null;
@@ -403,7 +398,7 @@ export function HideoutTrackerPanel({
                     return (
                       <div
                         key={`${selectedUpgrade.id}-${req.name}`}
-                        className="flex items-center justify-between gap-2 rounded-lg bg-[#090d14] border border-white/[0.08] px-3 py-2.5"
+                        className="flex items-center justify-between gap-2 rounded-lg bg-[#0a0e14] border border-white/[0.06] px-3 py-2"
                       >
                         <button
                           type="button"
@@ -445,7 +440,7 @@ export function HideoutTrackerPanel({
                               type="button"
                               onClick={() => handleMaterialClick(req.name)}
                               title="Locate spawns on map"
-                              className="p-1.5 rounded-lg bg-white/[0.04] border border-white/[0.09] text-[#38bdf8] hover:border-[#38bdf8] transition-colors"
+                              className="p-1.5 rounded-lg bg-white/[0.03] border border-white/[0.08] text-[#38bdf8] hover:border-[#38bdf8] transition-colors"
                             >
                               <MapPin className="w-3.5 h-3.5" />
                             </button>
@@ -455,8 +450,8 @@ export function HideoutTrackerPanel({
                               title="Pin spawns on map"
                               className={`px-2 py-1 rounded-lg text-xs font-medium border transition-colors ${
                                 isPinned
-                                  ? "bg-purple-500/20 border-purple-400/60 text-purple-200"
-                                  : "bg-white/[0.04] border-white/[0.09] text-[#cbd5e1] hover:text-white"
+                                  ? "bg-[#e5a93c]/18 border-[#e5a93c]/55 text-[#fde68a]"
+                                  : "bg-white/[0.03] border-white/[0.08] text-[#cbd5e1] hover:text-white"
                               }`}
                             >
                               {isPinned ? "Pinned" : "Pin"}
@@ -472,7 +467,7 @@ export function HideoutTrackerPanel({
 
             {/* 36 Upgrade Cards Grid */}
             <div
-              className={`grid gap-3.5 ${
+              className={`grid gap-3 ${
                 isExpanded ? "grid-cols-1 md:grid-cols-2" : "grid-cols-1"
               }`}
             >
@@ -485,14 +480,14 @@ export function HideoutTrackerPanel({
                   <div
                     key={upg.id}
                     onClick={() => onSelectUpgrade(isSelected ? null : upg)}
-                    className={`rounded-xl border p-4.5 flex flex-col justify-between transition-colors cursor-pointer ${
+                    className={`rounded-xl border p-4 flex flex-col justify-between transition-colors cursor-pointer ${
                       isSelected
-                        ? "bg-[#151e2c] border-[#38bdf8]/75 shadow-lg"
+                        ? "bg-[#15202e] border-[#38bdf8]/75 shadow-lg"
                         : isBuilt
-                          ? "bg-[#0f1918] border-[#22463a] hover:border-[#306352]"
+                          ? "bg-[#0f1a18] border-[#22473b] hover:border-[#2f6452]"
                           : isPlanned
-                            ? "bg-[#161a24] border-[#e5a93c]/40 hover:border-[#e5a93c]/65"
-                            : "bg-[#121822] border-white/[0.08] hover:border-white/[0.2]"
+                            ? "bg-[#161b25] border-[#e5a93c]/40 hover:border-[#e5a93c]/65"
+                            : "bg-[#141b26] border-white/[0.075] hover:border-white/[0.18]"
                     }`}
                   >
                     <div>
@@ -523,7 +518,7 @@ export function HideoutTrackerPanel({
 
                       {/* Clean Material Requirements */}
                       <div
-                        className="mt-3.5 flex flex-wrap gap-2"
+                        className="mt-3 flex flex-wrap gap-1.5"
                         onClick={(e) => e.stopPropagation()}
                       >
                         {upg.requirements.map((req) => {
@@ -546,12 +541,12 @@ export function HideoutTrackerPanel({
                                   ? `${req.quantity.toLocaleString()} Dollars`
                                   : "Click to show spawn locations on map"
                               }
-                              className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-[12.5px] transition-colors ${
+                              className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-[12.5px] transition-colors ${
                                 isMatSelected
-                                  ? "bg-[#16283b] border-[#38bdf8] text-[#e0f2fe]"
+                                  ? "bg-[#15283b] border-[#38bdf8] text-[#e0f2fe]"
                                   : isDollars
-                                    ? "bg-white/[0.025] border-white/[0.07] text-[#a9b8ca] cursor-default"
-                                    : "bg-[#090d14] border-white/[0.09] text-[#e2e8f0] hover:border-[#38bdf8] hover:text-[#7dd3fc] cursor-pointer"
+                                    ? "bg-white/[0.025] border-white/[0.05] text-[#a9b8ca] cursor-default"
+                                    : "bg-[#0a0e14]/90 border-white/[0.065] text-[#e2e8f0] hover:border-[#38bdf8] hover:text-[#7dd3fc] cursor-pointer"
                               }`}
                             >
                               <span className="font-medium">{req.name}</span>
@@ -575,7 +570,7 @@ export function HideoutTrackerPanel({
 
                     {/* Card Footer */}
                     <div
-                      className="mt-4 pt-3 border-t border-white/[0.07] flex items-center justify-between gap-2"
+                      className="mt-3.5 pt-2.5 border-t border-white/[0.06] flex items-center justify-between gap-2"
                       onClick={(e) => e.stopPropagation()}
                     >
                       <label className="inline-flex items-center gap-2 text-xs text-[#cbd5e1] hover:text-white cursor-pointer select-none">
@@ -594,7 +589,7 @@ export function HideoutTrackerPanel({
                         className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-medium transition-colors whitespace-nowrap ${
                           isBuilt
                             ? "bg-[#112922] border-[#2e7359] text-[#34d399] hover:border-[#34d399]"
-                            : "bg-white/[0.04] border-white/[0.12] text-[#e2e8f0] hover:border-[#e5a93c] hover:text-[#e5a93c]"
+                            : "bg-white/[0.035] border-white/[0.1] text-[#e2e8f0] hover:border-[#e5a93c] hover:text-[#e5a93c]"
                         }`}
                       >
                         {isBuilt && <Check className="w-3.5 h-3.5 stroke-[2.5]" />}
@@ -607,7 +602,7 @@ export function HideoutTrackerPanel({
             </div>
 
             {filteredUpgrades.length === 0 && (
-              <div className="rounded-xl border border-white/[0.08] bg-[#121822] p-8 text-center text-[13px] text-[#9fb0c4]">
+              <div className="rounded-xl border border-white/[0.075] bg-[#141b26] p-8 text-center text-[13px] text-[#9fb0c4]">
                 No Hideout upgrades matched your current filter.
               </div>
             )}
@@ -618,8 +613,8 @@ export function HideoutTrackerPanel({
             VIEW 2: SUPPLY MANIFEST (YOUR NEXT SUPPLY RUN)
            ================================================================ */}
         {activeView === "manifest" && (
-          <div className="space-y-4">
-            <div className="rounded-xl bg-[#121822] border border-white/[0.08] p-4.5 space-y-3">
+          <div className="space-y-3.5">
+            <div className="rounded-xl bg-[#141b26] border border-white/[0.075] p-4 space-y-2.5">
               <div className="flex items-start justify-between gap-3 flex-wrap">
                 <div>
                   <div className="text-xs font-medium text-[#e5a93c]">
@@ -637,13 +632,13 @@ export function HideoutTrackerPanel({
                   </p>
                 </div>
 
-                <div className="flex items-center rounded-lg bg-[#070a0f] border border-white/[0.07] p-0.5 shrink-0">
+                <div className="flex items-center rounded-lg bg-[#0a0e14] border border-white/[0.07] p-0.5 shrink-0">
                   <button
                     type="button"
                     onClick={() => setManifestScope("planned")}
                     className={`px-2.5 py-1 rounded-md text-xs font-medium transition-colors ${
                       manifestScope === "planned"
-                        ? "bg-[#e5a93c] text-[#0c0f14]"
+                        ? "bg-[#e5a93c] text-[#080b10]"
                         : "text-[#9fb0c4] hover:text-white"
                     }`}
                   >
@@ -654,7 +649,7 @@ export function HideoutTrackerPanel({
                     onClick={() => setManifestScope("unbuilt")}
                     className={`px-2.5 py-1 rounded-md text-xs font-medium transition-colors ${
                       manifestScope === "unbuilt"
-                        ? "bg-[#e5a93c] text-[#0c0f14]"
+                        ? "bg-[#e5a93c] text-[#080b10]"
                         : "text-[#9fb0c4] hover:text-white"
                     }`}
                   >
@@ -665,7 +660,7 @@ export function HideoutTrackerPanel({
             </div>
 
             {supplyManifest.rows.length === 0 ? (
-              <div className="rounded-xl border border-white/[0.08] bg-[#121822] p-8 text-center text-[13px] text-[#9fb0c4]">
+              <div className="rounded-xl border border-white/[0.075] bg-[#141b26] p-8 text-center text-[13px] text-[#9fb0c4]">
                 {manifestScope === "planned"
                   ? "No planned upgrades selected yet. Tick 'Add to plan' on any station card, or switch to 'All Remaining'."
                   : "All 36 Hideout upgrades are built."}
@@ -686,10 +681,10 @@ export function HideoutTrackerPanel({
                         row.mat ? "cursor-pointer" : ""
                       } ${
                         isSelected
-                          ? "bg-[#151e2c] border-[#38bdf8]"
+                          ? "bg-[#15202e] border-[#38bdf8]"
                           : done
-                            ? "bg-[#0f1918] border-[#22463a]"
-                            : "bg-[#121822] border-white/[0.08] hover:border-white/[0.2]"
+                            ? "bg-[#0f1a18] border-[#22473b]"
+                            : "bg-[#141b26] border-white/[0.075] hover:border-white/[0.18]"
                       }`}
                     >
                       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -719,7 +714,7 @@ export function HideoutTrackerPanel({
                           className="flex items-center justify-between sm:justify-end gap-3 shrink-0"
                           onClick={(e) => e.stopPropagation()}
                         >
-                          <div className="flex items-center gap-1 bg-[#080c12] border border-white/[0.09] rounded-lg px-2.5 py-1">
+                          <div className="flex items-center gap-1 bg-[#0a0e14] border border-white/[0.08] rounded-lg px-2.5 py-1">
                             <span className="text-xs text-[#9fb0c4] mr-1">Stash</span>
                             {!isDollars && (
                               <button
@@ -775,7 +770,7 @@ export function HideoutTrackerPanel({
 
                       {row.mat && (
                         <div
-                          className="mt-3 pt-2.5 border-t border-white/[0.07] flex items-center justify-between gap-2 text-xs"
+                          className="mt-3 pt-2.5 border-t border-white/[0.06] flex items-center justify-between gap-2 text-xs"
                           onClick={(e) => e.stopPropagation()}
                         >
                           <label className="inline-flex items-center gap-2 cursor-pointer text-[#cbd5e1] hover:text-[#38bdf8]">
@@ -822,8 +817,8 @@ export function HideoutTrackerPanel({
             VIEW 3: DISASSEMBLY RECIPES
            ================================================================ */}
         {activeView === "disassembly" && (
-          <div className="space-y-3.5">
-            <div className="rounded-xl bg-[#121822] border border-white/[0.08] p-4.5">
+          <div className="space-y-3">
+            <div className="rounded-xl bg-[#141b26] border border-white/[0.075] p-4">
               <div className="flex items-center gap-2">
                 <Wrench className="w-4 h-4 text-[#e5a93c]" />
                 <h2 className="font-display text-base font-semibold text-[#f8fafc]">
@@ -848,7 +843,7 @@ export function HideoutTrackerPanel({
                 .map((rec) => (
                   <div
                     key={rec.id}
-                    className="rounded-xl bg-[#121822] border border-white/[0.08] p-4"
+                    className="rounded-xl bg-[#141b26] border border-white/[0.075] p-4"
                   >
                     <div className="flex items-start justify-between gap-2">
                       <div>
@@ -864,11 +859,11 @@ export function HideoutTrackerPanel({
                       </div>
                     </div>
 
-                    <div className="mt-3 flex flex-wrap gap-2">
+                    <div className="mt-3 flex flex-wrap gap-1.5">
                       {rec.outcomes.map((out, i) => (
                         <span
                           key={i}
-                          className="px-2.5 py-1 rounded-lg bg-[#090d14] border border-white/[0.09] text-xs text-[#7dd3fc]"
+                          className="px-2.5 py-1 rounded-lg bg-[#0a0e14] border border-white/[0.065] text-xs text-[#7dd3fc]"
                         >
                           Yields: {out}
                         </span>
@@ -884,8 +879,8 @@ export function HideoutTrackerPanel({
             VIEW 4: LIVE API SEARCH (TOOLS, KEYS, CONTAINERS, TASKS)
            ================================================================ */}
         {activeView === "api-search" && (
-          <div className="space-y-3.5">
-            <div className="rounded-xl bg-[#121822] border border-white/[0.08] p-4.5 space-y-3">
+          <div className="space-y-3">
+            <div className="rounded-xl bg-[#141b26] border border-white/[0.075] p-4 space-y-3">
               <div className="flex items-center justify-between">
                 <h2 className="font-display text-base font-semibold text-[#f8fafc]">
                   Item &amp; Intel Index
@@ -904,14 +899,14 @@ export function HideoutTrackerPanel({
                     onChange={(e) => setApiQuery(e.target.value)}
                     onKeyDown={(e) => e.key === "Enter" && handleRunLiveApiSearch()}
                     placeholder="Search tools, keys, loot containers, tasks, modules..."
-                    className="w-full min-h-[38px] bg-[#070a0f] border border-white/[0.09] rounded-lg pl-9 pr-3 py-1.5 text-[13px] text-[#f1f5f9] placeholder:text-[#66778b] focus:outline-none focus:border-[#38bdf8]"
+                    className="w-full min-h-[36px] bg-[#0a0e14] border border-white/[0.08] rounded-lg pl-9 pr-3 py-1.5 text-[13px] text-[#f1f5f9] placeholder:text-[#66778b] focus:outline-none focus:border-[#38bdf8]"
                   />
                 </div>
                 <button
                   type="button"
                   onClick={handleRunLiveApiSearch}
                   disabled={isLiveSearching || !apiQuery.trim()}
-                  className="px-3.5 py-2 rounded-lg bg-[#38bdf8] hover:bg-[#5cc9fa] disabled:opacity-50 text-[#090d12] text-xs font-semibold whitespace-nowrap transition-colors"
+                  className="px-3.5 py-1.5 rounded-lg bg-[#38bdf8] hover:bg-[#5cc9fa] disabled:opacity-50 text-[#080b10] text-xs font-semibold whitespace-nowrap transition-colors"
                 >
                   {isLiveSearching ? "Searching..." : "Search Index"}
                 </button>
@@ -919,7 +914,7 @@ export function HideoutTrackerPanel({
             </div>
 
             {liveSearchResults && Object.keys(liveSearchResults).length > 0 && (
-              <div className="rounded-xl bg-[#131b28] border border-[#38bdf8]/45 p-4 space-y-2.5">
+              <div className="gzw-drawer-enter rounded-xl bg-[#141b26] border border-[#38bdf8]/45 p-4 space-y-2.5">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-semibold text-[#38bdf8]">
                     Live Search Results
@@ -942,7 +937,7 @@ export function HideoutTrackerPanel({
                         {list.slice(0, 6).map((item, idx) => (
                           <div
                             key={idx}
-                            className="px-3 py-2 rounded-lg bg-[#090d14] border border-white/[0.08] text-[#e2e8f0] truncate"
+                            className="px-3 py-2 rounded-lg bg-[#0a0e14] border border-white/[0.065] text-[#e2e8f0] truncate"
                           >
                             {String(item.name || item.title || item.id || "Record")}
                           </div>
@@ -960,8 +955,8 @@ export function HideoutTrackerPanel({
                 onClick={() => setApiDatasetFilter("ALL")}
                 className={`px-2.5 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
                   apiDatasetFilter === "ALL"
-                    ? "bg-[#1a2232] border-[#38bdf8] text-[#7dd3fc]"
-                    : "bg-[#121822] border-white/[0.08] text-[#9fb0c4] hover:text-white"
+                    ? "bg-[#15202e] border-[#38bdf8] text-[#7dd3fc]"
+                    : "bg-[#141b26] border-white/[0.075] text-[#9fb0c4] hover:text-white"
                 }`}
               >
                 All ({allApiRecords.length})
@@ -973,8 +968,8 @@ export function HideoutTrackerPanel({
                   onClick={() => setApiDatasetFilter(ds)}
                   className={`px-2.5 py-1.5 rounded-lg text-xs font-medium border capitalize transition-colors ${
                     apiDatasetFilter === ds
-                      ? "bg-[#1a2232] border-[#38bdf8] text-[#7dd3fc]"
-                      : "bg-[#121822] border-white/[0.08] text-[#9fb0c4] hover:text-white"
+                      ? "bg-[#15202e] border-[#38bdf8] text-[#7dd3fc]"
+                      : "bg-[#141b26] border-white/[0.075] text-[#9fb0c4] hover:text-white"
                   }`}
                 >
                   {ds.replace(/_/g, " ")} ({apiCache?.datasets[ds]?.length || 0})
@@ -987,7 +982,7 @@ export function HideoutTrackerPanel({
                 <div
                   key={rec.uid}
                   onClick={() => onInspectApiRecord(rec)}
-                  className="rounded-xl bg-[#121822] border border-white/[0.08] hover:border-[#38bdf8]/60 p-4 cursor-pointer transition-colors"
+                  className="rounded-xl bg-[#141b26] border border-white/[0.075] hover:border-[#38bdf8]/60 p-4 cursor-pointer transition-colors"
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex items-center gap-3 min-w-0">

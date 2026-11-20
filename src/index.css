@@ -8,6 +8,18 @@
     --font-display: 'Outfit', system-ui, sans-serif;
     --font-sans: 'Manrope', system-ui, sans-serif;
     --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
+
+    --bg-canvas: #080b10;
+    --bg-surface: #0e131b;
+    --bg-elevated: #141b26;
+    --bg-inset: #0a0e14;
+    --border-subtle: rgba(255, 255, 255, 0.075);
+    --border-strong: rgba(255, 255, 255, 0.14);
+    --accent-amber: #e5a93c;
+    --accent-cyan: #38bdf8;
+    --accent-emerald: #34d399;
+
+    color-scheme: dark;
   }
 
   html,
@@ -17,7 +29,7 @@
     width: 100%;
     margin: 0;
     padding: 0;
-    background-color: #090c11;
+    background-color: var(--bg-canvas);
     color: #e8eef5;
     font-family: var(--font-sans);
     letter-spacing: 0.005em;
@@ -33,6 +45,45 @@
 .font-mono-tabular {
   font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
+}
+
+@keyframes gzwFadeSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px) scale(0.99);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes gzwToastIn {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.gzw-drawer-enter,
+.gzw-popover-enter {
+  animation: gzwFadeSlideIn 150ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.gzw-toast-enter {
+  animation: gzwToastIn 160ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gzw-drawer-enter,
+  .gzw-popover-enter,
+  .gzw-toast-enter {
+    animation: none;
+  }
 }
 
 /* Custom subtle dark scrollbars */
@@ -68,7 +119,7 @@
 
 .leaflet-popup-content-wrapper,
 .leaflet-popup-tip {
-  background: rgba(13, 18, 26, 0.96) !important;
+  background: rgba(14, 19, 27, 0.96) !important;
   backdrop-filter: blur(10px) !important;
   color: #e8eef5 !important;
   border: 1px solid rgba(255, 255, 255, 0.12) !important;
@@ -84,13 +135,13 @@
 }
 
 .leaflet-control-zoom a {
-  background-color: rgba(13, 18, 25, 0.9) !important;
+  background-color: rgba(14, 19, 27, 0.92) !important;
   backdrop-filter: blur(8px) !important;
   color: #d4deea !important;
   border-color: rgba(255, 255, 255, 0.1) !important;
 }
 .leaflet-control-zoom a:hover {
-  background-color: rgba(25, 33, 45, 0.98) !important;
+  background-color: rgba(20, 27, 38, 0.98) !important;
   color: #e5a93c !important;
 }
 
@@ -121,8 +172,9 @@
 }
 .gzw-subpoi-chip:hover {
   scale: 1.04;
-  background-color: rgba(15, 21, 30, 0.96) !important;
+  background-color: rgba(14, 19, 27, 0.96) !important;
   border-color: rgba(229, 169, 60, 0.7) !important;
 }
+
 
 

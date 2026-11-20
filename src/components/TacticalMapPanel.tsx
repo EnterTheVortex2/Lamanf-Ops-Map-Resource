@@ -2342,7 +2342,7 @@ export function TacticalMapPanel({
                   placeholder="Search POI, grid, key (/)"
                   title="Search locations, keys, or grid coordinates (/)"
                   aria-label="Search map locations or grid"
-                  className="min-h-[36px] w-36 sm:w-40 xl:w-44 2xl:w-52 pl-8 pr-6 py-1 rounded-lg bg-[#0d121a]/92 backdrop-blur-xl border border-white/[0.1] focus:border-[#38bdf8] text-xs text-[#eef3f8] placeholder:text-[#7a899c] shadow-xl focus:outline-none transition-colors"
+                  className="min-h-[36px] w-36 sm:w-40 xl:w-44 2xl:w-52 pl-8 pr-6 py-1 rounded-lg bg-[#0e131b]/94 backdrop-blur-xl border border-white/[0.11] focus:border-[#38bdf8] text-xs text-[#eef3f8] placeholder:text-[#7a899c] shadow-xl focus:outline-none transition-colors"
                 />
               {mapSearchQuery && (
                 <button
@@ -2360,9 +2360,9 @@ export function TacticalMapPanel({
             </div>
 
             {mapSearchOpen && mapSearchQuery.trim() && (
-              <div className="absolute top-full left-0 mt-1.5 w-76 max-h-80 overflow-y-auto rounded-xl bg-[#0d121a]/96 backdrop-blur-xl border border-white/[0.12] p-1.5 shadow-2xl z-[810] space-y-1">
+              <div className="gzw-popover-enter absolute top-full left-0 mt-1.5 w-76 max-h-80 overflow-y-auto rounded-xl bg-[#0e131b]/96 backdrop-blur-xl border border-white/[0.12] p-1.5 shadow-2xl z-[810] space-y-1">
                 {mapSearchResults.gridJump && (
-                  <div className="flex items-center gap-1 rounded-lg bg-[#16202e] p-1">
+                  <div className="flex items-center gap-1 rounded-lg bg-[#141b26] p-1">
                     <button
                       type="button"
                       onClick={() => {
@@ -2502,7 +2502,7 @@ export function TacticalMapPanel({
                   setMapSearchOpen(false);
                   setScreenSyncPanelOpen(false);
                 }}
-                className="min-h-[36px] inline-flex items-center gap-1 px-2 xl:px-2.5 py-1 rounded-lg bg-[#0d121a]/92 backdrop-blur-xl border border-white/[0.1] hover:border-white/[0.22] text-xs font-medium text-[#e2e9f2] shadow-xl transition-colors whitespace-nowrap"
+                className="min-h-[36px] inline-flex items-center gap-1 px-2 xl:px-2.5 py-1 rounded-lg bg-[#0e131b]/94 backdrop-blur-xl border border-white/[0.11] hover:border-white/[0.22] text-xs font-medium text-[#e2e9f2] shadow-xl transition-colors whitespace-nowrap"
               >
                 <Navigation className="w-3.5 h-3.5 text-[#e5a93c]" />
                 <span className="hidden xl:inline">Regions</span>
@@ -2510,7 +2510,7 @@ export function TacticalMapPanel({
               </button>
 
               {jumpOpen && (
-                <div className="absolute top-full left-0 mt-1.5 w-64 max-h-72 overflow-y-auto rounded-xl bg-[#0d121a]/96 backdrop-blur-xl border border-white/[0.12] p-1.5 shadow-2xl z-[800]">
+                <div className="gzw-popover-enter absolute top-full left-0 mt-1.5 w-64 max-h-72 overflow-y-auto rounded-xl bg-[#0e131b]/96 backdrop-blur-xl border border-white/[0.12] p-1.5 shadow-2xl z-[800]">
                   {quickJumpPois.map((poi) => {
                     const isOwnFob =
                       activeFactionInfo && poi.id === activeFactionInfo.baseId;
@@ -2568,7 +2568,7 @@ export function TacticalMapPanel({
             className={`min-h-[36px] inline-flex items-center gap-1 px-2 xl:px-2.5 py-1 rounded-lg text-xs font-medium backdrop-blur-xl shadow-xl transition-colors whitespace-nowrap shrink-0 ${
               layerVisibility.gridOverlay
                 ? "bg-[#e5a93c]/16 border border-[#e5a93c]/55 text-[#fde68a]"
-                : "bg-[#0d121a]/92 border border-white/[0.1] text-[#94a3b8] hover:text-white"
+                : "bg-[#0e131b]/94 border border-white/[0.11] text-[#94a3b8] hover:text-white"
             }`}
           >
             <Grid3X3 className="w-3.5 h-3.5" />
@@ -2586,7 +2586,7 @@ export function TacticalMapPanel({
                 setMapSearchOpen(false);
                 setScreenSyncPanelOpen(false);
               }}
-              className="min-h-[36px] inline-flex items-center gap-1 px-2 xl:px-2.5 py-1 rounded-lg bg-[#0d121a]/92 backdrop-blur-xl border border-white/[0.1] hover:border-white/[0.22] text-xs font-medium text-[#e2e9f2] shadow-xl transition-colors whitespace-nowrap"
+              className="min-h-[36px] inline-flex items-center gap-1 px-2 xl:px-2.5 py-1 rounded-lg bg-[#0e131b]/94 backdrop-blur-xl border border-white/[0.11] hover:border-white/[0.22] text-xs font-medium text-[#e2e9f2] shadow-xl transition-colors whitespace-nowrap"
             >
               <Layers className="w-3.5 h-3.5 text-[#38bdf8]" />
               <span className="hidden xl:inline">Layers</span>
@@ -2596,7 +2596,7 @@ export function TacticalMapPanel({
             </button>
 
             {layersOpen && (
-              <div className="absolute top-full left-0 mt-1.5 w-60 rounded-xl bg-[#0d121a]/96 backdrop-blur-xl border border-white/[0.12] p-2.5 shadow-2xl z-[800] space-y-1">
+              <div className="gzw-popover-enter absolute top-full left-0 mt-1.5 w-60 rounded-xl bg-[#0e131b]/96 backdrop-blur-xl border border-white/[0.12] p-2.5 shadow-2xl z-[800] space-y-1">
                 {(
                   [
                     { key: "gridOverlay", label: "100m Grid Lines & Coords", dot: "bg-slate-400" },
@@ -2657,7 +2657,7 @@ export function TacticalMapPanel({
                 ? "bg-emerald-500/20 border border-emerald-400 text-[#a7f3d0]"
                 : screenSyncPanelOpen
                   ? "bg-[#38bdf8]/20 border border-[#38bdf8] text-[#bae6fd]"
-                  : "bg-[#0d121a]/92 border border-white/[0.1] text-[#e2e9f2] hover:border-white/[0.22]"
+                  : "bg-[#0e131b]/94 border border-white/[0.11] text-[#e2e9f2] hover:border-white/[0.22]"
             }`}
           >
             {screenSyncActive ? (
@@ -2691,7 +2691,7 @@ export function TacticalMapPanel({
               className={`min-h-[36px] inline-flex items-center gap-1 px-2 xl:px-2.5 py-1 rounded-lg text-xs font-medium backdrop-blur-xl shadow-xl transition-colors whitespace-nowrap shrink-0 ${
                 glanceMode
                   ? "bg-[#e5a93c]/25 border border-[#e5a93c] text-[#fde68a]"
-                  : "bg-[#0d121a]/92 border border-white/[0.1] text-[#e2e9f2] hover:border-white/[0.22]"
+                  : "bg-[#0e131b]/94 border border-white/[0.11] text-[#e2e9f2] hover:border-white/[0.22]"
               }`}
             >
               <Eye className="w-3.5 h-3.5 text-[#e5a93c]" />
@@ -2721,7 +2721,7 @@ export function TacticalMapPanel({
                 className={`min-h-[36px] inline-flex items-center gap-1 px-2 xl:px-2.5 py-1 rounded-lg text-xs font-medium backdrop-blur-xl shadow-xl transition-colors whitespace-nowrap shrink-0 ${
                   measureMode
                     ? "bg-[#38bdf8]/20 border border-[#38bdf8] text-[#bae6fd]"
-                    : "bg-[#0d121a]/92 border border-white/[0.1] text-[#e2e9f2] hover:border-white/[0.22]"
+                    : "bg-[#0e131b]/94 border border-white/[0.11] text-[#e2e9f2] hover:border-white/[0.22]"
                 }`}
               >
                 <Ruler className="w-3.5 h-3.5" />
@@ -2745,7 +2745,7 @@ export function TacticalMapPanel({
                 className={`min-h-[36px] inline-flex items-center gap-1 px-2 xl:px-2.5 py-1 rounded-lg text-xs font-medium backdrop-blur-xl shadow-xl transition-colors whitespace-nowrap shrink-0 ${
                   pinDropMode
                     ? "bg-cyan-500/20 border border-cyan-400 text-cyan-200"
-                    : "bg-[#0d121a]/92 border border-white/[0.1] text-[#e2e9f2] hover:border-white/[0.22]"
+                    : "bg-[#0e131b]/94 border border-white/[0.11] text-[#e2e9f2] hover:border-white/[0.22]"
                 }`}
               >
                 <Crosshair className="w-3.5 h-3.5" />
@@ -2766,7 +2766,7 @@ export function TacticalMapPanel({
                 className={`min-h-[36px] inline-flex items-center gap-1 px-2 xl:px-2.5 py-1 rounded-lg text-xs font-medium backdrop-blur-xl shadow-xl transition-colors whitespace-nowrap shrink-0 ${
                   pinsDrawerOpen
                     ? "bg-[#10b981]/20 border border-[#34d399]/70 text-[#a7f3d0]"
-                    : "bg-[#0d121a]/92 border border-white/[0.1] text-[#e2e9f2] hover:border-white/[0.22]"
+                    : "bg-[#0e131b]/94 border border-white/[0.11] text-[#e2e9f2] hover:border-white/[0.22]"
                 }`}
               >
                 <Bookmark className="w-3.5 h-3.5 text-[#34d399]" />
@@ -2788,7 +2788,7 @@ export function TacticalMapPanel({
             type="button"
             onClick={fitIslandView}
             title="Reset Island View (F)"
-            className="min-h-[36px] inline-flex items-center gap-1 px-2 xl:px-2.5 py-1 rounded-lg text-xs font-medium bg-[#0d121a]/92 backdrop-blur-xl border border-white/[0.1] text-[#e2e9f2] hover:border-white/[0.22] shadow-xl transition-colors whitespace-nowrap shrink-0"
+            className="min-h-[36px] inline-flex items-center gap-1 px-2 xl:px-2.5 py-1 rounded-lg text-xs font-medium bg-[#0e131b]/94 backdrop-blur-xl border border-white/[0.11] text-[#e2e9f2] hover:border-white/[0.22] shadow-xl transition-colors whitespace-nowrap shrink-0"
           >
             <LocateFixed className="w-3.5 h-3.5" />
             <span className="hidden 2xl:inline">Reset</span>
@@ -2801,8 +2801,8 @@ export function TacticalMapPanel({
           <div className="min-w-0 max-w-full pointer-events-none">
       {/* Interactive Zone Intel Slide-Over Drawer (Direct Map Click on any POI / Compound / COP / LZ) */}
       {inspectedPoi && zoneIntel && !inspectedMaterial && !inspectedTask && !inspectedKey && (
-        <div className="pointer-events-auto w-[370px] max-w-full max-h-[52vh] lg:max-h-[calc(100vh-240px)] overflow-y-auto rounded-xl bg-[#0d121a]/95 backdrop-blur-xl border border-white/[0.12] p-4 shadow-2xl">
-          <div className="flex items-start justify-between gap-2 pb-3 border-b border-white/[0.08]">
+        <div className="gzw-drawer-enter pointer-events-auto w-[360px] max-w-full max-h-[52vh] lg:max-h-[calc(100vh-220px)] overflow-y-auto rounded-xl bg-[#0e131b]/95 backdrop-blur-xl border border-white/[0.11] p-4 shadow-2xl">
+          <div className="flex items-start justify-between gap-2 pb-3 border-b border-white/[0.075]">
             <div className="min-w-0">
               <div className="text-[11px] font-medium text-[#e5a93c]">
                 {inspectedPoi.tier} · {inspectedPoi.faction} · Grid {formatGridSquare(inspectedPoi.x, inspectedPoi.y)}
@@ -2847,14 +2847,14 @@ export function TacticalMapPanel({
           <div className="mt-3 space-y-3 text-xs">
             {/* Nearest LZs & COPs (Click to Fly or Set Bearing Origin) */}
             <div>
-              <div className="font-mono-tabular text-[10px] uppercase tracking-wider text-[#38bdf8] mb-1.5">
-                Nearest LZs &amp; Outposts (Fly or Start Bearing)
+              <div className="text-[11px] font-semibold text-[#38bdf8] mb-1.5">
+                Nearest LZs &amp; Outposts
               </div>
               <div className="grid grid-cols-2 gap-1.5">
                 {zoneIntel.nearestLzs.map(({ poi: lzPoi, dist, bearing }) => (
                   <div
                     key={lzPoi.id}
-                    className="rounded bg-[#080b0f] border border-[#1f2834] hover:border-[#eab308] p-1.5 flex items-center justify-between gap-1 transition-colors"
+                    className="rounded-lg bg-[#0a0e14] border border-white/[0.065] hover:border-[#eab308] p-1.5 flex items-center justify-between gap-1 transition-colors"
                   >
                     <button
                       type="button"
@@ -2890,7 +2890,7 @@ export function TacticalMapPanel({
                           }
                         )
                       }
-                      className="p-1 rounded bg-[#141a23] border border-white/[0.08] text-[#e5a93c] hover:border-[#e5a93c] shrink-0"
+                      className="p-1 rounded-md bg-[#141b26] border border-white/[0.08] text-[#e5a93c] hover:border-[#e5a93c] shrink-0"
                     >
                       <ArrowRight className="w-3 h-3" />
                     </button>
@@ -2899,7 +2899,7 @@ export function TacticalMapPanel({
                 {zoneIntel.nearestCops.map(({ poi: copPoi, dist, bearing }) => (
                   <div
                     key={copPoi.id}
-                    className="rounded bg-[#080b0f] border border-[#1f2834] hover:border-[#38bdf8] p-1.5 flex items-center justify-between gap-1 transition-colors"
+                    className="rounded-lg bg-[#0a0e14] border border-white/[0.065] hover:border-[#38bdf8] p-1.5 flex items-center justify-between gap-1 transition-colors"
                   >
                     <button
                       type="button"
@@ -2935,7 +2935,7 @@ export function TacticalMapPanel({
                           }
                         )
                       }
-                      className="p-1 rounded bg-[#141a23] border border-white/[0.08] text-[#38bdf8] hover:border-[#38bdf8] shrink-0"
+                      className="p-1 rounded-md bg-[#141b26] border border-white/[0.08] text-[#38bdf8] hover:border-[#38bdf8] shrink-0"
                     >
                       <ArrowRight className="w-3 h-3" />
                     </button>
@@ -2948,7 +2948,7 @@ export function TacticalMapPanel({
             {zoneIntel.nearbyKeys.length > 0 && (
               <div>
                 <div className="flex items-center justify-between mb-1.5">
-                  <span className="font-mono-tabular text-[10px] uppercase tracking-wider text-[#e5a93c]">
+                  <span className="text-[11px] font-semibold text-[#e5a93c]">
                     Locked Doors &amp; Keys ({zoneIntel.nearbyKeys.length})
                   </span>
                 </div>
@@ -2958,7 +2958,7 @@ export function TacticalMapPanel({
                     return (
                       <div
                         key={k.id}
-                        className="flex items-center justify-between gap-2 px-2.5 py-1.5 rounded bg-[#080b0f] border border-[#1f2834]"
+                        className="flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-lg bg-[#0a0e14] border border-white/[0.06]"
                       >
                         <button
                           type="button"
@@ -2979,10 +2979,10 @@ export function TacticalMapPanel({
                           <button
                             type="button"
                             onClick={() => onToggleOwnedKey(k.id)}
-                            className={`px-2 py-1 rounded border text-[10px] font-medium shrink-0 transition-colors ${
+                            className={`px-2 py-1 rounded-md border text-[10px] font-medium shrink-0 transition-colors ${
                               isOwned
-                                ? "bg-[#112720] border-[#2b6b53] text-[#34d399]"
-                                : "bg-[#121720] border-[#253040] text-[#8b98a9] hover:text-white"
+                                ? "bg-[#112922] border-[#2e7359] text-[#34d399]"
+                                : "bg-[#141b26] border-white/[0.08] text-[#8b98a9] hover:text-white"
                             }`}
                           >
                             {isOwned ? "Owned" : "Need"}
@@ -2998,7 +2998,7 @@ export function TacticalMapPanel({
             {/* Tasks in This Zone */}
             {zoneIntel.zoneTasks.length > 0 && (
               <div>
-                <div className="font-mono-tabular text-[10px] uppercase tracking-wider text-[#38bdf8] mb-1.5">
+                <div className="text-[11px] font-semibold text-[#38bdf8] mb-1.5">
                   Tasks in {zoneIntel.regionName} ({zoneIntel.zoneTasks.length})
                 </div>
                 <div className="space-y-1">
@@ -3010,7 +3010,7 @@ export function TacticalMapPanel({
                         setInspectedPoi(null);
                         onSelectTask?.(t);
                       }}
-                      className="w-full text-left px-2.5 py-1.5 rounded bg-[#080b0f] border border-[#1f2834] hover:border-[#38bdf8] flex items-center justify-between gap-2 transition-colors"
+                      className="w-full text-left px-2.5 py-1.5 rounded-lg bg-[#0a0e14] border border-white/[0.06] hover:border-[#38bdf8] flex items-center justify-between gap-2 transition-colors"
                     >
                       <div className="min-w-0">
                         <div
@@ -3041,7 +3041,7 @@ export function TacticalMapPanel({
               zoneIntel.chemicalsNearby > 0 ||
               zoneIntel.matchingMaterials.length > 0) && (
               <div>
-                <div className="font-mono-tabular text-[10px] uppercase tracking-wider text-[#8b98a9] mb-1.5">
+                <div className="text-[11px] font-semibold text-[#94a3b8] mb-1.5">
                   Area Loot &amp; Hideout Materials
                 </div>
                 <div className="font-mono-tabular text-[11px] text-[#cbd5e1] mb-2">
@@ -3061,7 +3061,7 @@ export function TacticalMapPanel({
                           setInspectedPoi(null);
                           onSelectMaterial?.(mat);
                         }}
-                        className="px-2 py-1 rounded bg-[#080b0f] border border-[#222c3a] hover:border-[#e5a93c] text-[11px] text-[#dce4ee] transition-colors"
+                        className="px-2 py-1 rounded-md bg-[#0a0e14] border border-white/[0.07] hover:border-[#e5a93c] text-[11px] text-[#dce4ee] transition-colors"
                       >
                         {mat.name}
                       </button>
@@ -3076,8 +3076,8 @@ export function TacticalMapPanel({
 
       {/* Locked Door & Key Slide-Over Drawer */}
       {inspectedKey && !inspectedMaterial && !inspectedTask && (
-        <div className="pointer-events-auto w-[355px] max-w-full max-h-[52vh] lg:max-h-[calc(100vh-240px)] overflow-y-auto rounded-xl bg-[#0d121a]/95 backdrop-blur-xl border border-white/[0.12] p-4 shadow-2xl">
-          <div className="flex items-start justify-between gap-2 pb-3 border-b border-white/[0.08]">
+        <div className="gzw-drawer-enter pointer-events-auto w-[360px] max-w-full max-h-[52vh] lg:max-h-[calc(100vh-220px)] overflow-y-auto rounded-xl bg-[#0e131b]/95 backdrop-blur-xl border border-white/[0.11] p-4 shadow-2xl">
+          <div className="flex items-start justify-between gap-2 pb-3 border-b border-white/[0.075]">
             <div className="flex items-center gap-2.5 min-w-0">
               <ItemThumbnail
                 src={inspectedKey.image}
@@ -3124,7 +3124,7 @@ export function TacticalMapPanel({
           <div className="mt-3 space-y-3 text-xs">
             <p className="text-[#dce4ee] leading-relaxed">{inspectedKey.usage}</p>
 
-            <div className="rounded bg-[#080b0f] border border-[#1d2531] px-2.5 py-2 space-y-1 font-mono-tabular text-[11px]">
+            <div className="rounded-lg bg-[#0a0e14] border border-white/[0.06] px-2.5 py-2 space-y-1 font-mono-tabular text-[11px]">
               <div className="flex items-center justify-between">
                 <span className="text-[#8b98a9]">Door Location</span>
                 <span className="text-[#eef3f8]">
@@ -3145,10 +3145,10 @@ export function TacticalMapPanel({
               <button
                 type="button"
                 onClick={() => onToggleOwnedKey(inspectedKey.id)}
-                className={`w-full min-h-[38px] inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded border text-xs font-medium transition-colors ${
+                className={`w-full min-h-[36px] inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-medium transition-colors ${
                   ownedKeys[inspectedKey.id]
-                    ? "bg-[#112720] border-[#2b6b53] text-[#34d399]"
-                    : "bg-[#141a23] border-[#2b3748] text-[#dce4ee] hover:border-[#e5a93c]"
+                    ? "bg-[#112922] border-[#2e7359] text-[#34d399]"
+                    : "bg-[#141b26] border-white/[0.1] text-[#dce4ee] hover:border-[#e5a93c]"
                 }`}
               >
                 {ownedKeys[inspectedKey.id] && <Check className="w-3.5 h-3.5" />}
@@ -3162,7 +3162,7 @@ export function TacticalMapPanel({
 
             {inspectedKey.linkedTasks.length > 0 && (
               <div>
-                <div className="font-mono-tabular text-[10px] uppercase tracking-wider text-[#38bdf8] mb-1.5">
+                <div className="text-[11px] font-semibold text-[#38bdf8] mb-1.5">
                   Required for Tasks
                 </div>
                 <div className="space-y-1">
@@ -3178,7 +3178,7 @@ export function TacticalMapPanel({
                             onSelectTask(fullTask);
                           }
                         }}
-                        className="w-full text-left px-2.5 py-1.5 rounded bg-[#080b0f] border border-[#1f2834] hover:border-[#38bdf8] flex items-center justify-between gap-2 transition-colors"
+                        className="w-full text-left px-2.5 py-1.5 rounded-lg bg-[#0a0e14] border border-white/[0.06] hover:border-[#38bdf8] flex items-center justify-between gap-2 transition-colors"
                       >
                         <div className="min-w-0">
                           <div className="text-xs font-medium text-[#eef3f8] truncate">
@@ -3203,8 +3203,8 @@ export function TacticalMapPanel({
 
       {/* Task AO & Full Walkthrough Slide-Over Drawer */}
       {inspectedTask && !inspectedMaterial && (
-        <div className="pointer-events-auto w-[385px] max-w-full max-h-[52vh] lg:max-h-[calc(100vh-240px)] overflow-y-auto rounded-xl bg-[#0d121a]/95 backdrop-blur-xl border border-white/[0.12] p-4 shadow-2xl">
-          <div className="flex items-start justify-between gap-2 pb-3 border-b border-white/[0.08]">
+        <div className="gzw-drawer-enter pointer-events-auto w-[360px] max-w-full max-h-[52vh] lg:max-h-[calc(100vh-220px)] overflow-y-auto rounded-xl bg-[#0e131b]/95 backdrop-blur-xl border border-white/[0.11] p-4 shadow-2xl">
+          <div className="flex items-start justify-between gap-2 pb-3 border-b border-white/[0.075]">
             <div className="min-w-0">
               <div className="text-[11px] font-medium text-[#38bdf8]">
                 {inspectedTask.vendor} · {inspectedTask.areas.join(", ")} · {inspectedTask.category}
@@ -3237,7 +3237,7 @@ export function TacticalMapPanel({
                     lockBearingTo(target);
                   }}
                   title="Lock compass bearing to this task objective"
-                  className="inline-flex items-center gap-1 px-2 py-1 rounded border bg-[#e5a93c]/15 border-[#e5a93c]/50 text-[#fde68a] hover:bg-[#e5a93c]/25 text-[11px] font-semibold transition-colors"
+                  className="inline-flex items-center gap-1 px-2 py-1 rounded-lg border bg-[#e5a93c]/15 border-[#e5a93c]/50 text-[#fde68a] hover:bg-[#e5a93c]/25 text-[11px] font-semibold transition-colors"
                 >
                   <Compass className="w-3 h-3 text-[#e5a93c]" />
                   <span>Bearing</span>
@@ -3247,10 +3247,10 @@ export function TacticalMapPanel({
                 <button
                   type="button"
                   onClick={() => onToggleTaskComplete(inspectedTask.id)}
-                  className={`inline-flex items-center gap-1 px-2 py-1 rounded border text-[11px] font-medium transition-colors ${
+                  className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg border text-[11px] font-medium transition-colors ${
                     completedTasks[inspectedTask.id]
-                      ? "bg-[#112720] border-[#2b6b53] text-[#34d399]"
-                      : "bg-[#141a23] border-[#2b3748] text-[#dce4ee] hover:border-[#e5a93c] hover:text-[#e5a93c]"
+                      ? "bg-[#112922] border-[#2e7359] text-[#34d399]"
+                      : "bg-[#141b26] border-white/[0.1] text-[#dce4ee] hover:border-[#e5a93c] hover:text-[#e5a93c]"
                   }`}
                 >
                   {completedTasks[inspectedTask.id] && (
@@ -3265,7 +3265,7 @@ export function TacticalMapPanel({
                 type="button"
                 aria-label="Close task overlay"
                 onClick={onCloseInspectTask}
-                className="p-1.5 rounded text-[#8b98a9] hover:text-white hover:bg-[#1a222d]"
+                className="p-1.5 rounded-lg text-[#8b98a9] hover:text-white hover:bg-white/[0.08]"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -3283,7 +3283,7 @@ export function TacticalMapPanel({
                     title: `${inspectedTask.name} — Task Intel`,
                   })
                 }
-                className="w-full text-left rounded bg-[#080b0f] border border-[#222c3a] hover:border-[#38bdf8] overflow-hidden transition-colors block"
+                className="w-full text-left rounded-lg bg-[#0a0e14] border border-white/[0.07] hover:border-[#38bdf8] overflow-hidden transition-colors block"
               >
                 <img
                   src={inspectedTask.guideImage || inspectedTask.image || ""}
@@ -3297,7 +3297,7 @@ export function TacticalMapPanel({
                     inspectedTask.guideImage ? "max-h-40" : "max-h-20 opacity-85"
                   }`}
                 />
-                <div className="px-2.5 py-1 flex items-center justify-between text-[10px] font-mono-tabular text-[#8b98a9] bg-[#0a0e13]">
+                <div className="px-2.5 py-1 flex items-center justify-between text-[10px] font-mono-tabular text-[#8b98a9] bg-[#080b10]">
                   <span>
                     {inspectedTask.guideImage
                       ? "Location Reference Image"
@@ -3310,8 +3310,8 @@ export function TacticalMapPanel({
 
             {/* Objectives Checklist */}
             {inspectedTask.objectivesText && (
-              <div className="rounded bg-[#080b0f] border border-[#1d2531] px-2.5 py-2">
-                <div className="font-mono-tabular text-[10px] uppercase tracking-wider text-[#e5a93c] mb-1">
+              <div className="rounded-lg bg-[#0a0e14] border border-white/[0.06] px-2.5 py-2">
+                <div className="text-[11px] font-semibold text-[#e5a93c] mb-1">
                   Objectives
                 </div>
                 <p className="text-[#e6ecf2] leading-relaxed">
@@ -3330,11 +3330,11 @@ export function TacticalMapPanel({
             {/* Step-by-Step Task Walkthrough */}
             <div>
               <div className="flex items-center justify-between mb-1.5">
-                <span className="inline-flex items-center gap-1.5 font-mono-tabular text-[10px] uppercase tracking-wider text-[#38bdf8] font-semibold">
+                <span className="inline-flex items-center gap-1.5 text-[11px] text-[#38bdf8] font-semibold">
                   <BookOpen className="w-3 h-3" />
                   Walkthrough Steps
                 </span>
-                <span className="font-mono-tabular text-[9px] uppercase text-[#6f7e91]">
+                <span className="text-[10px] text-[#6f7e91]">
                   {inspectedTask.walkthroughSource === "api-guide"
                     ? "API Field Guide"
                     : inspectedTask.walkthroughSource === "curated"
@@ -3346,7 +3346,7 @@ export function TacticalMapPanel({
                 {inspectedTask.walkthroughSteps.map((step, idx) => (
                   <li
                     key={idx}
-                    className="flex items-start gap-2 rounded bg-[#080b0f] border border-[#1a222d] px-2.5 py-2 text-[#dce4ee] leading-relaxed"
+                    className="flex items-start gap-2 rounded-lg bg-[#0a0e14] border border-white/[0.055] px-2.5 py-2 text-[#dce4ee] leading-relaxed"
                   >
                     <span className="font-mono-tabular text-[10px] font-bold text-[#e5a93c] shrink-0 mt-0.5">
                       {String(idx + 1).padStart(2, "0")}
@@ -3361,15 +3361,15 @@ export function TacticalMapPanel({
             {(inspectedTask.exactCoords.length > 0 ||
               inspectedTask.matchedPois.length > 0) && (
               <div>
-                <div className="inline-flex items-center gap-1.5 font-mono-tabular text-[10px] uppercase tracking-wider text-[#e5a93c] mb-1.5">
+                <div className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-[#e5a93c] mb-1.5">
                   <Compass className="w-3 h-3" />
-                  Target Areas &amp; Grids (Click to Fly)
+                  Target Areas &amp; Grids
                 </div>
                 <div className="space-y-1.5">
                   {inspectedTask.exactCoords.map((coord, idx) => (
                     <div
                       key={`coord-${coord.grid}`}
-                      className="rounded bg-[#14120c] border border-[#e5a93c]/40 hover:border-[#e5a93c] transition-colors flex items-center gap-1.5 pr-1.5"
+                      className="rounded-lg bg-[#e5a93c]/[0.06] border border-[#e5a93c]/40 hover:border-[#e5a93c] transition-colors flex items-center gap-1.5 pr-1.5"
                     >
                       <button
                         type="button"
@@ -3404,7 +3404,7 @@ export function TacticalMapPanel({
                             kind: "task",
                           })
                         }
-                        className="p-1.5 rounded bg-[#090d14] border border-[#e5a93c]/40 text-[#e5a93c] hover:bg-[#e5a93c]/20 shrink-0"
+                        className="p-1.5 rounded-md bg-[#0a0e14] border border-[#e5a93c]/40 text-[#e5a93c] hover:bg-[#e5a93c]/20 shrink-0"
                       >
                         <Compass className="w-3.5 h-3.5" />
                       </button>
@@ -3414,7 +3414,7 @@ export function TacticalMapPanel({
                   {inspectedTask.matchedPois.map((poi) => (
                     <div
                       key={poi.id}
-                      className="rounded bg-[#080b0f] border border-[#1f2834] hover:border-[#38bdf8] transition-colors flex items-center gap-1.5 pr-1.5"
+                      className="rounded-lg bg-[#0a0e14] border border-white/[0.065] hover:border-[#38bdf8] transition-colors flex items-center gap-1.5 pr-1.5"
                     >
                       <button
                         type="button"
@@ -3449,7 +3449,7 @@ export function TacticalMapPanel({
                             kind: "task",
                           })
                         }
-                        className="p-1.5 rounded bg-[#090d14] border border-white/[0.1] text-[#38bdf8] hover:border-[#e5a93c] hover:text-[#e5a93c] shrink-0"
+                        className="p-1.5 rounded-md bg-[#0a0e14] border border-white/[0.08] text-[#38bdf8] hover:border-[#e5a93c] hover:text-[#e5a93c] shrink-0"
                       >
                         <Compass className="w-3.5 h-3.5" />
                       </button>
@@ -3462,7 +3462,7 @@ export function TacticalMapPanel({
             {/* Required Gear, Keys & Task Items */}
             {inspectedTask.relatedItems.length > 0 && (
               <div>
-                <div className="inline-flex items-center gap-1.5 font-mono-tabular text-[10px] uppercase tracking-wider text-[#e5a93c] mb-1.5">
+                <div className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-[#e5a93c] mb-1.5">
                   <KeyRound className="w-3 h-3" />
                   Required Gear, Keys &amp; Items
                 </div>
@@ -3470,7 +3470,7 @@ export function TacticalMapPanel({
                   {inspectedTask.relatedItems.map((item, idx) => (
                     <div
                       key={`${item.name}-${idx}`}
-                      className="flex items-center gap-2.5 rounded bg-[#080b0f] border border-[#1d2531] px-2.5 py-1.5"
+                      className="flex items-center gap-2.5 rounded-lg bg-[#0a0e14] border border-white/[0.06] px-2.5 py-1.5"
                     >
                       <ItemThumbnail
                         src={item.image}
@@ -3482,7 +3482,7 @@ export function TacticalMapPanel({
                           <span className="font-medium text-[#eef3f8] truncate">
                             {item.name}
                           </span>
-                          <span className="font-mono-tabular text-[9px] uppercase text-[#38bdf8] shrink-0">
+                          <span className="text-[10px] font-medium text-[#38bdf8] shrink-0">
                             {item.kind}
                           </span>
                         </div>
@@ -3500,14 +3500,14 @@ export function TacticalMapPanel({
 
             {/* Tactical Tip */}
             {inspectedTask.guideTip && (
-              <div className="rounded bg-[#18120c] border border-[#e5a93c]/40 px-2.5 py-2 text-[11px] text-[#cbd5e1]">
+              <div className="rounded-lg bg-[#e5a93c]/[0.06] border border-[#e5a93c]/35 px-2.5 py-2 text-[11px] text-[#cbd5e1]">
                 Tip: {inspectedTask.guideTip}
               </div>
             )}
 
             {/* Full Vendor Briefing */}
             {inspectedTask.briefing && (
-              <div className="rounded-lg bg-white/[0.025] border border-white/[0.07] px-3 py-2.5 text-[11px] text-[#9fb0c4] leading-relaxed">
+              <div className="rounded-lg bg-[#0a0e14] border border-white/[0.06] px-3 py-2.5 text-[11px] text-[#9fb0c4] leading-relaxed">
                 <div className="text-[10px] font-medium text-[#7f8ea1] mb-1">
                   {inspectedTask.vendor} Briefing
                 </div>
@@ -3520,8 +3520,8 @@ export function TacticalMapPanel({
 
       {/* Material Spawn & Upgrade Intel Slide-Over Drawer */}
       {inspectedMaterial && (
-        <div className="pointer-events-auto w-[335px] max-w-full max-h-[50vh] lg:max-h-[calc(100vh-240px)] overflow-y-auto rounded-xl bg-[#0d121a]/95 backdrop-blur-xl border border-white/[0.12] p-4 shadow-2xl">
-          <div className="flex items-start justify-between gap-3 pb-3 border-b border-white/[0.08]">
+        <div className="gzw-drawer-enter pointer-events-auto w-[360px] max-w-full max-h-[50vh] lg:max-h-[calc(100vh-220px)] overflow-y-auto rounded-xl bg-[#0e131b]/95 backdrop-blur-xl border border-white/[0.11] p-4 shadow-2xl">
+          <div className="flex items-start justify-between gap-3 pb-3 border-b border-white/[0.075]">
             <div className="flex items-center gap-3 min-w-0">
               <ItemThumbnail
                 src={inspectedMaterial.image}
@@ -3552,7 +3552,7 @@ export function TacticalMapPanel({
               {inspectedMaterial.description}
             </p>
 
-            <label className="flex items-center justify-between gap-2 px-3 py-2 rounded bg-[#121822] border border-[#222c3a] cursor-pointer">
+            <label className="flex items-center justify-between gap-2 px-3 py-2 rounded-lg bg-[#0a0e14] border border-white/[0.07] cursor-pointer">
               <span className="font-medium text-[#e6ecf2]">
                 Keep Spawn Pins Pinned
               </span>
@@ -3575,7 +3575,7 @@ export function TacticalMapPanel({
                   {inspectedMaterial.usedInUpgrades.map((u, idx) => (
                     <div
                       key={idx}
-                      className="flex items-center justify-between text-[#b8c4d4] py-1 border-b border-[#1c2430] last:border-none"
+                      className="flex items-center justify-between text-[#b8c4d4] py-1 border-b border-white/[0.06] last:border-none"
                     >
                       <span className="truncate pr-2">
                         {u.module} Lv.{u.level}
@@ -3602,7 +3602,7 @@ export function TacticalMapPanel({
                   {inspectedLookup.foundIn.map((src, i) => (
                     <div
                       key={i}
-                      className="flex items-center justify-between gap-2 px-2.5 py-1.5 rounded bg-[#080b0f] border border-[#1f2834]"
+                      className="flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-lg bg-[#0a0e14] border border-white/[0.06]"
                     >
                       <div className="min-w-0">
                         <div className="text-[#dce4ee] truncate">
@@ -3644,7 +3644,7 @@ export function TacticalMapPanel({
                     onClick={() =>
                       mapRef.current?.flyTo(toLatLng(pt.x, pt.y), 16.5, { duration: 0.6 })
                     }
-                    className="w-full text-left px-2.5 py-2 rounded bg-[#080b0f] border border-[#1f2834] hover:border-[#38bdf8] transition-colors flex items-center justify-between gap-2"
+                    className="w-full text-left px-2.5 py-2 rounded-lg bg-[#0a0e14] border border-white/[0.065] hover:border-[#38bdf8] transition-colors flex items-center justify-between gap-2"
                   >
                     <div className="min-w-0">
                       <div className="font-medium text-[#eef3f8] truncate">
@@ -3673,7 +3673,7 @@ export function TacticalMapPanel({
           <div className="ml-auto flex flex-col items-end gap-2 max-w-full pointer-events-none">
             {/* Glance Mode Monitor-2 Status Pill */}
             {glanceMode && (
-              <div className="hidden lg:flex pointer-events-auto items-center gap-2 rounded-lg bg-[#0d121a]/92 backdrop-blur-xl border border-white/[0.1] px-2.5 py-1.5 text-[11px] text-[#cbd5e1] shadow-xl">
+              <div className="hidden lg:flex pointer-events-auto items-center gap-2 rounded-lg bg-[#0e131b]/94 backdrop-blur-xl border border-white/[0.11] px-2.5 py-1.5 text-[11px] text-[#cbd5e1] shadow-xl">
                 <span className="font-semibold text-[#f8fafc]">{activeOperatorName}</span>
                 {activeFactionInfo && (
                   <span
@@ -3693,8 +3693,8 @@ export function TacticalMapPanel({
 
       {/* Recorded Dropped Pins Drawer */}
       {pinsDrawerOpen && (
-        <div className="pointer-events-auto w-[345px] max-w-full max-h-[52vh] lg:max-h-[calc(100vh-240px)] flex flex-col rounded-xl bg-[#0d121a]/96 backdrop-blur-xl border border-white/[0.12] shadow-2xl overflow-hidden">
-          <div className="px-4 py-3 border-b border-white/[0.08] flex items-center justify-between gap-2 shrink-0">
+        <div className="gzw-drawer-enter pointer-events-auto w-[360px] max-w-full max-h-[52vh] lg:max-h-[calc(100vh-220px)] flex flex-col rounded-xl bg-[#0e131b]/96 backdrop-blur-xl border border-white/[0.11] shadow-2xl overflow-hidden">
+          <div className="px-4 py-3 border-b border-white/[0.075] flex items-center justify-between gap-2 shrink-0">
             <div className="min-w-0">
               <h3 className="font-display text-sm font-semibold text-[#f8fafc] flex items-center gap-2">
                 <Bookmark className="w-4 h-4 text-[#34d399]" />
@@ -3717,14 +3717,14 @@ export function TacticalMapPanel({
             </button>
           </div>
 
-          <div className="px-3.5 py-2.5 border-b border-white/[0.07] bg-[#090d14] flex items-center justify-between gap-2 shrink-0">
-            <div className="flex items-center rounded-lg bg-[#06090e] border border-white/[0.08] p-0.5">
+          <div className="px-3.5 py-2.5 border-b border-white/[0.07] bg-[#0a0e14] flex items-center justify-between gap-2 shrink-0">
+            <div className="flex items-center rounded-lg bg-[#080b10] border border-white/[0.08] p-0.5">
               <button
                 type="button"
                 onClick={() => setPinsFilterTab("user")}
                 className={`px-2.5 py-1 rounded-md text-[11px] font-medium transition-colors ${
                   pinsFilterTab === "user"
-                    ? "bg-[#1a2232] text-[#f8fafc]"
+                    ? "bg-[#141b26] text-[#f8fafc] ring-1 ring-white/[0.08]"
                     : "text-[#8fa1b6] hover:text-white"
                 }`}
               >
@@ -3735,7 +3735,7 @@ export function TacticalMapPanel({
                 onClick={() => setPinsFilterTab("all")}
                 className={`px-2.5 py-1 rounded-md text-[11px] font-medium transition-colors ${
                   pinsFilterTab === "all"
-                    ? "bg-[#1a2232] text-[#f8fafc]"
+                    ? "bg-[#141b26] text-[#f8fafc] ring-1 ring-white/[0.08]"
                     : "text-[#8fa1b6] hover:text-white"
                 }`}
               >
@@ -3753,7 +3753,7 @@ export function TacticalMapPanel({
               className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border text-[11px] font-medium transition-colors ${
                 pinDropMode
                   ? "bg-cyan-500/20 border-cyan-400 text-cyan-200"
-                  : "bg-[#121822] border-white/[0.1] text-[#e2e8f0] hover:border-[#38bdf8]"
+                  : "bg-[#141b26] border-white/[0.1] text-[#e2e8f0] hover:border-[#38bdf8]"
               }`}
             >
               <Crosshair className="w-3 h-3" />
@@ -3763,7 +3763,7 @@ export function TacticalMapPanel({
 
           <div className="flex-1 overflow-y-auto p-3 space-y-2">
             {visibleDrawerPins.length === 0 ? (
-              <div className="rounded-xl border border-white/[0.08] bg-[#121822] p-5 text-center space-y-2">
+              <div className="rounded-xl border border-white/[0.075] bg-[#141b26] p-5 text-center space-y-2">
                 <p className="text-xs text-[#cbd5e1] leading-relaxed">
                   No dropped pins recorded yet.
                 </p>
@@ -3789,8 +3789,8 @@ export function TacticalMapPanel({
                     key={pin.id}
                     className={`rounded-xl border p-3 transition-colors ${
                       isEditingThis
-                        ? "bg-[#152030] border-[#38bdf8]"
-                        : "bg-[#121822] border-white/[0.08] hover:border-white/[0.18]"
+                        ? "bg-[#15202e] border-[#38bdf8]"
+                        : "bg-[#141b26] border-white/[0.075] hover:border-white/[0.18]"
                     }`}
                   >
                     <div className="flex items-start justify-between gap-2">
@@ -3835,7 +3835,7 @@ export function TacticalMapPanel({
                               kind: "pin",
                             })
                           }
-                          className="p-1.5 rounded-lg bg-[#090d14] border border-white/[0.08] text-[#9fb0c4] hover:text-[#e5a93c] hover:border-[#e5a93c]/50 transition-colors"
+                          className="p-1.5 rounded-lg bg-[#0a0e14] border border-white/[0.07] text-[#9fb0c4] hover:text-[#e5a93c] hover:border-[#e5a93c]/50 transition-colors"
                         >
                           <Compass className="w-3.5 h-3.5" />
                         </button>
@@ -3844,7 +3844,7 @@ export function TacticalMapPanel({
                           title="Locate pin on map"
                           aria-label={`Locate ${pin.label}`}
                           onClick={() => focusPinOnMap(pin)}
-                          className="p-1.5 rounded-lg bg-[#090d14] border border-white/[0.08] text-[#9fb0c4] hover:text-[#38bdf8] hover:border-[#38bdf8]/50 transition-colors"
+                          className="p-1.5 rounded-lg bg-[#0a0e14] border border-white/[0.07] text-[#9fb0c4] hover:text-[#38bdf8] hover:border-[#38bdf8]/50 transition-colors"
                         >
                           <MapPin className="w-3.5 h-3.5" />
                         </button>
@@ -3853,7 +3853,7 @@ export function TacticalMapPanel({
                           title="Edit pin"
                           aria-label={`Edit ${pin.label}`}
                           onClick={() => startEditingPin(pin)}
-                          className="p-1.5 rounded-lg bg-[#090d14] border border-white/[0.08] text-[#9fb0c4] hover:text-[#e5a93c] hover:border-[#e5a93c]/50 transition-colors"
+                          className="p-1.5 rounded-lg bg-[#0a0e14] border border-white/[0.07] text-[#9fb0c4] hover:text-[#e5a93c] hover:border-[#e5a93c]/50 transition-colors"
                         >
                           <Pencil className="w-3.5 h-3.5" />
                         </button>
@@ -3862,7 +3862,7 @@ export function TacticalMapPanel({
                           title="Delete pin"
                           aria-label={`Delete ${pin.label}`}
                           onClick={() => handleDeletePinById(pin.id)}
-                          className="p-1.5 rounded-lg bg-[#090d14] border border-white/[0.08] text-[#9fb0c4] hover:text-red-400 hover:border-red-500/50 transition-colors"
+                          className="p-1.5 rounded-lg bg-[#0a0e14] border border-white/[0.07] text-[#9fb0c4] hover:text-red-400 hover:border-red-500/50 transition-colors"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
@@ -3878,13 +3878,13 @@ export function TacticalMapPanel({
 
       {/* Pin Drop Create / Edit Modal */}
       {capturedCoords && (
-        <div className="pointer-events-auto w-[315px] max-w-full max-h-[54vh] lg:max-h-[calc(100vh-240px)] overflow-y-auto rounded-xl bg-[#0d121a]/98 backdrop-blur-xl border border-[#38bdf8]/60 p-4 shadow-2xl space-y-3">
+        <div className="gzw-drawer-enter pointer-events-auto w-[330px] max-w-full max-h-[54vh] lg:max-h-[calc(100vh-220px)] overflow-y-auto rounded-xl bg-[#0e131b]/96 backdrop-blur-xl border border-[#38bdf8]/55 p-4 shadow-2xl space-y-3">
           <div className="flex items-center justify-between gap-2">
             <div>
-              <div className="text-[10px] font-mono-tabular uppercase tracking-wider text-[#e5a93c] font-semibold">
+              <div className="text-[11px] font-semibold text-[#e5a93c]">
                 {editingPin ? "Edit Dropped Pin" : "New Map Pin"}
               </div>
-              <span className="text-xs font-semibold text-[#38bdf8]">
+              <span className="font-mono-tabular text-xs font-semibold text-[#38bdf8]">
                 Grid {formatGridSquare(capturedCoords.x, capturedCoords.y)}
               </span>
             </div>
@@ -3914,10 +3914,10 @@ export function TacticalMapPanel({
                       onNotify("Click anywhere on the map to move this pin");
                     }
                   }}
-                  className={`text-[11px] font-medium px-2 py-0.5 rounded border transition-colors ${
+                  className={`text-[11px] font-medium px-2 py-0.5 rounded-md border transition-colors ${
                     repositioningPin
                       ? "bg-cyan-500/20 border-cyan-400 text-cyan-200"
-                      : "bg-[#121822] border-white/[0.1] text-[#7dd3fc] hover:border-[#38bdf8]"
+                      : "bg-[#141b26] border-white/[0.1] text-[#7dd3fc] hover:border-[#38bdf8]"
                   }`}
                 >
                   {repositioningPin ? "Click map now..." : "Move on Map"}
@@ -3928,7 +3928,7 @@ export function TacticalMapPanel({
               type="text"
               readOnly
               value={`${capturedCoords.x}, ${capturedCoords.y}`}
-              className="w-full bg-[#070a0f] border border-white/[0.09] rounded-lg px-2.5 py-1.5 font-mono-tabular text-xs text-[#38bdf8]"
+              className="w-full bg-[#0a0e14] border border-white/[0.08] rounded-lg px-2.5 py-1.5 font-mono-tabular text-xs text-[#38bdf8]"
             />
           </div>
 
@@ -3940,7 +3940,7 @@ export function TacticalMapPanel({
               aria-label="Attach Pin to Material"
               value={pinMaterialId}
               onChange={(e) => setPinMaterialId(e.target.value)}
-              className="w-full bg-[#070a0f] border border-white/[0.09] rounded-lg px-2.5 py-1.5 text-xs text-[#f1f5f9]"
+              className="w-full bg-[#0a0e14] border border-white/[0.08] rounded-lg px-2.5 py-1.5 text-xs text-[#f1f5f9]"
             >
               <option value="">General Recon Pin</option>
               {catalog.map((m) => (
@@ -3963,7 +3963,7 @@ export function TacticalMapPanel({
                   e.target.value as "customPins" | "blueCrates" | "pcSpawns"
                 )
               }
-              className="w-full bg-[#070a0f] border border-white/[0.09] rounded-lg px-2.5 py-1.5 text-xs text-[#f1f5f9]"
+              className="w-full bg-[#0a0e14] border border-white/[0.08] rounded-lg px-2.5 py-1.5 text-xs text-[#f1f5f9]"
             >
               <option value="customPins">Custom Item Pin (Green)</option>
               <option value="blueCrates">Blue-Planked Crate (Blue)</option>
@@ -3983,7 +3983,7 @@ export function TacticalMapPanel({
                 if (e.key === "Enter") handleSavePin();
               }}
               placeholder="e.g. Northern Reach Armory shelf"
-              className="w-full bg-[#070a0f] border border-white/[0.09] rounded-lg px-2.5 py-1.5 text-xs text-[#f8fafc] placeholder:text-[#66778b]"
+              className="w-full bg-[#0a0e14] border border-white/[0.08] rounded-lg px-2.5 py-1.5 text-xs text-[#f8fafc] placeholder:text-[#66778b]"
             />
           </div>
 
@@ -3991,7 +3991,7 @@ export function TacticalMapPanel({
             <button
               type="button"
               onClick={handleSavePin}
-              className="flex-1 py-2 px-4 rounded-lg bg-[#e5a93c] hover:bg-[#f0b94d] text-[#0c0f14] font-semibold text-xs transition-colors"
+              className="flex-1 py-2 px-4 rounded-lg bg-[#e5a93c] hover:bg-[#f0b94d] text-[#080b10] font-semibold text-xs transition-colors"
             >
               {editingPin ? "Save Changes" : "Save Map Pin"}
             </button>
@@ -4013,8 +4013,8 @@ export function TacticalMapPanel({
 
       {/* Screen Sync (Local Browser OCR Position Tracker & Manual Position Calibrator) */}
       {screenSyncPanelOpen && (
-        <div className="pointer-events-auto w-[360px] max-w-full max-h-[58vh] lg:max-h-[calc(100vh-240px)] overflow-y-auto rounded-xl bg-[#0d121a]/98 backdrop-blur-xl border border-white/[0.14] p-4 shadow-2xl space-y-3">
-          <div className="flex items-start justify-between gap-2 pb-2.5 border-b border-white/[0.08]">
+        <div className="gzw-drawer-enter pointer-events-auto w-[360px] max-w-full max-h-[58vh] lg:max-h-[calc(100vh-220px)] overflow-y-auto rounded-xl bg-[#0e131b]/96 backdrop-blur-xl border border-white/[0.12] p-4 shadow-2xl space-y-3">
+          <div className="flex items-start justify-between gap-2 pb-2.5 border-b border-white/[0.075]">
             <div className="min-w-0">
               <div className="flex items-center gap-2">
                 <Monitor className="w-4 h-4 text-[#38bdf8] shrink-0" />
@@ -4037,19 +4037,19 @@ export function TacticalMapPanel({
           </div>
 
           {/* Primary Automated Capture Action */}
-          <div className="rounded-lg bg-[#080c12] border border-white/[0.08] p-3 space-y-2.5">
+          <div className="rounded-lg bg-[#0a0e14] border border-white/[0.07] p-3 space-y-2.5">
             <div className="flex items-center justify-between gap-2">
               <span className="text-xs font-semibold text-[#eef3f8]">
                 Auto Screen-Watcher
               </span>
               <span
-                className={`font-mono-tabular text-[10px] font-semibold px-2 py-0.5 rounded ${
+                className={`font-mono-tabular text-[10px] font-semibold px-2 py-0.5 rounded-md ${
                   screenSyncActive
                     ? "bg-emerald-500/20 text-emerald-300"
                     : "bg-white/[0.06] text-[#94a3b8]"
                 }`}
               >
-                {screenSyncActive ? "ACTIVE" : "STANDBY"}
+                {screenSyncActive ? "Active" : "Standby"}
               </span>
             </div>
 
@@ -4058,7 +4058,7 @@ export function TacticalMapPanel({
                 <button
                   type="button"
                   onClick={startScreenSync}
-                  className="flex-1 min-h-[36px] inline-flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-[#38bdf8] hover:bg-[#5ccbfd] text-[#061018] font-semibold text-xs transition-colors"
+                  className="flex-1 min-h-[36px] inline-flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-[#38bdf8] hover:bg-[#5ccbfd] text-[#080b10] font-semibold text-xs transition-colors"
                 >
                   <Radio className="w-3.5 h-3.5" />
                   <span>Start Screen Sync (Select Full GZW Screen)</span>
@@ -4076,7 +4076,7 @@ export function TacticalMapPanel({
                   <button
                     type="button"
                     onClick={() => void runSingleOcrScan()}
-                    className="min-h-[36px] px-3 py-2 rounded-lg bg-[#141d2b] border border-white/[0.12] hover:border-[#38bdf8] text-xs font-medium text-[#e2e8f0]"
+                    className="min-h-[36px] px-3 py-2 rounded-lg bg-[#141b26] border border-white/[0.1] hover:border-[#38bdf8] text-xs font-medium text-[#e2e8f0]"
                   >
                     Scan Now
                   </button>
@@ -4121,7 +4121,7 @@ export function TacticalMapPanel({
                     setCustomCrop(SCAN_PRESETS[val].rect);
                   }
                 }}
-                className="w-full bg-[#06090d] border border-white/[0.1] rounded-lg px-2.5 py-1.5 text-xs text-[#f1f5f9]"
+                className="w-full bg-[#080b10] border border-white/[0.08] rounded-lg px-2.5 py-1.5 text-xs text-[#f1f5f9]"
               >
                 <option value="full-map">
                   {SCAN_PRESETS["full-map"].label}
@@ -4227,7 +4227,7 @@ export function TacticalMapPanel({
                 aria-label="Scan interval"
                 value={scanIntervalMs}
                 onChange={(e) => setScanIntervalMs(Number(e.target.value))}
-                className="bg-[#06090d] border border-white/[0.1] rounded px-1.5 py-0.5 font-mono-tabular text-[10px] text-[#cbd5e1]"
+                className="bg-[#080b10] border border-white/[0.08] rounded-md px-1.5 py-0.5 font-mono-tabular text-[10px] text-[#cbd5e1]"
               >
                 <option value={0}>Auto Fast (~150ms)</option>
                 <option value={500}>0.5s</option>
@@ -4251,14 +4251,14 @@ export function TacticalMapPanel({
                 </div>
                 <canvas
                   ref={previewCanvasRef}
-                  className="w-full rounded border border-white/[0.1] bg-[#05070b]"
+                  className="w-full rounded-lg border border-white/[0.08] bg-[#06090d]"
                 />
               </div>
             )}
           </div>
 
           {/* Instant Manual Position Anchor ("Mark My Pos" / Type Grid) */}
-          <div className="rounded-lg bg-[#080c12] border border-white/[0.08] p-3 space-y-2">
+          <div className="rounded-lg bg-[#0a0e14] border border-white/[0.07] p-3 space-y-2">
             <div className="flex items-center justify-between gap-2">
               <span className="text-xs font-semibold text-[#eef3f8]">
                 Manual Position Anchor
@@ -4284,7 +4284,7 @@ export function TacticalMapPanel({
                 }}
                 placeholder="Type grid e.g. 174 142"
                 aria-label="Manual position grid square"
-                className="flex-1 min-w-0 bg-[#05080d] border border-white/[0.1] focus:border-[#10b981] rounded-lg px-2.5 py-1.5 font-mono-tabular text-xs text-[#eef3f8] placeholder:text-[#66778b] focus:outline-none"
+                className="flex-1 min-w-0 bg-[#080b10] border border-white/[0.08] focus:border-[#10b981] rounded-lg px-2.5 py-1.5 font-mono-tabular text-xs text-[#eef3f8] placeholder:text-[#66778b] focus:outline-none"
               />
               <button
                 type="button"
@@ -4310,7 +4310,7 @@ export function TacticalMapPanel({
               className={`w-full min-h-[34px] inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-medium transition-colors ${
                 manualPosMode
                   ? "bg-emerald-500/20 border-emerald-400 text-emerald-200"
-                  : "bg-[#121822] border-white/[0.1] text-[#cbd5e1] hover:border-[#10b981]"
+                  : "bg-[#141b26] border-white/[0.09] text-[#cbd5e1] hover:border-[#10b981]"
               }`}
             >
               <Crosshair className="w-3.5 h-3.5 text-[#34d399]" />
@@ -4329,7 +4329,7 @@ export function TacticalMapPanel({
       {/* Live Compass Bearing Lock HUD Banner (Monitor 2 Top-HUD Compass Readout) */}
       {navTarget && activeNavTelemetry && effectiveNavOrigin && (
         <div
-          className={`absolute bottom-[78px] md:bottom-2.5 left-2.5 right-2.5 sm:right-auto md:left-1/2 md:-translate-x-1/2 z-[690] pointer-events-auto rounded-xl bg-[#0b1018]/96 backdrop-blur-xl border border-[#e5a93c]/65 shadow-2xl ${
+          className={`gzw-drawer-enter absolute bottom-[78px] md:bottom-11 left-2.5 right-2.5 sm:right-auto md:left-1/2 md:-translate-x-1/2 z-[690] pointer-events-auto rounded-xl bg-[#0e131b]/96 backdrop-blur-xl border border-[#e5a93c]/50 shadow-2xl ${
             glanceMode ? "px-4 py-2.5" : "px-3 py-2"
           }`}
         >
@@ -4366,7 +4366,7 @@ export function TacticalMapPanel({
               <button
                 type="button"
                 onClick={() => setOriginPickerOpen((v) => !v)}
-                className="px-2 py-1 rounded-lg bg-[#141c28] border border-white/[0.1] hover:border-[#38bdf8] text-[11px] font-medium text-[#cbd5e1]"
+                className="px-2 py-1 rounded-lg bg-[#141b26] border border-white/[0.1] hover:border-[#38bdf8] text-[11px] font-medium text-[#cbd5e1]"
               >
                 Origin
               </button>
@@ -4374,7 +4374,7 @@ export function TacticalMapPanel({
                 type="button"
                 onClick={handleLockExfilNearestLz}
                 title="Lock bearing to nearest Exfil LZ"
-                className="px-2 py-1 rounded-lg bg-[#141c28] border border-white/[0.1] hover:border-[#e5a93c] text-[11px] font-medium text-[#fde047]"
+                className="px-2 py-1 rounded-lg bg-[#141b26] border border-white/[0.1] hover:border-[#e5a93c] text-[11px] font-medium text-[#fde047]"
               >
                 Exfil LZ
               </button>
@@ -4392,8 +4392,8 @@ export function TacticalMapPanel({
               </button>
 
               {originPickerOpen && (
-                <div className="absolute bottom-full right-0 mb-2 w-60 rounded-xl bg-[#0d121a]/98 backdrop-blur-xl border border-white/[0.14] p-1.5 shadow-2xl z-[760] space-y-1">
-                  <div className="px-2 py-1 text-[10px] font-mono-tabular uppercase text-[#8b98a9]">
+                <div className="gzw-popover-enter absolute bottom-full right-0 mb-2 w-60 rounded-xl bg-[#0e131b]/96 backdrop-blur-xl border border-white/[0.12] p-1.5 shadow-2xl z-[760] space-y-1">
+                  <div className="px-2 py-1 text-[11px] font-medium text-[#94a3b8]">
                     Switch Bearing Origin
                   </div>
                   {livePlayerPos && (
@@ -4492,12 +4492,12 @@ export function TacticalMapPanel({
       {contextMenu && (
         <div
           style={{ left: contextMenu.left, top: contextMenu.top }}
-          className="absolute z-[850] w-54 rounded-xl bg-[#0d121a]/96 backdrop-blur-xl border border-white/[0.14] p-1.5 shadow-2xl pointer-events-auto"
+          className="gzw-popover-enter absolute z-[850] w-54 rounded-xl bg-[#0e131b]/96 backdrop-blur-xl border border-white/[0.12] p-1.5 shadow-2xl pointer-events-auto"
           onContextMenu={(e) => e.preventDefault()}
         >
-          <div className="px-2.5 py-1.5 border-b border-white/[0.08] flex items-center justify-between gap-2 mb-1">
+          <div className="px-2.5 py-1.5 border-b border-white/[0.075] flex items-center justify-between gap-2 mb-1">
             <span className="font-mono-tabular text-[11px] font-bold text-[#e5a93c]">
-              GRID {contextMenu.grid}
+              Grid {contextMenu.grid}
             </span>
             <span className="font-mono-tabular text-[10px] text-[#7f8ea1]">
               {contextMenu.x}, {contextMenu.y}
@@ -4600,7 +4600,7 @@ export function TacticalMapPanel({
       )}
 
       {/* Minimal Bottom-Right Coordinate & Measure Telemetry */}
-      <div className="absolute bottom-2.5 right-2.5 z-[650] pointer-events-auto bg-[#0d121a]/90 backdrop-blur-xl border border-white/[0.1] rounded-lg px-2.5 py-1.5 font-mono-tabular text-[11px] text-[#94a3b8] flex items-center gap-2 shadow-xl">
+      <div className="absolute bottom-2.5 right-2.5 z-[650] pointer-events-auto bg-[#0e131b]/94 backdrop-blur-xl border border-white/[0.11] rounded-lg px-2.5 py-1.5 font-mono-tabular text-[11px] text-[#94a3b8] flex items-center gap-2 shadow-xl">
         {livePlayerPos ? (
           <>
             <button
@@ -4680,22 +4680,22 @@ export function TacticalMapPanel({
           onClick={() => setMapLightbox(null)}
         >
           <div
-            className="max-w-2xl w-full rounded-md bg-[#0c1016] border border-[#2c3849] overflow-hidden shadow-2xl"
+            className="gzw-drawer-enter max-w-2xl w-full rounded-xl bg-[#0e131b] border border-white/[0.12] overflow-hidden shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="px-4 py-2.5 border-b border-[#212a36] flex items-center justify-between gap-3">
+            <div className="px-4 py-2.5 border-b border-white/[0.075] flex items-center justify-between gap-3">
               <span className="text-xs font-semibold text-[#eef3f8] truncate">
                 {mapLightbox.title}
               </span>
               <button
                 type="button"
                 onClick={() => setMapLightbox(null)}
-                className="p-1 rounded text-[#8b98a9] hover:text-white"
+                className="p-1 rounded-lg text-[#8b98a9] hover:text-white hover:bg-white/[0.06]"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
-            <div className="p-3 bg-[#070a0e] flex justify-center">
+            <div className="p-3 bg-[#080b10] flex justify-center">
               <img
                 src={mapLightbox.src}
                 alt={mapLightbox.title}
