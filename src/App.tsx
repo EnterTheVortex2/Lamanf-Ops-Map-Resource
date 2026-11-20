@@ -13,6 +13,7 @@ import {
   Pencil,
   RefreshCw,
   RotateCcw,
+  ShieldCheck,
   ShoppingBag,
   Users,
 } from "lucide-react";
@@ -28,6 +29,7 @@ import {
   type PlannerViewId,
 } from "./components/HideoutTrackerPanel";
 import { KeysDoorsPanel } from "./components/KeysDoorsPanel";
+import { LegalPrivacyPanel } from "./components/LegalPrivacyPanel";
 import { TasksTrackerPanel } from "./components/TasksTrackerPanel";
 import { TacticalMapPanel } from "./components/TacticalMapPanel";
 import { VendorShopPanel } from "./components/VendorShopPanel";
@@ -49,10 +51,13 @@ import {
 } from "./utils/catalogBuilder";
 import { buildKeysAndDoorsCatalog, type GzwKeyDoorDef } from "./utils/keyBuilder";
 import {
+  eraseAllAppData,
+  exportAllAppDataBackup,
   loadActiveOperatorId,
   loadOperatorProfiles,
   loadOperatorSnapshot,
   OPERATOR_SLOT_IDS,
+  restoreAllAppDataBackup,
   saveActiveOperatorId,
   saveOperatorProfiles,
   saveOperatorSnapshot,
@@ -73,8 +78,8 @@ const DEFAULT_COMPACT_WIDTH = 468;
 const MIN_PANEL_WIDTH = 360;
 
 type ApiStatusMode = "loading" | "live" | "cached" | "error";
-type WorkspaceMode = "hideout" | "tasks" | "vendors" | "keys";
-type MobileTab = "hideout" | "tasks" | "vendors" | "keys" | "map";
+type WorkspaceMode = "hideout" | "tasks" | "vendors" | "keys" | "legal";
+type MobileTab = "hideout" | "tasks" | "vendors" | "keys" | "map" | "legal";
 
 function clampPanelWidth(rawWidth: number): number {
   const vw = typeof window !== "undefined" ? window.innerWidth : 1440;
@@ -557,6 +562,8 @@ export default function App() {
       showToast(`Cleared keyholder list for ${opName}`);
     } else if (workspaceMode === "vendors") {
       showToast("Vendor shop is synced live from gzw-data.dev");
+    } else if (workspaceMode === "legal") {
+      showToast("Use Erase my app data in Data Controls to wipe all saved progress");
     } else {
       updateOpState((prev) => ({
         ...prev,
@@ -676,12 +683,91 @@ export default function App() {
     });
   }, [operatorProfiles, activeOperatorId, opState]);
 
+  const totalStorageSummary = useMemo(
+    () =>
+      operatorSlotSummaries.reduce(
+        (acc, slot) => ({
+          builtTotal: acc.builtTotal + slot.built,
+          tasksTotal: acc.tasksTotal + slot.tasks,
+          keysTotal:
+            acc.keysTotal +
+            Object.values(
+              (slot.id === activeOperatorId
+                ? opState
+                : loadOperatorSnapshot(slot.id)
+              ).ownedKeys
+            ).filter(Boolean).length,
+          pinsTotal:
+            acc.pinsTotal +
+            (slot.id === activeOperatorId
+              ? opState
+              : loadOperatorSnapshot(slot.id)
+            ).customPins.length,
+        }),
+        { builtTotal: 0, tasksTotal: 0, keysTotal: 0, pinsTotal: 0 }
+      ),
+    [operatorSlotSummaries, activeOperatorId, opState]
+  );
+
+  const handleExportBackup = useCallback(() => {
+    saveOperatorSnapshot(activeOperatorIdRef.current, opState);
+    const payload = exportAllAppDataBackup(panelWidthRef.current);
+    const blob = new Blob([JSON.stringify(payload, null, 2)], {
+      type: "application/json",
+    });
+    const url = URL.createObjectURL(blob);
+    const dateStamp = new Date().toISOString().slice(0, 10);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = `lamang-operations-backup-${dateStamp}.json`;
+    document.body.appendChild(anchor);
+    anchor.click();
+    document.body.removeChild(anchor);
+    URL.revokeObjectURL(url);
+    showToast("Downloaded full progress backup (.json)");
+  }, [opState, showToast]);
+
+  const handleRestoreBackup = useCallback(
+    (rawJson: string): { ok: boolean; message: string } => {
+      try {
+        const restored = restoreAllAppDataBackup(rawJson);
+        setActiveOperatorId(restored.activeOperatorId);
+        setOperatorProfiles(restored.profiles);
+        setOpState(restored.activeSnapshot);
+        if (restored.panelWidth) {
+          setPanelWidth(clampPanelWidth(restored.panelWidth));
+        }
+        const msg = `Restored ${restored.summary.builtTotal} upgrades, ${restored.summary.tasksTotal} tasks, ${restored.summary.keysTotal} keys & ${restored.summary.pinsTotal} pins.`;
+        showToast(msg);
+        return { ok: true, message: msg };
+      } catch (err) {
+        const msg =
+          err instanceof Error ? err.message : "Failed to restore backup file.";
+        showToast(msg);
+        return { ok: false, message: msg };
+      }
+    },
+    [showToast]
+  );
+
+  const handleEraseAllData = useCallback(() => {
+    const fresh = eraseAllAppData();
+    setActiveOperatorId(fresh.activeOperatorId);
+    setOperatorProfiles(fresh.profiles);
+    setOpState(fresh.activeSnapshot);
+    setSelectedUpgrade(null);
+    setInspectedMaterial(null);
+    setInspectedTask(null);
+    setInspectedKey(null);
+    showToast("All saved browser app data erased");
+  }, [showToast]);
+
   const handleToggleGlanceMode = useCallback(
     (force?: boolean) => {
       setGlanceMode((prev) => {
         const next = force !== undefined ? force : !prev;
         if (next) {
-          if (workspaceMode === "vendors") {
+          if (workspaceMode === "vendors" || workspaceMode === "legal") {
             setWorkspaceMode("hideout");
           }
           if (window.innerWidth < 1024) {
@@ -963,15 +1049,42 @@ export default function App() {
             <RotateCcw className="w-3.5 h-3.5" />
             <span className="hidden sm:inline">Reset</span>
           </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              if (workspaceMode === "legal") {
+                setWorkspaceMode("hideout");
+                setMobileTab("hideout");
+              } else {
+                setGlanceMode(false);
+                setWorkspaceMode("legal");
+                setMobileTab("legal");
+              }
+            }}
+            aria-pressed={workspaceMode === "legal"}
+            title="Privacy notice, legal terms & data controls"
+            className={`hidden lg:inline-flex min-h-[32px] items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium border transition-colors whitespace-nowrap shrink-0 ${
+              workspaceMode === "legal"
+                ? "bg-[#e5a93c]/16 border-[#e5a93c]/55 text-[#fde68a]"
+                : "text-[#94a3b8] hover:text-white border-white/[0.08] hover:border-white/[0.18] bg-white/[0.025] hover:bg-white/[0.06]"
+            }`}
+          >
+            <ShieldCheck className="w-3.5 h-3.5 text-[#e5a93c]" />
+            <span>Privacy &amp; Legal</span>
+          </button>
         </div>
       </header>
 
       {/* Responsive Workspace: Fluid Draggable Split Sidebar + Dominant Map on Desktop, Full-Screen Tabbed Views on Mobile */}
       <main className="flex-1 min-h-0 flex flex-col lg:flex-row overflow-hidden">
-        {/* Left Operations Panel (Hideout + Tasks + Vendors + Keys, hidden when Glance Mode is active on Desktop) */}
+        {/* Left Operations Panel (Hideout + Tasks + Vendors + Keys + Legal, hidden when Glance Mode is active on Desktop) */}
         <aside
           style={
-            isDesktop && workspaceMode !== "vendors" && !glanceMode
+            isDesktop &&
+            workspaceMode !== "vendors" &&
+            workspaceMode !== "legal" &&
+            !glanceMode
               ? { width: `${panelWidth}px` }
               : undefined
           }
@@ -982,7 +1095,7 @@ export default function App() {
                 ? "flex"
                 : "hidden lg:flex"
           } flex-col flex-1 ${
-            workspaceMode === "vendors"
+            workspaceMode === "vendors" || workspaceMode === "legal"
               ? "lg:flex-1 lg:w-full"
               : "lg:flex-none lg:shrink-0 lg:border-r border-white/[0.075]"
           } min-h-0 bg-[#0e131b] ${
@@ -1066,7 +1179,7 @@ export default function App() {
               </button>
             </div>
 
-            {workspaceMode === "vendors" ? (
+            {workspaceMode === "vendors" || workspaceMode === "legal" ? (
               <button
                 type="button"
                 onClick={() => {
@@ -1149,6 +1262,15 @@ export default function App() {
               isExpanded={isWidePanel}
               isLoadingApi={apiStatus.mode === "loading"}
             />
+          ) : workspaceMode === "legal" ? (
+            <LegalPrivacyPanel
+              operatorProfiles={operatorProfiles}
+              activeOperatorId={activeOperatorId}
+              storageSummary={totalStorageSummary}
+              onExportBackup={handleExportBackup}
+              onRestoreBackup={handleRestoreBackup}
+              onEraseAllData={handleEraseAllData}
+            />
           ) : (
             <KeysDoorsPanel
               keysList={keysCatalog}
@@ -1163,8 +1285,8 @@ export default function App() {
           )}
         </aside>
 
-        {/* Fluid Draggable Split Divider (Desktop lg+, hidden when Vendors full-screen shop or Glance Mode is active) */}
-        {workspaceMode !== "vendors" && !glanceMode && (
+        {/* Fluid Draggable Split Divider (Desktop lg+, hidden when Vendors/Legal full-screen or Glance Mode is active) */}
+        {workspaceMode !== "vendors" && workspaceMode !== "legal" && !glanceMode && (
           <div
             role="separator"
             aria-orientation="vertical"
@@ -1204,10 +1326,10 @@ export default function App() {
           </div>
         )}
 
-        {/* Right Tactical Map Panel (Stays mounted for Leaflet pan/zoom persistence; hidden in full-screen Vendors shop unless Glance Mode) */}
+        {/* Right Tactical Map Panel (Stays mounted for Leaflet pan/zoom persistence; hidden in full-screen Vendors/Legal views unless Glance Mode) */}
         <div
           className={`${
-            workspaceMode === "vendors" && !glanceMode
+            (workspaceMode === "vendors" || workspaceMode === "legal") && !glanceMode
               ? mobileTab === "map"
                 ? "flex flex-1 min-h-0 lg:hidden"
                 : "hidden"
@@ -1261,7 +1383,7 @@ export default function App() {
       {/* Mobile Bottom Navigation Bar (< lg only, thumb-reachable 56px height, >= 44px hit targets) */}
       <nav
         aria-label="Mobile sections"
-        className="lg:hidden h-14 shrink-0 border-t border-white/[0.075] bg-[#0a0e14]/96 backdrop-blur-lg grid grid-cols-5 z-30"
+        className="lg:hidden h-14 shrink-0 border-t border-white/[0.075] bg-[#0a0e14]/96 backdrop-blur-lg grid grid-cols-6 z-30"
       >
         <button
           type="button"
@@ -1342,6 +1464,23 @@ export default function App() {
         >
           <MapIcon className="w-4 h-4" />
           <span>Map</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => {
+            setGlanceMode(false);
+            setMobileTab("legal");
+            setWorkspaceMode("legal");
+          }}
+          className={`flex flex-col items-center justify-center gap-0.5 min-h-[44px] text-[10px] font-medium transition-colors ${
+            mobileTab === "legal"
+              ? "text-[#e5a93c] bg-[#141b26]"
+              : "text-[#8b98a9] hover:text-white"
+          }`}
+        >
+          <ShieldCheck className="w-4 h-4" />
+          <span>Legal</span>
         </button>
       </nav>
 

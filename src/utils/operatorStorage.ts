@@ -213,3 +213,160 @@ export function saveOperatorSnapshot(
 ): void {
   safeStorageSet(getStateKey(slotId), snapshot);
 }
+
+export interface LamangBackupPayload {
+  app: "Lamang Operations";
+  schemaVersion: 1;
+  exportedAt: string;
+  activeOperatorId: OperatorSlotId;
+  panelWidth?: number;
+  profiles: OperatorProfileMeta[];
+  snapshots: Record<OperatorSlotId, OperatorStateSnapshot>;
+}
+
+export function exportAllAppDataBackup(panelWidth?: number): LamangBackupPayload {
+  ensureOperatorsInitialized();
+  const activeId = loadActiveOperatorId();
+  const profiles = loadOperatorProfiles();
+  const snapshots: Record<OperatorSlotId, OperatorStateSnapshot> = {
+    "op-1": loadOperatorSnapshot("op-1"),
+    "op-2": loadOperatorSnapshot("op-2"),
+    "op-3": loadOperatorSnapshot("op-3"),
+  };
+  return {
+    app: "Lamang Operations",
+    schemaVersion: 1,
+    exportedAt: new Date().toISOString(),
+    activeOperatorId: activeId,
+    panelWidth,
+    profiles,
+    snapshots,
+  };
+}
+
+export interface RestoredBackupResult {
+  activeOperatorId: OperatorSlotId;
+  profiles: OperatorProfileMeta[];
+  activeSnapshot: OperatorStateSnapshot;
+  panelWidth?: number;
+  summary: {
+    builtTotal: number;
+    tasksTotal: number;
+    keysTotal: number;
+    pinsTotal: number;
+  };
+}
+
+export function restoreAllAppDataBackup(rawText: string): RestoredBackupResult {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(rawText);
+  } catch {
+    throw new Error("Invalid backup file: could not parse JSON.");
+  }
+
+  if (!parsed || typeof parsed !== "object") {
+    throw new Error("Invalid backup file format.");
+  }
+
+  const obj = parsed as Partial<LamangBackupPayload>;
+  if (!obj.snapshots || typeof obj.snapshots !== "object") {
+    throw new Error(
+      "This file does not appear to be a Lamang Operations progress backup."
+    );
+  }
+
+  const rawSnapshots = obj.snapshots as Record<string, Partial<OperatorStateSnapshot>>;
+  const sanitizedSnapshots: Record<OperatorSlotId, OperatorStateSnapshot> = {
+    "op-1": sanitizeSnapshot(rawSnapshots["op-1"] || null),
+    "op-2": sanitizeSnapshot(rawSnapshots["op-2"] || null),
+    "op-3": sanitizeSnapshot(rawSnapshots["op-3"] || null),
+  };
+
+  const incomingProfiles = Array.isArray(obj.profiles) ? obj.profiles : [];
+  const nextProfiles: OperatorProfileMeta[] = OPERATOR_SLOT_IDS.map((id) => {
+    const match = incomingProfiles.find((p) => p && p.id === id);
+    const snap = sanitizedSnapshots[id];
+    const cleanName =
+      typeof match?.name === "string" && match.name.trim()
+        ? match.name.trim().slice(0, 24)
+        : DEFAULT_NAMES[id];
+    return {
+      id,
+      name: cleanName,
+      faction: snap.faction,
+      updatedAt:
+        typeof match?.updatedAt === "number" && Number.isFinite(match.updatedAt)
+          ? match.updatedAt
+          : Date.now(),
+    };
+  });
+
+  const nextActiveId: OperatorSlotId =
+    obj.activeOperatorId === "op-2" || obj.activeOperatorId === "op-3"
+      ? obj.activeOperatorId
+      : "op-1";
+
+  for (const id of OPERATOR_SLOT_IDS) {
+    saveOperatorSnapshot(id, sanitizedSnapshots[id]);
+  }
+  saveOperatorProfiles(nextProfiles);
+  saveActiveOperatorId(nextActiveId);
+
+  if (
+    typeof obj.panelWidth === "number" &&
+    Number.isFinite(obj.panelWidth) &&
+    obj.panelWidth >= 320 &&
+    obj.panelWidth <= 1200
+  ) {
+    safeStorageSet("lamang_ops_panel_width_v1", Math.round(obj.panelWidth));
+  }
+
+  let builtTotal = 0;
+  let tasksTotal = 0;
+  let keysTotal = 0;
+  let pinsTotal = 0;
+  for (const id of OPERATOR_SLOT_IDS) {
+    const s = sanitizedSnapshots[id];
+    builtTotal += Object.values(s.builtUpgrades).filter(Boolean).length;
+    tasksTotal += Object.values(s.completedTasks).filter(Boolean).length;
+    keysTotal += Object.values(s.ownedKeys).filter(Boolean).length;
+    pinsTotal += s.customPins.length;
+  }
+
+  return {
+    activeOperatorId: nextActiveId,
+    profiles: nextProfiles,
+    activeSnapshot: sanitizedSnapshots[nextActiveId],
+    panelWidth:
+      typeof obj.panelWidth === "number" ? Math.round(obj.panelWidth) : undefined,
+    summary: { builtTotal, tasksTotal, keysTotal, pinsTotal },
+  };
+}
+
+export function eraseAllAppData(): {
+  activeOperatorId: OperatorSlotId;
+  profiles: OperatorProfileMeta[];
+  activeSnapshot: OperatorStateSnapshot;
+} {
+  try {
+    const keysToRemove: string[] = [];
+    for (let i = 0; i < window.localStorage.length; i += 1) {
+      const k = window.localStorage.key(i);
+      if (k && (k.startsWith("lamang_ops_") || k.startsWith("gzw_"))) {
+        keysToRemove.push(k);
+      }
+    }
+    keysToRemove.forEach((k) => window.localStorage.removeItem(k));
+  } catch {
+    // ignore storage errors
+  }
+
+  ensureOperatorsInitialized();
+  return {
+    activeOperatorId: "op-1",
+    profiles: loadOperatorProfiles(),
+    activeSnapshot: loadOperatorSnapshot("op-1"),
+  };
+}
+
